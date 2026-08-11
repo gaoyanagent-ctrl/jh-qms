@@ -78,5 +78,19 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(jdbc.queryForObject("select count(*) from qms_audit_log", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
                 "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(6);
+        assertThat(jdbc.queryForObject(
+                "select primary_org_id from sys_user where tenant_id = 1 and username = 'admin'", Long.class))
+                .isNotNull();
+        assertThat(jdbc.queryForObject("""
+                select count(*)
+                  from sys_user_org uo
+                  join sys_user u on u.id = uo.user_id and u.tenant_id = uo.tenant_id
+                  join sys_org o on o.id = uo.org_id and o.tenant_id = uo.tenant_id
+                 where u.tenant_id = 1
+                   and u.username = 'admin'
+                   and o.org_code = 'ROOT'
+                   and uo.is_primary = true
+                   and uo.deleted = false
+                """, Integer.class)).isEqualTo(1);
     }
 }
