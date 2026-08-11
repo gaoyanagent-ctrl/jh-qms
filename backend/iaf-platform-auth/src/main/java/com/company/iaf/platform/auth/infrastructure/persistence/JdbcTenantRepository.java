@@ -5,7 +5,6 @@ import com.company.iaf.platform.auth.domain.model.TenantInfo;
 import com.company.iaf.platform.auth.domain.model.TenantQuota;
 import com.company.iaf.platform.auth.domain.model.TenantStatus;
 import com.company.iaf.platform.auth.domain.repository.TenantRepository;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-@ConditionalOnBean(JdbcTemplate.class)
 public class JdbcTenantRepository implements TenantRepository {
 
     private final JdbcTemplate jdbcTemplate;

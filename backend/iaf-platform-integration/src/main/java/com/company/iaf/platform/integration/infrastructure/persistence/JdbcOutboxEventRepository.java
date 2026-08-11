@@ -4,7 +4,6 @@ import com.company.iaf.platform.core.event.DomainEvent;
 import com.company.iaf.platform.integration.domain.model.OutboxEvent;
 import com.company.iaf.platform.integration.domain.model.OutboxEventStatus;
 import com.company.iaf.platform.integration.domain.repository.OutboxEventRepository;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -14,7 +13,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 @Repository
-@ConditionalOnBean(JdbcTemplate.class)
 public class JdbcOutboxEventRepository implements OutboxEventRepository {
 
     private final JdbcTemplate jdbcTemplate;

@@ -3,8 +3,9 @@ FROM maven:3.9.11-eclipse-temurin-21 AS build
 WORKDIR /workspace
 COPY backend ./backend
 
-RUN mvn -f backend/pom.xml -pl iaf-app -am install -DskipTests \
-    && mvn -f backend/pom.xml -pl iaf-app package spring-boot:repackage -DskipTests
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -f backend/pom.xml -pl iaf-app -am install -Dmaven.test.skip=true \
+    && mvn -f backend/pom.xml -pl iaf-app package spring-boot:repackage -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre
 
