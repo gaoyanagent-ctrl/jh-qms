@@ -16,19 +16,28 @@ fresh `ss -ltnp` and `docker ps` collision check.
 ```bash
 cd /opt/jh-qms
 cp deploy/production/.env.example deploy/production/.env
-# Replace JH_QMS_DB_PASSWORD and keep the file mode at 0600.
+# Replace both password placeholders with separate random values and keep mode 0600.
 docker compose --env-file deploy/production/.env \
   -f deploy/production/compose.yml up -d --build
 ```
 
-For the first Nginx setup, create the certificate before enabling the committed HTTPS
-vhost, or temporarily enable an HTTP-only vhost with the same ACME challenge location.
-After the certificate exists:
+The schema seeds tenant `default` and user `admin`. Before public access, replace its
+development-only password hash with `{noop}` followed by `JH_QMS_ADMIN_PASSWORD` from
+the root-only environment file.
+
+For the first Nginx setup, install the committed HTTP bootstrap vhost, validate and
+reload Nginx, then request the certificate with Certbot. After the certificate exists,
+replace the bootstrap vhost with the committed HTTPS vhost:
 
 ```bash
-install -m 0644 deploy/production/iaf-qms.naturedao.tech.nginx.conf \
+install -m 0644 deploy/production/iaf-qms.naturedao.tech.http.nginx.conf \
   /etc/nginx/sites-available/iaf-qms
 ln -s /etc/nginx/sites-available/iaf-qms /etc/nginx/sites-enabled/iaf-qms
+nginx -t
+systemctl reload nginx
+certbot certonly --webroot -w /var/www/html -d iaf-qms.naturedao.tech
+install -m 0644 deploy/production/iaf-qms.naturedao.tech.nginx.conf \
+  /etc/nginx/sites-available/iaf-qms
 nginx -t
 systemctl reload nginx
 ```
@@ -51,4 +60,3 @@ docker compose --env-file deploy/production/.env \
 - Disable only this vhost by removing `/etc/nginx/sites-enabled/iaf-qms`, validating with
   `nginx -t`, and reloading Nginx. Do not edit unrelated vhosts.
 - Preserve the named `jh-qms_postgres-data` volume during application rollback.
-
