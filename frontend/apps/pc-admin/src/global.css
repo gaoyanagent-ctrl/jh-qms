@@ -1,0 +1,182 @@
+.ant-drawer.ant-drawer-open.ant-drawer-right > .ant-drawer-content-wrapper {
+  transform: none;
+}
+
+body {
+  margin: 0;
+}
+
+.iaf-shell-root,
+.iaf-shell-root * {
+  box-sizing: border-box;
+}
+
+.iaf-shell-root .ant-layout-content {
+  min-width: 0;
+}
+
+.iaf-page-container {
+  min-width: 0;
+}
+
+.iaf-page-header {
+  flex-wrap: wrap;
+}
+
+.iaf-surface,
+.iaf-form-surface-page {
+  max-width: 100%;
+}
+
+.iaf-surface .ant-card-head {
+  min-height: 48px;
+}
+
+.iaf-surface .ant-card-body {
+  min-width: 0;
+}
+
+.iaf-form-surface-drawer .ant-drawer-header,
+.iaf-form-surface-drawer .ant-drawer-footer {
+  flex-shrink: 0;
+}
+
+.iaf-form-surface-drawer .ant-drawer-body {
+  min-width: 0;
+}
+
+.iaf-form-surface-modal .ant-modal-content {
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+}
+
+.iaf-form-surface-modal .ant-modal-body {
+  overflow: auto;
+}
+
+.iaf-login-page {
+  --iaf-login-autofill-bg: #f8fafc;
+  --iaf-login-autofill-text: #0f172a;
+  --iaf-login-autofill-shadow: 0 0 0 1000px var(--iaf-login-autofill-bg) inset;
+  box-sizing: border-box;
+}
+
+.iaf-login-page *,
+.iaf-login-page *::before,
+.iaf-login-page *::after {
+  box-sizing: border-box;
+}
+
+.iaf-login-page.iaf-login-dark {
+  --iaf-login-autofill-bg: #0f172a;
+  --iaf-login-autofill-text: #f8fafc;
+}
+
+.iaf-login-page.iaf-login-dark .ant-form-item-label > label,
+.iaf-login-page.iaf-login-dark .ant-checkbox-wrapper,
+.iaf-login-page.iaf-login-dark .ant-input-password-icon {
+  color: #94a3b8 !important;
+}
+
+.iaf-login-page.iaf-login-dark .ant-input::placeholder,
+.iaf-login-page.iaf-login-dark .ant-input-password input::placeholder {
+  color: rgba(148, 163, 184, 0.56) !important;
+}
+
+.iaf-login-page.iaf-login-dark .ant-input-affix-wrapper > input.ant-input {
+  background: transparent;
+  color: inherit;
+}
+
+.iaf-login-page input:-webkit-autofill,
+.iaf-login-page input:-webkit-autofill:hover,
+.iaf-login-page input:-webkit-autofill:focus,
+.iaf-login-page input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--iaf-login-autofill-text);
+  -webkit-box-shadow: var(--iaf-login-autofill-shadow);
+  box-shadow: var(--iaf-login-autofill-shadow);
+  caret-color: var(--iaf-login-autofill-text);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.iaf-login-standard-card .ant-form-item-label > label {
+  color: #0f172a !important;
+  font-weight: 700;
+}
+
+.iaf-login-standard-card .ant-input,
+.iaf-login-standard-card .ant-input-affix-wrapper > input.ant-input {
+  color: #0f172a !important;
+  font-weight: 500;
+}
+
+.iaf-login-standard-card .ant-input::placeholder,
+.iaf-login-standard-card .ant-input-password input::placeholder {
+  color: #64748b !important;
+  opacity: 1;
+}
+
+.iaf-login-standard-card .ant-input-prefix,
+.iaf-login-standard-card .ant-input-password-icon {
+  color: #334155 !important;
+}
+
+.iaf-login-standard-card .ant-btn[disabled] {
+  color: #334155;
+  opacity: 1;
+}
+
+.iaf-login-standard-submit,
+.iaf-login-standard-submit > span,
+.iaf-login-standard-submit .anticon {
+  color: #ffffff !important;
+}
+
+.iaf-login-standard-submit {
+  -webkit-text-fill-color: #ffffff;
+}
+
+@media (max-width: 900px) {
+  .iaf-login-page {
+    min-height: 100dvh !important;
+    overflow: auto !important;
+  }
+
+  .iaf-login-standard > section:first-child,
+  .iaf-login-bento > section > div:first-child {
+    display: none !important;
+  }
+
+  .iaf-login-standard > section:last-child,
+  .iaf-login-bento > section > div:last-child {
+    width: 100% !important;
+    padding: 24px !important;
+  }
+
+  .iaf-login-dark > section,
+  .iaf-login-bento > section {
+    flex-direction: column;
+  }
+
+  .iaf-login-dark > section > div,
+  .iaf-login-bento > section > div {
+    width: 100% !important;
+    padding: 32px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .iaf-page-header {
+    align-items: flex-start;
+  }
+
+  .iaf-form-surface-drawer .ant-drawer-content-wrapper {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  .iaf-form-surface-modal {
+    max-width: calc(100vw - 16px);
+  }
+}

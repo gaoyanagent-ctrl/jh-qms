@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: iaf
+  datasource:
+    # ADR-0002: PostgreSQL 16 -> 18. Default host port 5123 to avoid
+    # conflict with another project container holding host 5432.
+    url: ${IAF_DATASOURCE_URL:jdbc:postgresql://localhost:5123/iaf}
+    username: ${IAF_DATASOURCE_USERNAME:iaf}
+    password: ${IAF_DATASOURCE_PASSWORD:iaf}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: ${IAF_FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+server:
+  port: ${BACKEND_PORT:8080}
+
+iaf:
+  auth:
+    # memory is for local/dev/test only. ADR-0004 selects Redis as the
+    # first production token store; prod profile must not run with memory.
+    token-store: ${IAF_AUTH_TOKEN_STORE:memory}

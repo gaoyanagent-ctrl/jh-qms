@@ -1,0 +1,1 @@
+../../docs/codex_rules/10_给Codex的执行总提示词.md

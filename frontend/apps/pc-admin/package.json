@@ -1,0 +1,28 @@
+{
+  "name": "@iaf/pc-admin",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.5.2",
+    "@iaf/api-client": "workspace:*",
+    "@iaf/auth": "workspace:*",
+    "@iaf/domain-types": "workspace:*",
+    "@iaf/mock-data": "workspace:*",
+    "@iaf/form-engine": "workspace:*",
+    "@iaf/i18n": "workspace:*",
+    "@iaf/permissions": "workspace:*",
+    "@iaf/table-engine": "workspace:*",
+    "@iaf/theme": "workspace:*",
+    "@iaf/ui-business": "workspace:*",
+    "@iaf/ui-core": "workspace:*"
+  },
+  "devDependencies": {}
+}
