@@ -215,3 +215,26 @@ Business tables must include:
 - `ext_json`
 
 Existing Flyway migrations must not be edited after commit. Add a new migration instead.
+
+### `V0401__qms_engineering_data_foundation.sql`
+
+- Owner module: `iaf-qms-engineering`.
+- Purpose: Jinheng QMS Part/Drawing/DrawingRevision metadata foundation and transactional
+  module audit trail.
+- Tables:
+  - `qms_part`: organization-owned Part master; active-row unique
+    `(tenant_id, org_id, part_no)`.
+  - `qms_drawing`: Part child; active-row unique `(tenant_id, part_id, drawing_no)` and
+    tenant-qualified foreign key to Part.
+  - `qms_drawing_revision`: Drawing child with monotonic positive `revision_seq`, unique
+    active revision code/sequence per Drawing, optional self-reference for supersession,
+    and reserved file/release fields.
+  - `qms_audit_log`: immutable actor/action/object before/after JSON audit records.
+- Initial states: Part `ACTIVE`; Drawing `ACTIVE`; DrawingRevision `DRAFT`, parse status
+  `PENDING`, review status `PENDING`.
+- Common fields: every table includes tenant, audit timestamps/actors, soft delete,
+  optimistic-lock version, and `ext_json`.
+- Indexes: tenant/org/status, tenant/parent lookup, active natural keys, revision sequence,
+  audit object/actor lookup, and created time.
+- Permission seeds: six `qms:*` view/create permissions are created for every current
+  tenant and assigned to that tenant's `platform_admin` role.

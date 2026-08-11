@@ -10,6 +10,10 @@ import com.company.iaf.platform.permission.domain.repository.MenuRepository;
 import com.company.iaf.platform.permission.domain.repository.PermissionRepository;
 import com.company.iaf.platform.permission.domain.repository.RoleRepository;
 import com.company.iaf.platform.system.domain.repository.SystemConfigurationRepository;
+import com.company.iaf.qms.engineering.domain.repository.DrawingRepository;
+import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionRepository;
+import com.company.iaf.qms.engineering.domain.repository.PartRepository;
+import com.company.iaf.qms.engineering.domain.repository.QmsAuditTrail;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -50,6 +54,18 @@ class IafApplicationTests {
 
     @MockBean
     private OutboxEventRepository outboxEventRepository;
+
+    @MockBean
+    private PartRepository partRepository;
+
+    @MockBean
+    private DrawingRepository drawingRepository;
+
+    @MockBean
+    private DrawingRevisionRepository drawingRevisionRepository;
+
+    @MockBean
+    private QmsAuditTrail qmsAuditTrail;
 
     @Test
     void contextLoads() {

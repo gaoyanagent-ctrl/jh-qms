@@ -1,8 +1,12 @@
-# AGENTS.md - IAF Platform AI Development Rules
+# AGENTS.md - JH QMS AI Development Rules
 
 ## Project Positioning
 
-IAF, Industrial Application Framework, is an AI Coding oriented application framework for manufacturing enterprise systems. It provides a unified engineering structure, platform capabilities, manufacturing common models, business document patterns, approval/state/rule capabilities, lightweight DSL, source generation, and AI coding governance for WMS, MES, SRM, QMS, and related industrial management applications.
+JH QMS is JinHeng's quality management system. This repository uses IAF (Industrial Application Framework) as its imported engineering foundation and develops QMS product capabilities independently.
+
+The IAF repository and local `/iaf` checkout are upstream references only. All JH QMS branches, commits, worktrees, pull requests, migrations, and product documentation must be created in this repository. Never modify or push to IAF while implementing JH QMS tasks.
+
+The inherited IAF platform provides a unified engineering structure, platform capabilities, manufacturing common models, business document patterns, approval/state/rule capabilities, lightweight DSL, source generation, and AI coding governance.
 
 This is not a generic CRUD admin system and not a full low-code runtime. Development must satisfy enterprise engineering quality, manufacturing business extensibility, AI coding maintainability, and project delivery practicality.
 
@@ -114,6 +118,7 @@ The first version must use a flat Maven multi-module layout:
 - `iaf-wms-inventory`
 - `iaf-wms-inbound`
 - `iaf-wms-strategy`
+- `iaf-qms-engineering`
 
 Each module must follow the internal package structure: `interfaces`, `application`, `domain`, `infrastructure`.
 

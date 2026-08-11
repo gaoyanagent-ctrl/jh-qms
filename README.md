@@ -1,8 +1,10 @@
-# IAF
+# 锦恒 QMS
 
-IAF, Industrial Application Framework, is an AI Coding oriented application framework for manufacturing enterprise systems.
+锦恒 QMS（JH QMS）是面向制造质量管理的一体化系统。本仓库从 IAF 工业应用基础框架初始化，但具有独立的代码、分支、版本与交付流程；IAF 仓库仅作为上游参考，不承载本项目的开发提交。
 
 This repository is organized as a monorepo for backend, frontend, DSL, deployment, tests, documentation, and AI development governance.
+
+一期总体架构和详细设计见 [`docs/product/锦恒QMS系统总体架构与一期详细设计说明书_Codex开发版.md`](docs/product/锦恒QMS系统总体架构与一期详细设计说明书_Codex开发版.md)，分阶段开发计划见 [`docs/operations/HANDOFF-jinheng-qms-phase-plan.md`](docs/operations/HANDOFF-jinheng-qms-phase-plan.md)。
 
 ## Document Layers
 
@@ -44,14 +46,13 @@ Before implementing any task, read `AGENTS.md`, `docs/architecture/*`, `ai-codin
 
 Each task must produce an implementation plan, changed file list, migration impact, backend/frontend verification results, quality checklist, risks, and follow-up items.
 
-## Development Roadmap
+## JH QMS 一期开发路线
 
-1. Initialize monorepo and base engineering structure.
-2. Complete platform basics: users, organizations, roles, permissions, dictionaries, coding rules, attachments, and audit.
-3. Complete state machine, approval workflow, rule engine, and Outbox.
-4. Complete manufacturing common master data.
-5. Complete WMS inbound sample flow: warehouse/location, inventory, receipt, putaway, and inventory posting.
-6. Add designers, reporting, dashboard, and integration center capabilities.
+1. 建立独立仓库、工程基线和 QMS 模块边界。
+2. 建设零件、图纸、图纸版本及审计追踪等工程数据基础。
+3. 建设检验标准、检验计划、来料/过程/成品检验闭环。
+4. 建设不合格品、评审、处置、返工返修及 CAPA 闭环。
+5. 建设质量追溯、统计分析、看板、报表和外部系统集成。
 
 ## Quality Gate
 

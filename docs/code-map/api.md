@@ -519,3 +519,55 @@ Platform Foundation RC1 release validation is documented in:
 `scripts/platform-foundation-smoke-test.sh` uses existing APIs only. It does not add an internal verification endpoint and does not change API compatibility rules. Published platform API paths, permission codes, menu codes, i18n keys, delivery package schema fields, and migration history are treated as compatibility-managed contracts after RC1.
 
 TASK-0223 adds no API paths, request/response fields, error codes, authentication behavior, or permission codes. Stabilization feedback that requires an API change must be split into a new task and reflected in this file.
+
+## QMS Engineering Data APIs
+
+All endpoints require Bearer authentication, tenant context, and a current organization.
+The current organization is applied as a mandatory data scope. API paths follow IAF's
+`/api/{module}/{resources}` rule rather than the source design's `/api/v1` suggestion.
+
+### Parts
+
+- `GET /api/qms/parts`
+  - Permission: `qms:part:view`.
+  - Query: optional `keyword`, `pageNo` (default 1), `pageSize` (default 20, max 200).
+  - Response: `Result<PageResult<PartResponse>>`.
+- `GET /api/qms/parts/{id}`
+  - Permission: `qms:part:view`.
+  - Error: `QMS_PART_NOT_FOUND`.
+- `POST /api/qms/parts`
+  - Permission: `qms:part:create`.
+  - Request: `partNo`, optional `materialNo`, `partName`, optional `customerId`,
+    `vehicleModel`, `supplierId`, `importanceLevel`.
+  - Errors: `QMS_PART_NO_ALREADY_EXISTS`, `COMMON_VALIDATION_FAILED`.
+
+### Drawings
+
+- `GET /api/qms/parts/{partId}/drawings`
+  - Permission: `qms:drawing:view`.
+- `POST /api/qms/parts/{partId}/drawings`
+  - Permission: `qms:drawing:create`.
+  - Request: `drawingNo`, `drawingName`, `drawingType`, optional `sourceSystem`.
+  - Errors: `QMS_PART_NOT_FOUND`, `QMS_DRAWING_NO_ALREADY_EXISTS`.
+- `GET /api/qms/drawings/{id}`
+  - Permission: `qms:drawing:view`.
+  - Error: `QMS_DRAWING_NOT_FOUND`.
+
+### Drawing Revisions
+
+- `GET /api/qms/drawings/{drawingId}/revisions`
+  - Permission: `qms:drawing-revision:view`.
+  - Response is ordered by descending `revisionSeq`.
+- `POST /api/qms/drawings/{drawingId}/revisions`
+  - Permission: `qms:drawing-revision:create`.
+  - Request: `revisionCode`, optional `effectiveDate`, optional `supersedesRevisionId`.
+  - Creates metadata only in `DRAFT`, with parse/review status `PENDING`.
+  - Errors: `QMS_DRAWING_NOT_FOUND`, `QMS_DRAWING_REVISION_CODE_ALREADY_EXISTS`,
+    `QMS_DRAWING_REVISION_SUPERSEDES_INVALID`.
+- `GET /api/qms/drawing-revisions/{id}`
+  - Permission: `qms:drawing-revision:view`.
+  - Error: `QMS_DRAWING_REVISION_NOT_FOUND`.
+
+Create idempotency currently uses tenant-scoped natural-key constraints to reject replayed
+business keys without creating duplicate rows. A transport `Idempotency-Key` ledger is
+deferred to the upload workflow.

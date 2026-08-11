@@ -729,6 +729,63 @@ Platform Foundation stabilization documents
   - `docs/operations/platform-foundation-next-backlog.md`
 - Notes: no Java classes, controllers, repositories, permissions, or migrations were added by TASK-0223.
 
+### QMS Modules
+
+`iaf-qms-engineering`
+- Purpose: first Jinheng QMS engineering-data boundary owning Part, Drawing, and
+  DrawingRevision metadata plus its transactional audit trail.
+- Depends on: `iaf-platform-core`, Spring Web/JDBC/TX/Validation, Jackson, and springdoc
+  common contracts. It does not depend on another business module's infrastructure.
+- Assembly: included by `iaf-app`; architectural rationale is ADR-0009.
+
+`com.company.iaf.qms.engineering.application.PartApplicationService`
+- Layer: application.
+- Purpose: current-organization Part create/list/detail use cases, normalization,
+  duplicate prevention, transaction ownership, permission checks, and audit writes.
+- Key methods: `list(...)`, `get(...)`, `create(...)`.
+- Permissions: `qms:part:view`, `qms:part:create`.
+
+`com.company.iaf.qms.engineering.application.DrawingApplicationService`
+- Layer: application.
+- Purpose: Drawing and metadata-only DrawingRevision use cases within the selected
+  Part/Drawing hierarchy.
+- Key methods: `listDrawings(...)`, `getDrawing(...)`, `createDrawing(...)`,
+  `listRevisions(...)`, `getRevision(...)`, `createRevision(...)`.
+- Permissions: `qms:drawing:view/create`, `qms:drawing-revision:view/create`.
+- Notes: new revisions are always `DRAFT/PENDING/PENDING`; no state transition is
+  implemented before the platform state-machine contract exists.
+
+`com.company.iaf.qms.engineering.domain.model.Part`, `Drawing`, `DrawingRevision`
+- Layer: domain/model.
+- Purpose: tenant- and organization-owned engineering data. `DrawingRevision.metadataDraft`
+  is the safe initial-state factory.
+
+`PartRepository`, `DrawingRepository`, `DrawingRevisionRepository`, `QmsAuditTrail`
+- Layer: domain/repository contracts.
+- Purpose: persistence boundaries for engineering aggregates and the immutable audit trail.
+
+`JdbcPartRepository`, `JdbcDrawingRepository`, `JdbcDrawingRevisionRepository`,
+`JdbcQmsAuditTrail`
+- Layer: infrastructure/persistence.
+- Purpose: tenant/current-org-qualified PostgreSQL access. Revision sequence reservation
+  uses a PostgreSQL transaction-scoped advisory lock before `max(sequence)+1`.
+
+`QmsPartController`, `QmsDrawingController`
+- Layer: interfaces/controller.
+- Purpose: authenticated `/api/qms/**` HTTP surface with validated DTOs, OpenAPI
+  descriptions, and unified `Result`/`PageResult` envelopes.
+
+Current tests:
+
+- `DrawingRevisionTest`: safe initial state and invalid sequence.
+- `PartApplicationServiceTest`: create, normalization, audit, duplicates, tenant/org scope,
+  and search.
+- `DrawingApplicationServiceTest`: parent validation, duplicates, revision ordering,
+  supersession, and audit.
+- `QmsPartControllerTest`: unified response and Bean Validation.
+- `QmsEngineeringPostgresIntegrationTest`: empty PostgreSQL migration, JDBC repositories,
+  tenant/org isolation, revision sequence, audit JSON, and permission seeds.
+
 ### Manufacturing Modules
 
 `iaf-manufacturing-core`
