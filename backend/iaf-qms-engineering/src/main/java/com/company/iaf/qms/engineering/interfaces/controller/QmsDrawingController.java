@@ -31,7 +31,7 @@ public class QmsDrawingController {
 
     @Operation(summary = "List drawings under a part")
     @GetMapping("/parts/{partId}/drawings")
-    public Result<List<DrawingResponse>> listDrawings(@PathVariable long partId) {
+    public Result<List<DrawingResponse>> listDrawings(@PathVariable("partId") long partId) {
         return Result.ok(drawingApplicationService.listDrawings(
                 QmsRequestContext.tenantId(), QmsRequestContext.orgId(), partId
         ));
@@ -40,7 +40,7 @@ public class QmsDrawingController {
     @Operation(summary = "Create a drawing under a part")
     @PostMapping("/parts/{partId}/drawings")
     public Result<DrawingResponse> createDrawing(
-            @PathVariable long partId,
+            @PathVariable("partId") long partId,
             @Valid @RequestBody DrawingCreateRequest request
     ) {
         return Result.ok(drawingApplicationService.createDrawing(
@@ -50,7 +50,7 @@ public class QmsDrawingController {
 
     @Operation(summary = "Get a drawing")
     @GetMapping("/drawings/{id}")
-    public Result<DrawingResponse> getDrawing(@PathVariable long id) {
+    public Result<DrawingResponse> getDrawing(@PathVariable("id") long id) {
         return Result.ok(drawingApplicationService.getDrawing(
                 QmsRequestContext.tenantId(), QmsRequestContext.orgId(), id
         ));
@@ -58,7 +58,7 @@ public class QmsDrawingController {
 
     @Operation(summary = "List drawing revisions")
     @GetMapping("/drawings/{drawingId}/revisions")
-    public Result<List<DrawingRevisionResponse>> listRevisions(@PathVariable long drawingId) {
+    public Result<List<DrawingRevisionResponse>> listRevisions(@PathVariable("drawingId") long drawingId) {
         return Result.ok(drawingApplicationService.listRevisions(
                 QmsRequestContext.tenantId(), QmsRequestContext.orgId(), drawingId
         ));
@@ -67,7 +67,7 @@ public class QmsDrawingController {
     @Operation(summary = "Create a metadata-only drawing revision draft")
     @PostMapping("/drawings/{drawingId}/revisions")
     public Result<DrawingRevisionResponse> createRevision(
-            @PathVariable long drawingId,
+            @PathVariable("drawingId") long drawingId,
             @Valid @RequestBody DrawingRevisionCreateRequest request
     ) {
         return Result.ok(drawingApplicationService.createRevision(
@@ -77,7 +77,7 @@ public class QmsDrawingController {
 
     @Operation(summary = "Get a drawing revision")
     @GetMapping("/drawing-revisions/{id}")
-    public Result<DrawingRevisionResponse> getRevision(@PathVariable long id) {
+    public Result<DrawingRevisionResponse> getRevision(@PathVariable("id") long id) {
         return Result.ok(drawingApplicationService.getRevision(
                 QmsRequestContext.tenantId(), QmsRequestContext.orgId(), id
         ));

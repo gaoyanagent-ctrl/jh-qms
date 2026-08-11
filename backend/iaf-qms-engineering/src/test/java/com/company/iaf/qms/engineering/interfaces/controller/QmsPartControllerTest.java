@@ -4,6 +4,7 @@ import com.company.iaf.qms.engineering.application.PartApplicationService;
 import com.company.iaf.qms.engineering.domain.model.PartStatus;
 import com.company.iaf.qms.engineering.interfaces.dto.PartCreateRequest;
 import com.company.iaf.qms.engineering.interfaces.dto.PartResponse;
+import com.company.iaf.shared.result.PageResult;
 import com.company.iaf.shared.security.SecurityContext;
 import com.company.iaf.shared.tenant.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,11 +15,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -29,6 +32,25 @@ class QmsPartControllerTest {
     void clearContext() {
         TenantContext.clear();
         SecurityContext.clear();
+    }
+
+    @Test
+    void listResolvesExplicitQueryParameterNames() throws Exception {
+        PartApplicationService service = mock(PartApplicationService.class);
+        when(service.list(1L, 10L, "bracket", 2, 5))
+                .thenReturn(new PageResult<>(List.of(), 0, 2, 5));
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new QmsPartController(service)).build();
+        TenantContext.setTenantId(1L);
+        SecurityContext.setCurrentOrgId(10L);
+
+        mvc.perform(get("/api/qms/parts")
+                        .queryParam("keyword", "bracket")
+                        .queryParam("pageNo", "2")
+                        .queryParam("pageSize", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.pageNo").value(2))
+                .andExpect(jsonPath("$.data.pageSize").value(5));
     }
 
     @Test

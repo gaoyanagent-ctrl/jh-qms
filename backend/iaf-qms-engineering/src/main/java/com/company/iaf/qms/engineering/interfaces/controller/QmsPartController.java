@@ -34,9 +34,9 @@ public class QmsPartController {
     @Operation(summary = "List parts in the current organization")
     @GetMapping
     public Result<PageResult<PartResponse>> list(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "1") @Min(1) int pageNo,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(200) int pageSize
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "pageNo", defaultValue = "1") @Min(1) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = "20") @Min(1) @Max(200) int pageSize
     ) {
         return Result.ok(partApplicationService.list(
                 QmsRequestContext.tenantId(), QmsRequestContext.orgId(), keyword, pageNo, pageSize
@@ -45,7 +45,7 @@ public class QmsPartController {
 
     @Operation(summary = "Get a part")
     @GetMapping("/{id}")
-    public Result<PartResponse> get(@PathVariable long id) {
+    public Result<PartResponse> get(@PathVariable("id") long id) {
         return Result.ok(partApplicationService.get(QmsRequestContext.tenantId(), QmsRequestContext.orgId(), id));
     }
 
