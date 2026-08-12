@@ -8,7 +8,7 @@ import java.util.List;
 @RestController @RequestMapping("/api/qms/drawing-revisions/{revisionId}/characteristics")
 public class QmsQualityCharacteristicController {
  private final QualityCharacteristicService service; public QmsQualityCharacteristicController(QualityCharacteristicService service){this.service=service;}
- @GetMapping public Result<List<QualityCharacteristicResponse>> list(@PathVariable long revisionId){return Result.ok(service.list(QmsRequestContext.tenantId(),QmsRequestContext.orgId(),revisionId));}
- @PostMapping("/{id}/confirm") public Result<QualityCharacteristicResponse> confirm(@PathVariable long revisionId,@PathVariable long id,@Valid @RequestBody QualityCharacteristicReviewRequest request){return Result.ok(service.review(QmsRequestContext.tenantId(),QmsRequestContext.orgId(),revisionId,id,"CONFIRMED",request));}
- @PostMapping("/{id}/reject") public Result<QualityCharacteristicResponse> reject(@PathVariable long revisionId,@PathVariable long id,@Valid @RequestBody QualityCharacteristicReviewRequest request){return Result.ok(service.review(QmsRequestContext.tenantId(),QmsRequestContext.orgId(),revisionId,id,"REJECTED",request));}
+ @GetMapping public Result<List<QualityCharacteristicResponse>> list(@PathVariable("revisionId") long revisionId){return Result.ok(service.list(QmsRequestContext.tenantId(),QmsRequestContext.orgId(),revisionId));}
+ @PostMapping("/{id}/confirm") public Result<QualityCharacteristicResponse> confirm(@PathVariable("revisionId") long revisionId,@PathVariable("id") long id,@Valid @RequestBody QualityCharacteristicReviewRequest request){return Result.ok(service.review(QmsRequestContext.tenantId(),QmsRequestContext.orgId(),revisionId,id,"CONFIRMED",request));}
+ @PostMapping("/{id}/reject") public Result<QualityCharacteristicResponse> reject(@PathVariable("revisionId") long revisionId,@PathVariable("id") long id,@Valid @RequestBody QualityCharacteristicReviewRequest request){return Result.ok(service.review(QmsRequestContext.tenantId(),QmsRequestContext.orgId(),revisionId,id,"REJECTED",request));}
 }
