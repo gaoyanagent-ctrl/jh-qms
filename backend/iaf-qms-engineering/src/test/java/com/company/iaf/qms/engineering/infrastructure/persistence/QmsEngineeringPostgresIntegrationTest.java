@@ -91,13 +91,21 @@ class QmsEngineeringPostgresIntegrationTest {
                 "1", 1, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.TEN, BigDecimal.ONE,
                 "8±0.5", "8±0.5", EvidenceExtractorType.PDF_VECTOR, "1.0", null, null,
                 new BigDecimal("0.98"), 0, null, null);
+        DrawingEntity cadEntity = new DrawingEntity(null, 0, 0, 0, 0, "DWG-DIM-20", "20",
+                DrawingEntityType.DIMENSION, "细实线", "MODEL", BigDecimal.ZERO, BigDecimal.ZERO,
+                new BigDecimal("34"), BigDecimal.ONE, mapper.readTree("{\"act_measurement\":34}"),
+                "34", "34", null, 0, null, null);
+        SourceEvidence cadEvidence = new SourceEvidence(null, 0, 0, 0, 0, 0, "EV-DWG-20", "DWG-DIM-20", "20",
+                "MODEL", null, BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("34"), BigDecimal.ONE,
+                "34", "34", EvidenceExtractorType.DWG_ENTITY, "libredwg-0.14", null, null,
+                BigDecimal.ONE, 0, null, null);
         DrawingParseResult parseResult = new DrawingParseResult("1.0.0", "DRAW-1", "Z1",
                 mapper.readTree("""
                     {"schemaVersion":"1.0.0","documentId":"DRAW-1","revision":"Z1","sheets":[
                     {"sheetNo":"1","width":100,"height":80,"titleBlock":{},"views":[],
                     "entities":[{"entityId":"DIM-1","entityType":"DIMENSION","sheetNo":"1",
                     "evidence":[{"evidenceKey":"EV-1"}]}],"notes":[],"characteristicCandidates":[]}]}
-                    """), List.of(entity), List.of(evidence));
+                    """), List.of(entity, cadEntity), List.of(evidence, cadEvidence));
         parseResults.save(1, 1, 10, revisionId, parseJobId, fileId, parseResult);
 
         assertThat(parts.findById(1L, 10L, partId)).isPresent();
@@ -109,19 +117,25 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(jdbc.queryForObject("select count(*) from qms_drawing_parse_job", Integer.class)).isEqualTo(1);
         assertThat(parseResults.findModel(1, 10, revisionId)).isPresent();
         assertThat(parseResults.findEntities(1, 10, revisionId)).extracting(DrawingEntity::entityId)
-                .containsExactly("DIM-1");
+                .containsExactly("DIM-1", "DWG-DIM-20");
         assertThat(parseResults.findEvidence(1, 10, revisionId)).extracting(SourceEvidence::sheetNo)
-                .containsExactly("1");
+                .containsExactly("1", "MODEL");
         assertThat(parseResults.findEvidence(1, 99, revisionId)).isEmpty();
         JdbcQualityCharacteristicRepository characteristics = new JdbcQualityCharacteristicRepository(jdbc);
         characteristics.generateDimensionCandidates(1, 1, 10, revisionId);
-        assertThat(characteristics.findByRevision(1, 10, revisionId))
-                .singleElement().satisfies(candidate -> {
+        assertThat(characteristics.findByRevision(1, 10, revisionId)).hasSize(2);
+        assertThat(characteristics.findByRevision(1, 10, revisionId).get(0)).satisfies(candidate -> {
                     assertThat(candidate.nominalValue()).isEqualByComparingTo("8");
                     assertThat(candidate.upperTolerance()).isEqualByComparingTo("0.5");
                     assertThat(candidate.reviewStatus()).isEqualTo("PENDING");
                     assertThat(candidate.evidenceId()).isPositive();
                 });
+        assertThat(characteristics.findByRevision(1, 10, revisionId).get(1)).satisfies(candidate -> {
+            assertThat(candidate.nominalValue()).isEqualByComparingTo("34");
+            assertThat(candidate.upperTolerance()).isNull();
+            assertThat(candidate.lowerTolerance()).isNull();
+            assertThat(candidate.name()).isEqualTo("34");
+        });
         assertThat(jdbc.queryForObject("""
                 select count(*)
                   from sys_role_permission rp
