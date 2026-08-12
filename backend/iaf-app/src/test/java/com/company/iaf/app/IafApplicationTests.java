@@ -12,6 +12,7 @@ import com.company.iaf.platform.permission.domain.repository.RoleRepository;
 import com.company.iaf.platform.system.domain.repository.SystemConfigurationRepository;
 import com.company.iaf.qms.engineering.domain.repository.DrawingRepository;
 import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionRepository;
+import com.company.iaf.qms.engineering.domain.repository.DrawingParseJobRepository;
 import com.company.iaf.qms.engineering.domain.repository.PartRepository;
 import com.company.iaf.qms.engineering.domain.repository.QmsAuditTrail;
 import com.company.iaf.qms.engineering.domain.repository.QmsFileObjectRepository;
@@ -65,6 +66,9 @@ class IafApplicationTests {
 
     @MockBean
     private DrawingRevisionRepository drawingRevisionRepository;
+
+    @MockBean
+    private DrawingParseJobRepository drawingParseJobRepository;
 
     @MockBean
     private QmsAuditTrail qmsAuditTrail;

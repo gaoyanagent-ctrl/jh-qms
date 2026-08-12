@@ -29,6 +29,7 @@ export type QmsDrawingRevisionStatus =
   | 'FAILED';
 export type QmsParseStatus = 'PENDING' | 'RUNNING' | 'PARTIAL_SUCCESS' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
 export type QmsReviewStatus = 'PENDING' | 'REVIEWING' | 'CONFIRMED' | 'REJECTED';
+export type QmsParseJobStatus = 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
 
 export interface QmsPart {
   id: number;
@@ -99,6 +100,18 @@ export interface QmsDrawingRevisionCreateRequest {
   revisionCode: string;
   effectiveDate?: string | null;
   supersedesRevisionId?: number | null;
+}
+
+export interface QmsDrawingParseJob {
+  id: number;
+  revisionId: number;
+  attemptNo: number;
+  status: QmsParseJobStatus;
+  parserType: string;
+  errorCode: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface QmsFileObject {

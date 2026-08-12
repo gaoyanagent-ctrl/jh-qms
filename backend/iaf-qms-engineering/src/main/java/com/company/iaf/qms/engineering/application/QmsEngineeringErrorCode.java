@@ -19,6 +19,9 @@ public enum QmsEngineeringErrorCode implements ErrorCode {
     FILE_NOT_FOUND("QMS_FILE_NOT_FOUND", "Drawing revision file not found"),
     FILE_STORAGE_FAILED("QMS_FILE_STORAGE_FAILED", "Object storage operation failed"),
     FILE_UPLOAD_FAILED("QMS_FILE_UPLOAD_FAILED", "File upload could not be completed"),
+    REVISION_INVALID_STATE("QMS_DRAWING_REVISION_INVALID_STATE", "Drawing revision action is not allowed in its current state"),
+    PARSE_JOB_NOT_FOUND("QMS_PARSE_JOB_NOT_FOUND", "Drawing parse job not found"),
+    PARSE_JOB_NOT_RETRYABLE("QMS_PARSE_JOB_NOT_RETRYABLE", "Only a failed latest parse job can be retried"),
     AUDIT_WRITE_FAILED("QMS_AUDIT_WRITE_FAILED", "QMS audit record could not be written");
 
     private final String code;

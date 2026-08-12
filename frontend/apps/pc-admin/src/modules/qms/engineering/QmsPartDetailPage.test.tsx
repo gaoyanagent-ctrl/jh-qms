@@ -17,7 +17,10 @@ vi.mock('./api', () => ({
     listDrawings: vi.fn(),
     createDrawing: vi.fn(),
     listRevisions: vi.fn(),
-    createRevision: vi.fn()
+    createRevision: vi.fn(),
+    listLatestParseJobs: vi.fn(),
+    retryParseJob: vi.fn(),
+    uploadRevisionFile: vi.fn()
   }
 }));
 
@@ -61,8 +64,22 @@ describe('QmsPartDetailPage', () => {
       reviewStatus: 'PENDING', status: 'DRAFT', checksum: null, version: 0,
       createdAt: '2026-08-12T00:00:00Z', updatedAt: '2026-08-12T00:00:00Z'
     }]);
+    vi.mocked(qmsEngineeringApi.listLatestParseJobs).mockResolvedValue([]);
     vi.mocked(qmsEngineeringApi.createDrawing).mockResolvedValue({} as never);
     vi.mocked(qmsEngineeringApi.createRevision).mockResolvedValue({} as never);
+  });
+
+  it('shows the latest parse attempt and retries a failed job', async () => {
+    vi.mocked(qmsEngineeringApi.listLatestParseJobs).mockResolvedValue([{
+      id: 4001, revisionId: 3001, attemptNo: 2, status: 'FAILED', parserType: 'PDF',
+      errorCode: 'PARSER_ERROR', errorMessage: 'Parser unavailable',
+      createdAt: '2026-08-12T00:00:00Z', updatedAt: '2026-08-12T00:00:00Z'
+    }]);
+    vi.mocked(qmsEngineeringApi.retryParseJob).mockResolvedValue({} as never);
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: '重试解析' }));
+    await waitFor(() => expect(qmsEngineeringApi.retryParseJob).toHaveBeenCalledWith(3001));
+    expect(screen.getByText('#2')).toBeInTheDocument();
   });
 
   it('renders the part, drawing, and selected drawing revision hierarchy', async () => {

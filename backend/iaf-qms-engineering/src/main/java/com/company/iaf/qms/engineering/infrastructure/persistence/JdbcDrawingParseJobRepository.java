@@ -1,0 +1,66 @@
+package com.company.iaf.qms.engineering.infrastructure.persistence;
+
+import com.company.iaf.qms.engineering.domain.model.DrawingParseJob;
+import com.company.iaf.qms.engineering.domain.model.ParseJobStatus;
+import com.company.iaf.qms.engineering.domain.repository.DrawingParseJobRepository;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public class JdbcDrawingParseJobRepository implements DrawingParseJobRepository {
+    private final JdbcTemplate jdbc;
+    public JdbcDrawingParseJobRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+
+    @Override
+    public long enqueue(long actorId, long tenantId, long orgId, long revisionId, long fileId,
+                        String parserType, int attemptNo) {
+        try {
+            return jdbc.queryForObject("""
+                insert into qms_drawing_parse_job
+                  (tenant_id, org_id, revision_id, file_id, attempt_no, status, parser_type, created_by, updated_by)
+                values (?, ?, ?, ?, ?, 'QUEUED', ?, ?, ?) returning id
+                """, Long.class, tenantId, orgId, revisionId, fileId, attemptNo, parserType, actorId, actorId);
+        } catch (DuplicateKeyException e) {
+            return findLatest(tenantId, orgId, revisionId).orElseThrow().id();
+        }
+    }
+
+    @Override
+    public Optional<DrawingParseJob> findLatest(long tenantId, long orgId, long revisionId) {
+        return jdbc.query("""
+            select id, tenant_id, org_id, revision_id, file_id, attempt_no, status, parser_type,
+                   error_code, error_message, version, created_at, updated_at
+              from qms_drawing_parse_job
+             where tenant_id=? and org_id=? and revision_id=? and deleted=false
+             order by attempt_no desc limit 1
+            """, this::map, tenantId, orgId, revisionId)
+                .stream().findFirst();
+    }
+
+    @Override
+    public List<DrawingParseJob> findLatestByDrawingId(long tenantId, long orgId, long drawingId) {
+        return jdbc.query("""
+            select distinct on (j.revision_id)
+                   j.id, j.tenant_id, j.org_id, j.revision_id, j.file_id, j.attempt_no, j.status,
+                   j.parser_type, j.error_code, j.error_message, j.version, j.created_at, j.updated_at
+              from qms_drawing_parse_job j
+              join qms_drawing_revision r on r.tenant_id=j.tenant_id and r.id=j.revision_id and r.deleted=false
+             where j.tenant_id=? and j.org_id=? and r.drawing_id=? and j.deleted=false
+             order by j.revision_id, j.attempt_no desc
+            """, this::map, tenantId, orgId, drawingId);
+    }
+
+    private DrawingParseJob map(ResultSet rs, int row) throws SQLException {
+        return new DrawingParseJob(rs.getLong("id"), rs.getLong("tenant_id"), rs.getLong("org_id"),
+                rs.getLong("revision_id"), rs.getLong("file_id"), rs.getInt("attempt_no"),
+                ParseJobStatus.valueOf(rs.getString("status")), rs.getString("parser_type"),
+                rs.getString("error_code"), rs.getString("error_message"), rs.getInt("version"),
+                JdbcPartRepository.utc(rs.getTimestamp("created_at")),
+                JdbcPartRepository.utc(rs.getTimestamp("updated_at")));
+    }
+}

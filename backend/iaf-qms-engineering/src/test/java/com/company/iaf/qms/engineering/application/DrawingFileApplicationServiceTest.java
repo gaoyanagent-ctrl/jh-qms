@@ -6,6 +6,8 @@ import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionReposito
 import com.company.iaf.qms.engineering.domain.repository.QmsAuditTrail;
 import com.company.iaf.qms.engineering.domain.repository.QmsFileObjectRepository;
 import com.company.iaf.qms.engineering.domain.repository.QmsObjectStorage;
+import com.company.iaf.qms.engineering.domain.repository.DrawingParseJobRepository;
+import com.company.iaf.platform.statemachine.application.DefaultStateMachineService;
 import com.company.iaf.shared.exception.BusinessException;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -26,7 +28,9 @@ class DrawingFileApplicationServiceTest {
     private final QmsFileObjectRepository files = mock(QmsFileObjectRepository.class);
     private final QmsObjectStorage storage = mock(QmsObjectStorage.class);
     private final QmsAuditTrail audit = mock(QmsAuditTrail.class);
-    private final DrawingFileApplicationService service = new DrawingFileApplicationService(revisions, files, storage, audit);
+    private final DrawingParseJobRepository parseJobs = mock(DrawingParseJobRepository.class);
+    private final DrawingFileApplicationService service = new DrawingFileApplicationService(
+            revisions, files, storage, audit, parseJobs, new DefaultStateMachineService());
 
     @Test
     void rejectsUnsupportedExtensionBeforeObjectStorageWrite() {
@@ -57,7 +61,7 @@ class DrawingFileApplicationServiceTest {
         when(revisions.findById(1, 10, 5)).thenReturn(Optional.of(revision));
         when(storage.bucket()).thenReturn("qms-files");
         when(files.insert(anyLong(), any())).thenReturn(9L);
-        when(revisions.attachFile(anyLong(), eq(1L), eq(10L), eq(5L), eq(9L), eq("PDF"), eq(checksum), eq(0)))
+        when(revisions.attachFile(anyLong(), eq(1L), eq(10L), eq(5L), eq(9L), eq("PDF"), eq(checksum), eq("UPLOADED"), eq(0)))
                 .thenReturn(true);
         QmsFileObject stored = new QmsFileObject(9L, 1, 10, "drawing.pdf", "application/pdf", "pdf",
                 content.length, checksum, "qms-files", "object-key", 0, OffsetDateTime.now());
@@ -68,6 +72,7 @@ class DrawingFileApplicationServiceTest {
 
         assertThat(response.checksumSha256()).isEqualTo(checksum);
         verify(storage).put(any(), any(), eq((long) content.length), eq("application/pdf"));
+        verify(parseJobs).enqueue(anyLong(), eq(1L), eq(10L), eq(5L), eq(9L), eq("PDF"), eq(1));
         verify(audit).record(eq(1L), anyLong(), eq("DRAWING_REVISION_FILE_UPLOADED"),
                 eq("DrawingRevision"), eq(5L), any());
     }

@@ -77,7 +77,8 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(revision.revisionSeq()).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from qms_audit_log", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
-                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(7);
+                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(8);
+        assertThat(jdbc.queryForObject("select count(*) from qms_drawing_parse_job", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("""
                 select count(*)
                   from sys_role_permission rp

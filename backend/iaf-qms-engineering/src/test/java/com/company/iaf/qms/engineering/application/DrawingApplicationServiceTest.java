@@ -197,7 +197,13 @@ class DrawingApplicationServiceTest {
 
         @Override
         public boolean attachFile(long operatorUserId, long tenantId, long orgId, long revisionId,
-                                  long fileId, String fileType, String checksum, int expectedVersion) {
+                                  long fileId, String fileType, String checksum, String targetStatus, int expectedVersion) {
+            return false;
+        }
+
+        @Override
+        public boolean transitionState(long operatorUserId, long tenantId, long orgId, long revisionId,
+                                       String fromStatus, String targetStatus, String parseStatus, int expectedVersion) {
             return false;
         }
     }

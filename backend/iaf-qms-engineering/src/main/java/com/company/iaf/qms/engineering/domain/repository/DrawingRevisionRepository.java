@@ -12,5 +12,7 @@ public interface DrawingRevisionRepository {
     List<DrawingRevision> findByDrawingId(long tenantId, long orgId, long drawingId);
     long insert(long operatorUserId, DrawingRevision revision);
     boolean attachFile(long operatorUserId, long tenantId, long orgId, long revisionId,
-                       long fileId, String fileType, String checksum, int expectedVersion);
+                       long fileId, String fileType, String checksum, String targetStatus, int expectedVersion);
+    boolean transitionState(long operatorUserId, long tenantId, long orgId, long revisionId,
+                            String fromStatus, String targetStatus, String parseStatus, int expectedVersion);
 }

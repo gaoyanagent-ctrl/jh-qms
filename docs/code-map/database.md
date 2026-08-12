@@ -253,3 +253,13 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
 - `qms_file_object`: tenant/org-scoped immutable source-file metadata, SHA-256 and private object key.
 - `qms_drawing_revision.file_id` references `qms_file_object(tenant_id,id)`.
 - `V0403_1__assign_qms_upload_permission.sql` assigns upload permission to `platform_admin`.
+
+### `V0404__drawing_parse_job.sql`
+
+- Owner module: `iaf-qms-engineering`.
+- Creates `qms_drawing_parse_job`, a tenant/org-scoped durable parse attempt queue linked
+  to one revision and immutable file object.
+- Enforces one attempt number and one active `QUEUED/RUNNING` job per revision; the claim
+  index supports a later worker without changing the upload contract.
+- Seeds `qms:drawing-revision:retry-parse` for every active tenant and assigns it to each
+  active `platform_admin` role.

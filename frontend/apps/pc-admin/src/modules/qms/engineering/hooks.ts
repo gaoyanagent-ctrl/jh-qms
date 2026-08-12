@@ -6,7 +6,8 @@ export const qmsEngineeringKeys = {
   parts: ['qms-engineering-parts'] as const,
   part: (id: number) => ['qms-engineering-part', id] as const,
   drawings: (partId: number) => ['qms-engineering-drawings', partId] as const,
-  revisions: (drawingId: number) => ['qms-engineering-drawing-revisions', drawingId] as const
+  revisions: (drawingId: number) => ['qms-engineering-drawing-revisions', drawingId] as const,
+  parseJobs: (drawingId: number) => ['qms-engineering-drawing-parse-jobs', drawingId] as const
 };
 
 export const useQmsPartsQuery = (params: { keyword?: string; pageNo: number; pageSize: number }) =>
@@ -29,6 +30,13 @@ export const useQmsRevisionsQuery = (drawingId?: number, enabled = true) =>
   useQuery({
     queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0),
     queryFn: () => qmsEngineeringApi.listRevisions(drawingId!),
+    enabled: Boolean(drawingId) && enabled
+  });
+
+export const useQmsParseJobsQuery = (drawingId?: number, enabled = true) =>
+  useQuery({
+    queryKey: qmsEngineeringKeys.parseJobs(drawingId ?? 0),
+    queryFn: () => qmsEngineeringApi.listLatestParseJobs(drawingId!),
     enabled: Boolean(drawingId) && enabled
   });
 
@@ -59,7 +67,24 @@ export const useCreateQmsRevisionMutation = (drawingId?: number, onSuccess?: () 
   return useMutation({
     mutationFn: (request: QmsDrawingRevisionCreateRequest) => qmsEngineeringApi.createRevision(drawingId!, request),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0) });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0) }),
+        queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.parseJobs(drawingId ?? 0) })
+      ]);
+      onSuccess?.();
+    }
+  });
+};
+
+export const useRetryQmsParseJobMutation = (drawingId?: number, onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (revisionId: number) => qmsEngineeringApi.retryParseJob(revisionId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0) }),
+        queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.parseJobs(drawingId ?? 0) })
+      ]);
       onSuccess?.();
     }
   });
@@ -70,7 +95,10 @@ export const useUploadQmsRevisionFileMutation = (drawingId?: number, onSuccess?:
   return useMutation({
     mutationFn: ({ revisionId, file }: { revisionId: number; file: File }) => qmsEngineeringApi.uploadRevisionFile(revisionId, file),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0) });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0) }),
+        queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.parseJobs(drawingId ?? 0) })
+      ]);
       onSuccess?.();
     }
   });

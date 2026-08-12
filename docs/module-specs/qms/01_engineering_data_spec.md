@@ -41,8 +41,10 @@ A revision belongs to one Drawing. `revisionCode` is unique within a Drawing and
 
 TASK-0403 attaches one controlled PDF/DWG source file to a revision through the
 `QmsObjectStorage` port. Metadata is stored in `qms_file_object`; content is stored in
-MinIO under an opaque tenant/revision key. Attachment does not change revision status;
-TASK-0404 owns later state transitions.
+MinIO under an opaque tenant/revision key. TASK-0404 validates every transition through
+`StateMachineService`: upload moves `DRAFT -> UPLOADED` and atomically enqueues parse
+attempt 1; retry moves a failed revision `FAILED -> UPLOADED` and enqueues the next attempt.
+The parser worker and later `PARSING/PARSED` transitions remain deferred.
 
 ## 4. Commands And Idempotency
 
@@ -68,6 +70,7 @@ qms:drawing:create
 qms:drawing-revision:view
 qms:drawing-revision:create
 qms:drawing-revision:upload
+qms:drawing-revision:retry-parse
 ```
 
 Read and write permissions are enforced in the application layer. Frontend visibility
@@ -75,7 +78,6 @@ is not a security boundary.
 
 ## 7. Deferred Scope
 
-- Revision state transitions and transition audit.
 - PDF/DWG preview.
-- Parse jobs, SourceEvidence, and Drawing Intermediate Model.
+- Parse execution workers, SourceEvidence, and Drawing Intermediate Model.
 - Updates, obsolescence, release, and physical deletion.

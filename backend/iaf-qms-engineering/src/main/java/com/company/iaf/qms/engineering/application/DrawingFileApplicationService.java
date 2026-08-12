@@ -1,9 +1,12 @@
 package com.company.iaf.qms.engineering.application;
 
 import com.company.iaf.platform.core.security.RequiresPermission;
+import com.company.iaf.platform.statemachine.application.StateMachineService;
+import com.company.iaf.platform.statemachine.application.StateTransition;
 import com.company.iaf.qms.engineering.domain.model.DrawingRevision;
 import com.company.iaf.qms.engineering.domain.model.QmsFileObject;
 import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionRepository;
+import com.company.iaf.qms.engineering.domain.repository.DrawingParseJobRepository;
 import com.company.iaf.qms.engineering.domain.repository.QmsAuditTrail;
 import com.company.iaf.qms.engineering.domain.repository.QmsFileObjectRepository;
 import com.company.iaf.qms.engineering.domain.repository.QmsObjectStorage;
@@ -22,6 +25,8 @@ import java.security.DigestInputStream;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.List;
+import com.company.iaf.qms.engineering.domain.model.DrawingRevisionStatus;
 
 @Service
 public class DrawingFileApplicationService {
@@ -30,10 +35,16 @@ public class DrawingFileApplicationService {
     private final QmsFileObjectRepository files;
     private final QmsObjectStorage storage;
     private final QmsAuditTrail audit;
+    private final DrawingParseJobRepository parseJobs;
+    private final StateMachineService stateMachine;
+    private static final List<StateTransition<DrawingRevisionStatus>> TRANSITIONS = List.of(
+            new StateTransition<>(DrawingRevisionStatus.DRAFT, "upload", DrawingRevisionStatus.UPLOADED));
 
     public DrawingFileApplicationService(DrawingRevisionRepository revisions, QmsFileObjectRepository files,
-            QmsObjectStorage storage, QmsAuditTrail audit) {
+            QmsObjectStorage storage, QmsAuditTrail audit, DrawingParseJobRepository parseJobs,
+            StateMachineService stateMachine) {
         this.revisions = revisions; this.files = files; this.storage = storage; this.audit = audit;
+        this.parseJobs = parseJobs; this.stateMachine = stateMachine;
     }
 
     @RequiresPermission("qms:drawing-revision:upload")
@@ -68,16 +79,23 @@ public class DrawingFileApplicationService {
             QmsFileObject draft = new QmsFileObject(null, tenantId, orgId, original, mediaType, extension,
                     upload.getSize(), checksum, storage.bucket(), key, 0, null);
             long fileId = files.insert(actor, draft);
-            if (!revisions.attachFile(actor, tenantId, orgId, revisionId, fileId, extension.toUpperCase(Locale.ROOT), checksum, revision.version()))
+            DrawingRevisionStatus target;
+            try { target = stateMachine.requireTransition(revision.status(), "upload", TRANSITIONS).to(); }
+            catch (IllegalStateException e) { throw new BusinessException(QmsEngineeringErrorCode.REVISION_INVALID_STATE); }
+            if (!revisions.attachFile(actor, tenantId, orgId, revisionId, fileId, extension.toUpperCase(Locale.ROOT), checksum, target.name(), revision.version()))
                 throw new BusinessException(QmsEngineeringErrorCode.FILE_ALREADY_ATTACHED);
+            parseJobs.enqueue(actor, tenantId, orgId, revisionId, fileId, extension.toUpperCase(Locale.ROOT), 1);
             QmsFileObject stored = files.findById(tenantId, orgId, fileId)
                     .orElseThrow(() -> new BusinessException(QmsEngineeringErrorCode.FILE_UPLOAD_FAILED));
             audit.record(tenantId, actor, "DRAWING_REVISION_FILE_UPLOADED", "DrawingRevision", revisionId, QmsFileResponse.from(stored));
+            audit.record(tenantId, actor, "DRAWING_REVISION_STATE_TRANSITIONED", "DrawingRevision", revisionId,
+                    new StateChange(revision.status().name(), "upload", target.name()));
             return QmsFileResponse.from(stored);
         } catch (BusinessException e) { if (key != null) storage.delete(key); throw e;
         } catch (Exception e) { if (key != null) storage.delete(key); throw new BusinessException(QmsEngineeringErrorCode.FILE_UPLOAD_FAILED);
         } finally { if (temp != null) try { Files.deleteIfExists(temp); } catch (Exception ignored) { } }
     }
+    private record StateChange(String from, String action, String to) { }
 
     @RequiresPermission("qms:drawing-revision:view")
     @Transactional(readOnly = true)

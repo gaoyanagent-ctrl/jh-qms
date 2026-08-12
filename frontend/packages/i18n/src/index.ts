@@ -219,7 +219,7 @@ export const resources = {
           ACTIVE: '启用', INACTIVE: '停用', OBSOLETE: '作废', DRAFT: '草稿', UPLOADED: '已上传',
           PARSING: '解析中', PARSED: '已解析', REVIEWING: '复核中', CONFIRMED: '已确认',
           RELEASED: '已发布', SUPERSEDED: '已替代', FAILED: '失败', PENDING: '待处理',
-          RUNNING: '处理中', PARTIAL_SUCCESS: '部分成功', SUCCESS: '成功', CANCELLED: '已取消', REJECTED: '已驳回'
+          QUEUED: '已排队', RUNNING: '处理中', PARTIAL_SUCCESS: '部分成功', SUCCESS: '成功', SUCCEEDED: '成功', CANCELLED: '已取消', REJECTED: '已驳回'
         },
         drawingType: { PRODUCT: '产品图', PART: '零件图', ASSEMBLY: '装配图', OTHER: '其他' },
         sourceSystem: { MANUAL: '手工维护', PLM: 'PLM', MIGRATION: '历史迁移' },
@@ -252,11 +252,11 @@ export const resources = {
         fields: { drawingNo: '图号', drawingName: '图纸名称', drawingType: '图纸类型', sourceSystem: '来源系统' }
       },
       qmsRevisions: {
-        title: '版本历史', empty: '当前图纸暂无版本', selectDrawing: '选择一张图纸以查看版本历史。', actions: { create: '新增版本', upload: '上传文件' },
-        feedback: { uploadSucceeded: '图纸文件上传成功', uploadPermissionRequired: '当前登录身份缺少上传权限，请重新登录或联系管理员。' },
+        title: '版本历史', empty: '当前图纸暂无版本', selectDrawing: '选择一张图纸以查看版本历史。', actions: { create: '新增版本', upload: '上传文件', retryParse: '重试解析' },
+        feedback: { uploadSucceeded: '图纸文件上传成功', retrySucceeded: '已重新提交解析任务', uploadPermissionRequired: '当前登录身份缺少上传权限，请重新登录或联系管理员。' },
         fields: {
           revisionCode: '版本号', revisionSeq: '版本序号', effectiveDate: '生效日期', parseStatus: '解析状态',
-          reviewStatus: '复核状态', supersedesRevision: '替代版本', file: '源文件'
+          reviewStatus: '复核状态', supersedesRevision: '替代版本', file: '源文件', parseJob: '解析任务'
         }
       },
       settings: {
@@ -853,7 +853,7 @@ export const resources = {
           ACTIVE: 'Active', INACTIVE: 'Inactive', OBSOLETE: 'Obsolete', DRAFT: 'Draft', UPLOADED: 'Uploaded',
           PARSING: 'Parsing', PARSED: 'Parsed', REVIEWING: 'Reviewing', CONFIRMED: 'Confirmed',
           RELEASED: 'Released', SUPERSEDED: 'Superseded', FAILED: 'Failed', PENDING: 'Pending',
-          RUNNING: 'Running', PARTIAL_SUCCESS: 'Partial success', SUCCESS: 'Success', CANCELLED: 'Cancelled', REJECTED: 'Rejected'
+          QUEUED: 'Queued', RUNNING: 'Running', PARTIAL_SUCCESS: 'Partial success', SUCCESS: 'Success', SUCCEEDED: 'Succeeded', CANCELLED: 'Cancelled', REJECTED: 'Rejected'
         },
         drawingType: { PRODUCT: 'Product', PART: 'Part', ASSEMBLY: 'Assembly', OTHER: 'Other' },
         sourceSystem: { MANUAL: 'Manual', PLM: 'PLM', MIGRATION: 'Migration' },
@@ -886,11 +886,11 @@ export const resources = {
         fields: { drawingNo: 'Drawing no.', drawingName: 'Drawing name', drawingType: 'Drawing type', sourceSystem: 'Source system' }
       },
       qmsRevisions: {
-        title: 'Revision History', empty: 'No revisions for this drawing', selectDrawing: 'Select a drawing to view its revision history.', actions: { create: 'Create Revision', upload: 'Upload File' },
-        feedback: { uploadSucceeded: 'Drawing file uploaded', uploadPermissionRequired: 'The current session lacks upload permission. Sign in again or contact an administrator.' },
+        title: 'Revision History', empty: 'No revisions for this drawing', selectDrawing: 'Select a drawing to view its revision history.', actions: { create: 'Create Revision', upload: 'Upload File', retryParse: 'Retry parse' },
+        feedback: { uploadSucceeded: 'Drawing file uploaded', retrySucceeded: 'Parse job resubmitted', uploadPermissionRequired: 'The current session lacks upload permission. Sign in again or contact an administrator.' },
         fields: {
           revisionCode: 'Revision', revisionSeq: 'Sequence', effectiveDate: 'Effective date', parseStatus: 'Parse status',
-          reviewStatus: 'Review status', supersedesRevision: 'Supersedes revision', file: 'Source file'
+          reviewStatus: 'Review status', supersedesRevision: 'Supersedes revision', file: 'Source file', parseJob: 'Parse job'
         }
       },
       settings: {

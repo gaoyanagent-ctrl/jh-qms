@@ -4,6 +4,7 @@ import type {
   QmsDrawingCreateRequest,
   QmsDrawingRevision,
   QmsDrawingRevisionCreateRequest,
+  QmsDrawingParseJob,
   QmsPart,
   QmsPartCreateRequest
 } from '@iaf/domain-types';
@@ -22,6 +23,10 @@ export const qmsEngineeringApi = {
     apiClient.get<QmsDrawingRevision[]>(`/api/qms/drawings/${drawingId}/revisions`),
   createRevision: (drawingId: number, request: QmsDrawingRevisionCreateRequest) =>
     apiClient.post<QmsDrawingRevision>(`/api/qms/drawings/${drawingId}/revisions`, request),
+  listLatestParseJobs: (drawingId: number) =>
+    apiClient.get<QmsDrawingParseJob[]>(`/api/qms/drawings/${drawingId}/parse-jobs`),
+  retryParseJob: (revisionId: number) =>
+    apiClient.post<QmsDrawingParseJob>(`/api/qms/drawing-revisions/${revisionId}/parse-job/retry`),
   uploadRevisionFile: (revisionId: number, file: File) => {
     const body = new FormData();
     body.append('file', file);

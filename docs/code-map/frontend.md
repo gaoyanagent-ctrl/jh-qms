@@ -586,3 +586,6 @@ Planned stack:
 
 - The Part detail revision table uploads PDF/DWG source files with the dedicated
   `qms:drawing-revision:upload` permission and displays file type/checksum after attachment.
+- The same table loads the latest parse attempt per revision in one drawing-scoped query,
+  displays its queue status/attempt number, and exposes retry only for failed jobs to users
+  with `qms:drawing-revision:retry-parse`.

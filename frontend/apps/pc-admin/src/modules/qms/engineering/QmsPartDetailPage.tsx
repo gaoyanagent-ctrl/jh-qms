@@ -2,7 +2,8 @@ import type {
   QmsDrawing,
   QmsDrawingCreateRequest,
   QmsDrawingRevision,
-  QmsDrawingRevisionCreateRequest
+  QmsDrawingRevisionCreateRequest,
+  QmsDrawingParseJob
 } from '@iaf/domain-types';
 import { PermissionButton, QMS_PERMISSIONS, hasPermission, useUserPermissions } from '@iaf/permissions';
 import { useIafTheme, iafSurfaceWidths } from '@iaf/theme';
@@ -18,7 +19,9 @@ import {
   useCreateQmsRevisionMutation,
   useQmsDrawingsQuery,
   useQmsPartQuery,
+  useQmsParseJobsQuery,
   useQmsRevisionsQuery,
+  useRetryQmsParseJobMutation,
   useUploadQmsRevisionFileMutation
 } from './hooks';
 import { buildPageAIContext, QmsPageContextProvider } from './pageContext';
@@ -38,6 +41,7 @@ export const QmsPartDetailPage = () => {
   const canViewDrawings = hasPermission(permissions, QMS_PERMISSIONS.drawingView);
   const canViewRevisions = hasPermission(permissions, QMS_PERMISSIONS.drawingRevisionView);
   const canUploadRevisionFile = hasPermission(permissions, QMS_PERMISSIONS.drawingRevisionUpload);
+  const canRetryParse = hasPermission(permissions, QMS_PERMISSIONS.drawingRevisionRetryParse);
   const { formInteractionMode, surfaceWidth, workspaceMode } = useIafTheme();
   const [selectedDrawingId, setSelectedDrawingId] = useState<number>();
   const [drawingOpen, setDrawingOpen] = useState(false);
@@ -50,7 +54,10 @@ export const QmsPartDetailPage = () => {
   const partQuery = useQmsPartQuery(validPartId ? partId : undefined);
   const drawingsQuery = useQmsDrawingsQuery(validPartId ? partId : undefined, canViewDrawings);
   const revisionsQuery = useQmsRevisionsQuery(selectedDrawingId, canViewRevisions);
+  const parseJobsQuery = useQmsParseJobsQuery(selectedDrawingId, canViewRevisions);
   const uploadFile = useUploadQmsRevisionFileMutation(selectedDrawingId, () => message.success(t('qmsRevisions.feedback.uploadSucceeded')));
+  const retryParse = useRetryQmsParseJobMutation(selectedDrawingId, () => message.success(t('qmsRevisions.feedback.retrySucceeded')));
+  const parseJobsByRevision = useMemo(() => new Map((parseJobsQuery.data ?? []).map((job) => [job.revisionId, job])), [parseJobsQuery.data]);
   const selectedDrawing = drawingsQuery.data?.find((drawing) => drawing.id === selectedDrawingId);
 
   useEffect(() => {
@@ -98,6 +105,15 @@ export const QmsPartDetailPage = () => {
     ...(workspaceMode === 'expert' ? [{ title: t('qmsRevisions.fields.revisionSeq'), dataIndex: 'revisionSeq', width: 90 }] : []),
     { title: t('qmsRevisions.fields.effectiveDate'), dataIndex: 'effectiveDate', width: 130, render: (value) => value ?? t('common.notAvailable') },
     { title: t('qmsRevisions.fields.parseStatus'), dataIndex: 'parseStatus', width: 135, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
+    { title: t('qmsRevisions.fields.parseJob'), width: 220, render: (_, revision) => {
+      const job: QmsDrawingParseJob | undefined = parseJobsByRevision.get(revision.id);
+      if (!job) return <Typography.Text type="secondary">{t('common.notAvailable')}</Typography.Text>;
+      return <Space size="small">
+        <StatusTag status={job.status} label={t(`qms.status.${job.status}`)} />
+        <Typography.Text type="secondary">#{job.attemptNo}</Typography.Text>
+        {job.status === 'FAILED' && canRetryParse && <Button size="small" loading={retryParse.isPending} onClick={() => retryParse.mutate(revision.id)}>{t('qmsRevisions.actions.retryParse')}</Button>}
+      </Space>;
+    } },
     { title: t('qmsRevisions.fields.reviewStatus'), dataIndex: 'reviewStatus', width: 135, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
     { title: t('common.fields.status'), dataIndex: 'status', width: 120, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
     { title: t('qmsRevisions.fields.file'), width: 190, fixed: 'right', render: (_, revision) => revision.fileId
@@ -106,7 +122,7 @@ export const QmsPartDetailPage = () => {
           <Button disabled={!canUploadRevisionFile} title={!canUploadRevisionFile ? t('qmsRevisions.feedback.uploadPermissionRequired') : undefined} size="small" loading={uploadFile.isPending}>{t('qmsRevisions.actions.upload')}</Button>
         </Upload> },
     ...(workspaceMode === 'expert' ? [{ title: t('common.fields.createdAt'), dataIndex: 'createdAt', width: 190, render: (value: string) => formatDateTime(value) }] : [])
-  ], [canUploadRevisionFile, i18n.language, t, workspaceMode, uploadFile]);
+  ], [canRetryParse, canUploadRevisionFile, i18n.language, parseJobsByRevision, retryParse, t, workspaceMode, uploadFile]);
 
   const submitDrawing = async (values: QmsDrawingCreateRequest) => {
     try {
@@ -135,7 +151,8 @@ export const QmsPartDetailPage = () => {
     availableActions: [
       ...(hasPermission(permissions, QMS_PERMISSIONS.drawingCreate) ? ['createDrawing'] : []),
       ...(hasPermission(permissions, QMS_PERMISSIONS.drawingRevisionCreate) && selectedDrawing ? ['createRevision'] : []),
-      ...(canUploadRevisionFile && selectedDrawing ? ['uploadRevisionFile'] : [])
+      ...(canUploadRevisionFile && selectedDrawing ? ['uploadRevisionFile'] : []),
+      ...(canRetryParse && selectedDrawing ? ['retryParse'] : [])
     ],
     visibleFields: [
       'partNo', 'partName', 'materialNo', 'vehicleModel', 'importanceLevel', 'status',
@@ -237,7 +254,7 @@ export const QmsPartDetailPage = () => {
               <Alert type="error" showIcon message={t('qms.feedback.loadRevisionsFailed')} action={<Button onClick={() => revisionsQuery.refetch()}>{t('common.actions.retry')}</Button>} />
             ) : (
               <Table<QmsDrawingRevision>
-                rowKey="id" size="small" bordered loading={revisionsQuery.isLoading} dataSource={revisionsQuery.data ?? []}
+                rowKey="id" size="small" bordered loading={revisionsQuery.isLoading || parseJobsQuery.isLoading} dataSource={revisionsQuery.data ?? []}
                 columns={revisionColumns} pagination={false} scroll={{ x: 'max-content' }} locale={{ emptyText: t('qmsRevisions.empty') }}
               />
             )}

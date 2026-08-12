@@ -580,3 +580,10 @@ deferred to the upload workflow.
 - `POST /api/qms/drawing-revisions/{revisionId}/file` — multipart PDF/DWG upload.
 - `GET /api/qms/drawing-revisions/{revisionId}/file` — file metadata.
 - `GET /api/qms/drawing-revisions/{revisionId}/file/content` — authenticated content download.
+
+# QMS drawing parse orchestration
+
+- `GET /api/qms/drawing-revisions/{revisionId}/parse-job` — latest attempt; revision-view permission.
+- `GET /api/qms/drawings/{drawingId}/parse-jobs` — latest attempt for each drawing revision.
+- `POST /api/qms/drawing-revisions/{revisionId}/parse-job/retry` — retry a failed latest
+  attempt; `qms:drawing-revision:retry-parse` permission.

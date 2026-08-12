@@ -791,6 +791,16 @@ Current tests:
 - `QmsEngineeringPostgresIntegrationTest`: empty PostgreSQL migration, JDBC repositories,
   tenant/org isolation, revision sequence, audit JSON, permission seeds, and QMS menu/role links.
 
+TASK-0404 parse orchestration:
+
+- `StateMachineService` / `DefaultStateMachineService`: shared explicit-transition validator.
+- `DrawingFileApplicationService`: `DRAFT -> UPLOADED`, file attachment, parse-job enqueue,
+  and transition audit in one database transaction.
+- `DrawingParseJobApplicationService`: latest-job queries and permission-controlled retry
+  from `FAILED -> UPLOADED` with an incremented attempt.
+- `DrawingParseJobRepository` / `JdbcDrawingParseJobRepository`: durable, tenant/org-scoped
+  parse queue and latest-attempt projections.
+
 ### Manufacturing Modules
 
 `iaf-manufacturing-core`
