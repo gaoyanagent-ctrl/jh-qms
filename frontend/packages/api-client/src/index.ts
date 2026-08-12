@@ -56,6 +56,17 @@ export class ApiClient {
     return this.request<T>(path, { ...options, method: 'PATCH', body });
   }
 
+  async getBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+    const headers = new Headers(options.headers);
+    const token = this.getToken?.();
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    const { body: _body, query, ...requestInit } = options;
+    const response = await fetch(this.toUrl(path, query), { ...requestInit, method: 'GET', headers });
+    if (response.status === 401) this.onUnauthorized?.();
+    if (!response.ok) throw new ApiError(response.statusText, `HTTP_${response.status}`, response.status);
+    return response.blob();
+  }
+
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
     const method = options.method ?? 'GET';
     const headers = new Headers(options.headers);

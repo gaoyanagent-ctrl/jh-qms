@@ -53,6 +53,11 @@ Every normalized entity must have evidence with source file, sheet/page, boundin
 extractor version, and confidence. Parser algorithms and worker polling remain external to
 this module contract.
 
+TASK-0406 consumes that contract in the Review Workbench. PDF source content is fetched as
+an authenticated Blob and rendered with PDF.js; selecting evidence changes to its source page
+and scales the DIM bounding box onto the rendered Canvas. DWG files deliberately show the
+deferred CAD-adapter state instead of attempting an inaccurate browser preview.
+
 ## 4. Commands And Idempotency
 
 Create commands are protected by tenant-scoped natural keys and database unique
@@ -87,6 +92,6 @@ is not a security boundary.
 
 ## 7. Deferred Scope
 
-- PDF/DWG preview.
+- Native DWG preview.
 - Parse execution workers and PDF/DWG adapters.
 - Updates, obsolescence, release, and physical deletion.

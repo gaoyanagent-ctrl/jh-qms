@@ -7,7 +7,11 @@ export const qmsEngineeringKeys = {
   part: (id: number) => ['qms-engineering-part', id] as const,
   drawings: (partId: number) => ['qms-engineering-drawings', partId] as const,
   revisions: (drawingId: number) => ['qms-engineering-drawing-revisions', drawingId] as const,
-  parseJobs: (drawingId: number) => ['qms-engineering-drawing-parse-jobs', drawingId] as const
+  revision: (revisionId: number) => ['qms-engineering-drawing-revision', revisionId] as const,
+  parseJobs: (drawingId: number) => ['qms-engineering-drawing-parse-jobs', drawingId] as const,
+  revisionFile: (revisionId: number) => ['qms-engineering-revision-file', revisionId] as const,
+  intermediateModel: (revisionId: number) => ['qms-engineering-intermediate-model', revisionId] as const,
+  evidence: (revisionId: number) => ['qms-engineering-evidence', revisionId] as const
 };
 
 export const useQmsPartsQuery = (params: { keyword?: string; pageNo: number; pageSize: number }) =>
@@ -33,12 +37,28 @@ export const useQmsRevisionsQuery = (drawingId?: number, enabled = true) =>
     enabled: Boolean(drawingId) && enabled
   });
 
+export const useQmsRevisionQuery = (revisionId?: number, enabled = true) =>
+  useQuery({ queryKey: qmsEngineeringKeys.revision(revisionId ?? 0),
+    queryFn: () => qmsEngineeringApi.getRevision(revisionId!), enabled: Boolean(revisionId) && enabled });
+
 export const useQmsParseJobsQuery = (drawingId?: number, enabled = true) =>
   useQuery({
     queryKey: qmsEngineeringKeys.parseJobs(drawingId ?? 0),
     queryFn: () => qmsEngineeringApi.listLatestParseJobs(drawingId!),
     enabled: Boolean(drawingId) && enabled
   });
+
+export const useQmsRevisionFileQuery = (revisionId?: number, enabled = true) =>
+  useQuery({ queryKey: qmsEngineeringKeys.revisionFile(revisionId ?? 0),
+    queryFn: () => qmsEngineeringApi.getRevisionFileContent(revisionId!), enabled: Boolean(revisionId) && enabled });
+
+export const useQmsIntermediateModelQuery = (revisionId?: number, enabled = true) =>
+  useQuery({ queryKey: qmsEngineeringKeys.intermediateModel(revisionId ?? 0),
+    queryFn: () => qmsEngineeringApi.getIntermediateModel(revisionId!), enabled: Boolean(revisionId) && enabled, retry: false });
+
+export const useQmsEvidenceQuery = (revisionId?: number, enabled = true) =>
+  useQuery({ queryKey: qmsEngineeringKeys.evidence(revisionId ?? 0),
+    queryFn: () => qmsEngineeringApi.listEvidence(revisionId!), enabled: Boolean(revisionId) && enabled });
 
 export const useCreateQmsPartMutation = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();

@@ -114,6 +114,25 @@ export interface QmsDrawingParseJob {
   updatedAt: string;
 }
 
+export interface QmsBoundingBox { x: number; y: number; width: number; height: number; }
+export interface QmsSourceEvidence {
+  id: number; sourceFileId: number; drawingRevisionId: number; parseJobId: number;
+  evidenceKey: string; entityId: string | null; entityHandle: string | null;
+  sheetNo: string; pageNo: number | null; bbox: QmsBoundingBox;
+  rawText: string | null; normalizedText: string | null;
+  extractorType: 'PDF_VECTOR' | 'OCR' | 'DWG_ENTITY' | 'VLM' | 'LLM' | 'RULE' | 'MANUAL';
+  extractorVersion: string; modelName: string | null; modelVersion: string | null;
+  confidence: number; createdAt: string;
+}
+export interface QmsDrawingIntermediateModel {
+  id: number; revisionId: number; parseJobId: number; schemaVersion: string;
+  documentId: string; revisionCode: string;
+  model: { schemaVersion: string; documentId: string; revision: string; sheets: Array<{
+    sheetNo: string; width: number; height: number; titleBlock: Record<string, unknown>;
+    views: unknown[]; entities: unknown[]; notes: unknown[]; characteristicCandidates: unknown[];
+  }> }; createdAt: string;
+}
+
 export interface QmsFileObject {
   id: number;
   originalName: string;

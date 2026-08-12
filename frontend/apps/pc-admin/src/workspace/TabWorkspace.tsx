@@ -17,6 +17,7 @@ const getTabLabelKey = (pathname: string): string => {
   if (pathname === '/platform/kanban') return 'menu.kanban';
   if (pathname === '/qms/engineering/parts') return 'menu.qmsParts';
   if (/^\/qms\/engineering\/parts\/\d+$/.test(pathname)) return 'menu.qmsPartDetail';
+  if (/^\/qms\/engineering\/drawing-revisions\/\d+\/review$/.test(pathname)) return 'menu.qmsDrawingReview';
   return 'menu.unknown';
 };
 

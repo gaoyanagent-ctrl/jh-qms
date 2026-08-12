@@ -200,6 +200,7 @@ export const resources = {
         }
       },
       menu: {
+        qmsDrawingReview: '图纸评审',
         workbench: '工作台',
         platform: '平台管理',
         users: '用户管理',
@@ -252,12 +253,20 @@ export const resources = {
         fields: { drawingNo: '图号', drawingName: '图纸名称', drawingType: '图纸类型', sourceSystem: '来源系统' }
       },
       qmsRevisions: {
-        title: '版本历史', empty: '当前图纸暂无版本', selectDrawing: '选择一张图纸以查看版本历史。', actions: { create: '新增版本', upload: '上传文件', retryParse: '重试解析' },
+        title: '版本历史', empty: '当前图纸暂无版本', selectDrawing: '选择一张图纸以查看版本历史。', actions: { create: '新增版本', upload: '上传文件', retryParse: '重试解析', review: '查看图纸' },
         feedback: { uploadSucceeded: '图纸文件上传成功', retrySucceeded: '已重新提交解析任务', uploadPermissionRequired: '当前登录身份缺少上传权限，请重新登录或联系管理员。' },
         fields: {
           revisionCode: '版本号', revisionSeq: '版本序号', effectiveDate: '生效日期', parseStatus: '解析状态',
           reviewStatus: '复核状态', supersedesRevision: '替代版本', file: '源文件', parseJob: '解析任务'
         }
+      },
+      qmsReview: {
+        title: '图纸复核工作台', invalidRevision: '无效的图纸版本 ID', evidence: '来源证据', viewer: '图纸预览',
+        evidenceCount: '共 {{count}} 条证据', noEvidence: '暂无解析证据', sheet: '图幅', page: '页码',
+        previousPage: '上一页', nextPage: '下一页', pdfCanvas: 'PDF 图纸画布',
+        waitingForParse: '图纸尚未生成解析结果', waitingForParseDescription: '文件仍可预览。解析器完成后，证据列表和定位高亮会自动可用。',
+        cadPending: 'DWG 在线预览将在 CAD 解析适配器阶段接入。', renderFailed: 'PDF 渲染失败，请检查文件是否有效。',
+        filters: { all: '全部', high: '高', medium: '中', low: '低' }
       },
       settings: {
         theme: '主题',
@@ -834,6 +843,7 @@ export const resources = {
         }
       },
       menu: {
+        qmsDrawingReview: 'Drawing Review',
         workbench: 'Workbench',
         platform: 'Platform',
         users: 'Users',
@@ -886,12 +896,20 @@ export const resources = {
         fields: { drawingNo: 'Drawing no.', drawingName: 'Drawing name', drawingType: 'Drawing type', sourceSystem: 'Source system' }
       },
       qmsRevisions: {
-        title: 'Revision History', empty: 'No revisions for this drawing', selectDrawing: 'Select a drawing to view its revision history.', actions: { create: 'Create Revision', upload: 'Upload File', retryParse: 'Retry parse' },
+        title: 'Revision History', empty: 'No revisions for this drawing', selectDrawing: 'Select a drawing to view its revision history.', actions: { create: 'Create Revision', upload: 'Upload File', retryParse: 'Retry parse', review: 'View drawing' },
         feedback: { uploadSucceeded: 'Drawing file uploaded', retrySucceeded: 'Parse job resubmitted', uploadPermissionRequired: 'The current session lacks upload permission. Sign in again or contact an administrator.' },
         fields: {
           revisionCode: 'Revision', revisionSeq: 'Sequence', effectiveDate: 'Effective date', parseStatus: 'Parse status',
           reviewStatus: 'Review status', supersedesRevision: 'Supersedes revision', file: 'Source file', parseJob: 'Parse job'
         }
+      },
+      qmsReview: {
+        title: 'Drawing Review Workbench', invalidRevision: 'Invalid drawing revision ID', evidence: 'Source Evidence', viewer: 'Drawing Viewer',
+        evidenceCount: '{{count}} evidence items', noEvidence: 'No parse evidence', sheet: 'Sheet', page: 'Page',
+        previousPage: 'Previous', nextPage: 'Next', pdfCanvas: 'PDF drawing canvas',
+        waitingForParse: 'No parse result is available yet', waitingForParseDescription: 'The file remains previewable. Evidence and location highlights become available after parsing.',
+        cadPending: 'DWG preview will be connected with the CAD parser adapter.', renderFailed: 'PDF rendering failed. Check that the file is valid.',
+        filters: { all: 'All', high: 'High', medium: 'Medium', low: 'Low' }
       },
       settings: {
         theme: 'Theme',

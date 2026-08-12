@@ -20,7 +20,8 @@ vi.mock('./api', () => ({
     createRevision: vi.fn(),
     listLatestParseJobs: vi.fn(),
     retryParseJob: vi.fn(),
-    uploadRevisionFile: vi.fn()
+    uploadRevisionFile: vi.fn(),
+    getRevision: vi.fn()
   }
 }));
 

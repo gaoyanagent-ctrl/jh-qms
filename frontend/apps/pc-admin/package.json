@@ -22,7 +22,8 @@
     "@iaf/table-engine": "workspace:*",
     "@iaf/theme": "workspace:*",
     "@iaf/ui-business": "workspace:*",
-    "@iaf/ui-core": "workspace:*"
+    "@iaf/ui-core": "workspace:*",
+    "pdfjs-dist": "^5.4.149"
   },
   "devDependencies": {}
 }

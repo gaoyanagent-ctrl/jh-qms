@@ -589,3 +589,13 @@ Planned stack:
 - The same table loads the latest parse attempt per revision in one drawing-scoped query,
   displays its queue status/attempt number, and exposes retry only for failed jobs to users
   with `qms:drawing-revision:retry-parse`.
+
+# QMS drawing review workbench
+
+- Route `/qms/engineering/drawing-revisions/:revisionId/review` is protected by
+  `qms:drawing-revision:view` and is opened from an attached revision in Part details.
+- `QmsDrawingReviewWorkbenchPage.tsx` renders authenticated PDF Blobs with PDF.js, supports
+  page navigation and confidence filtering, and maps selected evidence BBoxes from DIM sheet
+  coordinates onto the Canvas overlay.
+- DWG preview remains behind a future CAD adapter and is represented by an explicit UI state.
+- `packages/api-client#getBlob` is the shared authenticated binary-download entry point.
