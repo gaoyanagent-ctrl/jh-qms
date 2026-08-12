@@ -9,6 +9,7 @@ public interface DrawingParseJobRepository {
     Optional<DrawingParseJob> findLatest(long tenantId, long orgId, long revisionId);
     Optional<DrawingParseJob> findById(long tenantId, long orgId, long id);
     List<DrawingParseJob> findLatestByDrawingId(long tenantId, long orgId, long drawingId);
+    List<DrawingParseJob> findQueued(int limit);
     boolean transition(long actorId, long tenantId, long orgId, long id, String fromStatus,
                        String targetStatus, String errorCode, String errorMessage, int expectedVersion);
 }

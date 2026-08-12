@@ -16,5 +16,13 @@ the versioned DIM and locatable SourceEvidence contract from TASK-0405.
 ## Deferred
 
 - Scanned PDF OCR/VLM fallback and dimension semantics.
-- Spring parse-job dispatcher integration.
 - DWG provider adapter (TASK-0408).
+
+## Dispatcher Extension
+
+- A scheduled Spring dispatcher reads bounded batches of queued jobs.
+- Lifecycle optimistic transitions provide the claim boundary for concurrent instances.
+- The dispatcher streams the controlled source object to the internal parser and persists the
+  returned DIM/evidence through the existing transactional lifecycle.
+- Parser and infrastructure errors transition the claimed job/revision to `FAILED` with a
+  bounded diagnostic.

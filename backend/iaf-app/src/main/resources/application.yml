@@ -31,3 +31,9 @@ iaf:
     # memory is for local/dev/test only. ADR-0004 selects Redis as the
     # first production token store; prod profile must not run with memory.
     token-store: ${IAF_AUTH_TOKEN_STORE:memory}
+
+qms:
+  parser:
+    base-url: ${QMS_PARSER_BASE_URL:http://localhost:18083}
+    worker-enabled: ${QMS_PARSER_WORKER_ENABLED:false}
+    poll-delay-ms: ${QMS_PARSER_POLL_DELAY_MS:3000}

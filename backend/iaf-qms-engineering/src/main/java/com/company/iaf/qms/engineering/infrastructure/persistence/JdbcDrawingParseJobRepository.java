@@ -66,6 +66,17 @@ public class JdbcDrawingParseJobRepository implements DrawingParseJobRepository 
     }
 
     @Override
+    public List<DrawingParseJob> findQueued(int limit) {
+        return jdbc.query("""
+            select id, tenant_id, org_id, revision_id, file_id, attempt_no, status, parser_type,
+                   error_code, error_message, version, created_at, updated_at
+              from qms_drawing_parse_job
+             where status='QUEUED' and deleted=false
+             order by created_at, id limit ?
+            """, this::map, Math.max(1, Math.min(limit, 20)));
+    }
+
+    @Override
     public boolean transition(long actorId, long tenantId, long orgId, long id, String fromStatus,
                               String targetStatus, String errorCode, String errorMessage, int expectedVersion) {
         return jdbc.update("""

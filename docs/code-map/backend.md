@@ -806,6 +806,9 @@ TASK-0405 parse-result contract:
 - TASK-0407 adds the independent `ai-service` FastAPI application. Its `pdf-vector` adapter
   converts PDF pages and text coordinates into DIM 1.0 entities and SourceEvidence without
   invoking an external model. The service is internal-only in production Compose.
+- `DrawingParseJobDispatcher` polls bounded queued-job batches, claims them through
+  `DrawingParseLifecycleService`, reads the controlled object, invokes `PdfParserPort`, and
+  completes or fails the durable job. `HttpPdfParserAdapter` is the internal HTTP adapter.
 
 - `DrawingParseLifecycleService`: internal parser port for start/complete/fail with state
   machine validation, atomic parse-job/revision transitions, result validation, and audit.

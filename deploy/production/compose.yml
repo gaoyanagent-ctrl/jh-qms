@@ -33,10 +33,14 @@ services:
       QMS_STORAGE_ACCESS_KEY: ${JH_QMS_MINIO_ACCESS_KEY:-jh-qms}
       QMS_STORAGE_SECRET_KEY: ${JH_QMS_MINIO_SECRET_KEY:?JH_QMS_MINIO_SECRET_KEY is required}
       QMS_STORAGE_BUCKET: ${JH_QMS_MINIO_BUCKET:-jh-qms-files}
+      QMS_PARSER_BASE_URL: http://ai-service:8000
+      QMS_PARSER_WORKER_ENABLED: "true"
     depends_on:
       postgres:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      ai-service:
         condition: service_healthy
     ports:
       - "127.0.0.1:${JH_QMS_BACKEND_PORT:-18082}:8080"
