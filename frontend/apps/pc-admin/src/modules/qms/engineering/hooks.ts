@@ -1,0 +1,66 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { QmsDrawingCreateRequest, QmsDrawingRevisionCreateRequest } from '@iaf/domain-types';
+import { qmsEngineeringApi } from './api';
+
+export const qmsEngineeringKeys = {
+  parts: ['qms-engineering-parts'] as const,
+  part: (id: number) => ['qms-engineering-part', id] as const,
+  drawings: (partId: number) => ['qms-engineering-drawings', partId] as const,
+  revisions: (drawingId: number) => ['qms-engineering-drawing-revisions', drawingId] as const
+};
+
+export const useQmsPartsQuery = (params: { keyword?: string; pageNo: number; pageSize: number }) =>
+  useQuery({
+    queryKey: [...qmsEngineeringKeys.parts, params.keyword ?? '', params.pageNo, params.pageSize],
+    queryFn: () => qmsEngineeringApi.listParts(params)
+  });
+
+export const useQmsPartQuery = (id?: number) =>
+  useQuery({ queryKey: qmsEngineeringKeys.part(id ?? 0), queryFn: () => qmsEngineeringApi.getPart(id!), enabled: Boolean(id) });
+
+export const useQmsDrawingsQuery = (partId?: number, enabled = true) =>
+  useQuery({
+    queryKey: qmsEngineeringKeys.drawings(partId ?? 0),
+    queryFn: () => qmsEngineeringApi.listDrawings(partId!),
+    enabled: Boolean(partId) && enabled
+  });
+
+export const useQmsRevisionsQuery = (drawingId?: number, enabled = true) =>
+  useQuery({
+    queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0),
+    queryFn: () => qmsEngineeringApi.listRevisions(drawingId!),
+    enabled: Boolean(drawingId) && enabled
+  });
+
+export const useCreateQmsPartMutation = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: qmsEngineeringApi.createPart,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.parts });
+      onSuccess?.();
+    }
+  });
+};
+
+export const useCreateQmsDrawingMutation = (partId: number, onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: QmsDrawingCreateRequest) => qmsEngineeringApi.createDrawing(partId, request),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.drawings(partId) });
+      onSuccess?.();
+    }
+  });
+};
+
+export const useCreateQmsRevisionMutation = (drawingId?: number, onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: QmsDrawingRevisionCreateRequest) => qmsEngineeringApi.createRevision(drawingId!, request),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0) });
+      onSuccess?.();
+    }
+  });
+};

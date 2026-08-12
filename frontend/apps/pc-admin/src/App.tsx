@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PermissionRoute, PLATFORM_PERMISSIONS } from '@iaf/permissions';
+import { PermissionRoute, PLATFORM_PERMISSIONS, QMS_PERMISSIONS } from '@iaf/permissions';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { LoginPage } from './pages/LoginPage';
@@ -12,6 +12,8 @@ import { ApprovalTaskCenterPage } from './modules/platform/approval/ApprovalTask
 import { PlatformAuditLogPage, PlatformDictionaryParameterPage } from './modules/platform/config/PlatformConfigPages';
 import { PlatformMenuConsolePage } from './modules/platform/menus/PlatformMenuConsolePage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
+import { QmsPartListPage } from './modules/qms/engineering/QmsPartListPage';
+import { QmsPartDetailPage } from './modules/qms/engineering/QmsPartDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +52,10 @@ export const App = () => (
               <Route path="/platform/audit-logs" element={<PlatformAuditLogPage />} />
             </Route>
             <Route path="/platform/approval/tasks" element={<ApprovalTaskCenterPage />} />
+            <Route element={<PermissionRoute require={QMS_PERMISSIONS.partView} fallbackPath="/" />}>
+              <Route path="/qms/engineering/parts" element={<QmsPartListPage />} />
+              <Route path="/qms/engineering/parts/:partId" element={<QmsPartDetailPage />} />
+            </Route>
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

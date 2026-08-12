@@ -12,6 +12,95 @@ export interface PageResult<T> {
   pageSize: number;
 }
 
+export type QmsPartStatus = 'ACTIVE' | 'INACTIVE';
+export type QmsDrawingType = 'PRODUCT' | 'PART' | 'ASSEMBLY' | 'OTHER';
+export type QmsDrawingSourceSystem = 'MANUAL' | 'PLM' | 'MIGRATION';
+export type QmsDrawingStatus = 'ACTIVE' | 'OBSOLETE';
+export type QmsDrawingRevisionStatus =
+  | 'DRAFT'
+  | 'UPLOADED'
+  | 'PARSING'
+  | 'PARSED'
+  | 'REVIEWING'
+  | 'CONFIRMED'
+  | 'RELEASED'
+  | 'SUPERSEDED'
+  | 'OBSOLETE'
+  | 'FAILED';
+export type QmsParseStatus = 'PENDING' | 'RUNNING' | 'PARTIAL_SUCCESS' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
+export type QmsReviewStatus = 'PENDING' | 'REVIEWING' | 'CONFIRMED' | 'REJECTED';
+
+export interface QmsPart {
+  id: number;
+  orgId: number;
+  partNo: string;
+  materialNo: string | null;
+  partName: string;
+  customerId: number | null;
+  vehicleModel: string | null;
+  supplierId: number | null;
+  importanceLevel: string | null;
+  status: QmsPartStatus;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QmsPartCreateRequest {
+  partNo: string;
+  materialNo?: string | null;
+  partName: string;
+  customerId?: number | null;
+  vehicleModel?: string | null;
+  supplierId?: number | null;
+  importanceLevel?: string | null;
+}
+
+export interface QmsDrawing {
+  id: number;
+  partId: number;
+  drawingNo: string;
+  drawingName: string;
+  drawingType: QmsDrawingType;
+  sourceSystem: QmsDrawingSourceSystem;
+  status: QmsDrawingStatus;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QmsDrawingCreateRequest {
+  drawingNo: string;
+  drawingName: string;
+  drawingType: QmsDrawingType;
+  sourceSystem?: QmsDrawingSourceSystem | null;
+}
+
+export interface QmsDrawingRevision {
+  id: number;
+  drawingId: number;
+  revisionCode: string;
+  revisionSeq: number;
+  fileId: number | null;
+  fileType: string | null;
+  effectiveDate: string | null;
+  releaseDate: string | null;
+  supersedesRevisionId: number | null;
+  parseStatus: QmsParseStatus;
+  reviewStatus: QmsReviewStatus;
+  status: QmsDrawingRevisionStatus;
+  checksum: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QmsDrawingRevisionCreateRequest {
+  revisionCode: string;
+  effectiveDate?: string | null;
+  supersedesRevisionId?: number | null;
+}
+
 export interface LoginRequest {
   tenantCode: string;
   username: string;

@@ -526,6 +526,10 @@ All endpoints require Bearer authentication, tenant context, and a current organ
 The current organization is applied as a mandatory data scope. API paths follow IAF's
 `/api/{module}/{resources}` rule rather than the source design's `/api/v1` suggestion.
 
+Frontend consumer: `frontend/apps/pc-admin/src/modules/qms/engineering/api.ts` provides the
+typed TASK-0402 client; `hooks.ts` is the only business-page server-state entrypoint.
+The frontend does not redefine, wrap, or version these endpoints.
+
 ### Parts
 
 - `GET /api/qms/parts`

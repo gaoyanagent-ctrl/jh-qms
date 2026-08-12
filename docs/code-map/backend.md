@@ -784,7 +784,7 @@ Current tests:
   supersession, and audit.
 - `QmsPartControllerTest`: unified response and Bean Validation.
 - `QmsEngineeringPostgresIntegrationTest`: empty PostgreSQL migration, JDBC repositories,
-  tenant/org isolation, revision sequence, audit JSON, and permission seeds.
+  tenant/org isolation, revision sequence, audit JSON, permission seeds, and QMS menu/role links.
 
 ### Manufacturing Modules
 

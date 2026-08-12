@@ -238,3 +238,13 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
   audit object/actor lookup, and created time.
 - Permission seeds: six `qms:*` view/create permissions are created for every current
   tenant and assigned to that tenant's `platform_admin` role.
+
+### `V0402_1__seed_qms_engineering_menu.sql`
+
+- Owner module: `iaf-qms-engineering`.
+- Purpose: expose the TASK-0402 Engineering Data route through the backend-managed shell menu.
+- Seeds, for every existing tenant, the `qms` group and `qms.engineering.parts` menu at
+  `/qms/engineering/parts`.
+- Links the route menu to `qms:part:view` and assigns the group/route to each tenant's
+  active `platform_admin` role.
+- All inserts are conflict-safe; this migration adds no QMS business table or API change.

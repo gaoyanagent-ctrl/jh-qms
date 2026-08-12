@@ -23,10 +23,17 @@ export const resources = {
           assign: '分配',
           refresh: '刷新',
           view: '查看',
+          retry: '重试',
+          back: '返回',
           actions: '操作'
         },
         yes: '是',
         no: '否',
+        notAvailable: '—',
+        validation: {
+          required: '请填写此字段',
+          maxLength: '最多输入 {{max}} 个字符'
+        },
         fields: {
           actions: '操作',
           status: '状态',
@@ -202,7 +209,54 @@ export const resources = {
         dictionaries: '字典参数',
         auditLogs: '操作日志',
         approvalTasks: '审批任务',
-        kanban: '平台 Kanban'
+        kanban: '平台 Kanban',
+        qms: '质量管理',
+        qmsParts: '工程数据',
+        qmsPartDetail: '零件详情'
+      },
+      qms: {
+        status: {
+          ACTIVE: '启用', INACTIVE: '停用', OBSOLETE: '作废', DRAFT: '草稿', UPLOADED: '已上传',
+          PARSING: '解析中', PARSED: '已解析', REVIEWING: '复核中', CONFIRMED: '已确认',
+          RELEASED: '已发布', SUPERSEDED: '已替代', FAILED: '失败', PENDING: '待处理',
+          RUNNING: '处理中', PARTIAL_SUCCESS: '部分成功', SUCCESS: '成功', CANCELLED: '已取消', REJECTED: '已驳回'
+        },
+        drawingType: { PRODUCT: '产品图', PART: '零件图', ASSEMBLY: '装配图', OTHER: '其他' },
+        sourceSystem: { MANUAL: '手工维护', PLM: 'PLM', MIGRATION: '历史迁移' },
+        feedback: {
+          loadPartsFailed: '无法加载零件清单，请重试。',
+          loadPartDetailFailed: '无法加载零件及图纸信息，请重试。',
+          loadRevisionsFailed: '无法加载版本历史。',
+          createPartFailed: '零件创建失败，请检查输入后重试。',
+          createDrawingFailed: '图纸创建失败，请检查输入后重试。',
+          createRevisionFailed: '版本创建失败，请检查输入后重试。',
+          invalidPartId: '零件地址无效，请返回工程数据清单。',
+          drawingViewRestricted: '当前账号无权查看图纸数据。',
+          revisionViewRestricted: '当前账号无权查看版本历史。'
+        }
+      },
+      qmsParts: {
+        title: '工程数据',
+        description: '维护当前组织的零件主数据，并进入图纸与版本层级。',
+        search: { keyword: '关键词', placeholder: '搜索零件号、名称、物料号或车型' },
+        fields: {
+          partNo: '零件号', partName: '零件名称', materialNo: '物料号', vehicleModel: '车型',
+          importanceLevel: '重要度', customerId: '客户 ID', supplierId: '供应商 ID', orgId: '组织 ID', version: '数据版本'
+        }
+      },
+      qmsPartDetail: {
+        title: '零件详情'
+      },
+      qmsDrawings: {
+        title: '图纸', empty: '当前零件暂无图纸', actions: { create: '新增图纸' },
+        fields: { drawingNo: '图号', drawingName: '图纸名称', drawingType: '图纸类型', sourceSystem: '来源系统' }
+      },
+      qmsRevisions: {
+        title: '版本历史', empty: '当前图纸暂无版本', selectDrawing: '选择一张图纸以查看版本历史。', actions: { create: '新增版本' },
+        fields: {
+          revisionCode: '版本号', revisionSeq: '版本序号', effectiveDate: '生效日期', parseStatus: '解析状态',
+          reviewStatus: '复核状态', supersedesRevision: '替代版本'
+        }
       },
       settings: {
         theme: '主题',
@@ -602,10 +656,17 @@ export const resources = {
           assign: 'Assign',
           refresh: 'Refresh',
           view: 'View',
+          retry: 'Retry',
+          back: 'Back',
           actions: 'Actions'
         },
         yes: 'Yes',
         no: 'No',
+        notAvailable: '—',
+        validation: {
+          required: 'This field is required',
+          maxLength: 'Enter no more than {{max}} characters'
+        },
         fields: {
           actions: 'Actions',
           status: 'Status',
@@ -781,7 +842,54 @@ export const resources = {
         dictionaries: 'Dictionaries & Parameters',
         auditLogs: 'Operation Logs',
         approvalTasks: 'Approval Tasks',
-        kanban: 'Platform Kanban'
+        kanban: 'Platform Kanban',
+        qms: 'Quality Management',
+        qmsParts: 'Engineering Data',
+        qmsPartDetail: 'Part Detail'
+      },
+      qms: {
+        status: {
+          ACTIVE: 'Active', INACTIVE: 'Inactive', OBSOLETE: 'Obsolete', DRAFT: 'Draft', UPLOADED: 'Uploaded',
+          PARSING: 'Parsing', PARSED: 'Parsed', REVIEWING: 'Reviewing', CONFIRMED: 'Confirmed',
+          RELEASED: 'Released', SUPERSEDED: 'Superseded', FAILED: 'Failed', PENDING: 'Pending',
+          RUNNING: 'Running', PARTIAL_SUCCESS: 'Partial success', SUCCESS: 'Success', CANCELLED: 'Cancelled', REJECTED: 'Rejected'
+        },
+        drawingType: { PRODUCT: 'Product', PART: 'Part', ASSEMBLY: 'Assembly', OTHER: 'Other' },
+        sourceSystem: { MANUAL: 'Manual', PLM: 'PLM', MIGRATION: 'Migration' },
+        feedback: {
+          loadPartsFailed: 'Parts could not be loaded. Please retry.',
+          loadPartDetailFailed: 'Part and drawing data could not be loaded. Please retry.',
+          loadRevisionsFailed: 'Revision history could not be loaded.',
+          createPartFailed: 'The part could not be created. Check the form and retry.',
+          createDrawingFailed: 'The drawing could not be created. Check the form and retry.',
+          createRevisionFailed: 'The revision could not be created. Check the form and retry.',
+          invalidPartId: 'The part address is invalid. Return to Engineering Data.',
+          drawingViewRestricted: 'Your account cannot view drawing data.',
+          revisionViewRestricted: 'Your account cannot view revision history.'
+        }
+      },
+      qmsParts: {
+        title: 'Engineering Data',
+        description: 'Maintain part master data for the current organization and navigate drawing revisions.',
+        search: { keyword: 'Keyword', placeholder: 'Search part no., name, material no., or vehicle model' },
+        fields: {
+          partNo: 'Part no.', partName: 'Part name', materialNo: 'Material no.', vehicleModel: 'Vehicle model',
+          importanceLevel: 'Importance', customerId: 'Customer ID', supplierId: 'Supplier ID', orgId: 'Organization ID', version: 'Data version'
+        }
+      },
+      qmsPartDetail: {
+        title: 'Part Detail'
+      },
+      qmsDrawings: {
+        title: 'Drawings', empty: 'No drawings for this part', actions: { create: 'Create Drawing' },
+        fields: { drawingNo: 'Drawing no.', drawingName: 'Drawing name', drawingType: 'Drawing type', sourceSystem: 'Source system' }
+      },
+      qmsRevisions: {
+        title: 'Revision History', empty: 'No revisions for this drawing', selectDrawing: 'Select a drawing to view its revision history.', actions: { create: 'Create Revision' },
+        fields: {
+          revisionCode: 'Revision', revisionSeq: 'Sequence', effectiveDate: 'Effective date', parseStatus: 'Parse status',
+          reviewStatus: 'Review status', supersedesRevision: 'Supersedes revision'
+        }
       },
       settings: {
         theme: 'Theme',

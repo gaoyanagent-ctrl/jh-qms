@@ -43,6 +43,17 @@ export const PLATFORM_PERMISSIONS = {
   preferenceMe: 'platform:preference:me'
 } as const;
 
+export const QMS_PERMISSIONS = {
+  partView: 'qms:part:view',
+  partCreate: 'qms:part:create',
+  drawingView: 'qms:drawing:view',
+  drawingCreate: 'qms:drawing:create',
+  drawingRevisionView: 'qms:drawing-revision:view',
+  drawingRevisionCreate: 'qms:drawing-revision:create'
+} as const;
+
+export type QmsPermissionCode = (typeof QMS_PERMISSIONS)[keyof typeof QMS_PERMISSIONS];
+
 export type PlatformPermissionCode = (typeof PLATFORM_PERMISSIONS)[keyof typeof PLATFORM_PERMISSIONS];
 
 export const PLATFORM_PERMISSION_OPTIONS: PlatformPermission[] = [

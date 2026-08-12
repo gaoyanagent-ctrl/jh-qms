@@ -27,6 +27,25 @@ export const mockMenus: PlatformMenu[] = [
       { id: 8, tenantId: 1, parentId: 1, menuCode: 'platform.approvalTasks', menuType: 'MENU', titleKey: 'menu.approvalTasks', routePath: '/platform/approval/tasks', componentKey: 'platform/approval/ApprovalTaskCenterPage', icon: 'AuditOutlined', sortNo: 170, visible: true, enabled: true, version: 1, permissionCodes: [], children: [] },
       { id: 9, tenantId: 1, parentId: 1, menuCode: 'platform.kanban', menuType: 'MENU', titleKey: 'menu.kanban', routePath: '/platform/kanban', componentKey: 'platform/kanban/PlatformKanbanPage', icon: 'DashboardOutlined', sortNo: 180, visible: true, enabled: true, version: 1, permissionCodes: [], children: [] }
     ]
+  },
+  {
+    id: 40,
+    tenantId: 1,
+    parentId: null,
+    menuCode: 'qms',
+    menuType: 'GROUP',
+    titleKey: 'menu.qms',
+    routePath: null,
+    componentKey: null,
+    icon: 'AppstoreOutlined',
+    sortNo: 400,
+    visible: true,
+    enabled: true,
+    version: 1,
+    permissionCodes: [],
+    children: [
+      { id: 41, tenantId: 1, parentId: 40, menuCode: 'qms.engineering.parts', menuType: 'MENU', titleKey: 'menu.qmsParts', routePath: '/qms/engineering/parts', componentKey: 'qms/engineering/QmsPartListPage', icon: 'FileSearchOutlined', sortNo: 410, visible: true, enabled: true, version: 1, permissionCodes: ['qms:part:view'], children: [] }
+    ]
   }
 ];
 

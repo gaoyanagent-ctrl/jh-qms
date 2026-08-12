@@ -46,7 +46,13 @@ const adminPrincipal: AuthPrincipal = {
     'platform:brand:update',
     'platform:i18n:view',
     'platform:i18n:update',
-    'platform:preference:me'
+    'platform:preference:me',
+    'qms:part:view',
+    'qms:part:create',
+    'qms:drawing:view',
+    'qms:drawing:create',
+    'qms:drawing-revision:view',
+    'qms:drawing-revision:create'
   ]
 };
 

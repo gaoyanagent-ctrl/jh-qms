@@ -241,6 +241,7 @@ export function ConfigurableListPage<T extends { id: string | number }>({
             preserveSelectedRowKeys: true
           }}
           scroll={{ x: 'max-content' }}
+          locale={{ emptyText: t('common.feedback.empty') }}
           pagination={{
             current: pageNo,
             total: total,

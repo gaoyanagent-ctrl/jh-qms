@@ -1,5 +1,5 @@
 import { logout, useAuthStore } from '@iaf/auth';
-import { PLATFORM_PERMISSIONS, hasAnyPermission } from '@iaf/permissions';
+import { PLATFORM_PERMISSIONS, QMS_PERMISSIONS, hasAnyPermission } from '@iaf/permissions';
 import type { PlatformMenu } from '@iaf/domain-types';
 import {
   iafDefaultExperienceSettings,
@@ -26,6 +26,7 @@ import {
   DashboardOutlined,
   DatabaseOutlined,
   GlobalOutlined,
+  FileSearchOutlined,
   LogoutOutlined,
   MenuOutlined,
   MenuFoldOutlined,
@@ -59,7 +60,8 @@ const fallbackMenus: PlatformMenu[] = [
   { id: 5, tenantId: 1, parentId: null, menuCode: 'platform.dictionaries', menuType: 'MENU', titleKey: 'menu.dictionaries', routePath: '/platform/dictionaries', componentKey: 'platform/config/PlatformDictionaryParameterPage', icon: 'DatabaseOutlined', sortNo: 150, visible: true, enabled: true, version: 0, permissionCodes: [PLATFORM_PERMISSIONS.dictionaryView, PLATFORM_PERMISSIONS.parameterView], children: [] },
   { id: 6, tenantId: 1, parentId: null, menuCode: 'platform.auditLogs', menuType: 'MENU', titleKey: 'menu.auditLogs', routePath: '/platform/audit-logs', componentKey: 'platform/config/PlatformAuditLogPage', icon: 'AuditOutlined', sortNo: 160, visible: true, enabled: true, version: 0, permissionCodes: [PLATFORM_PERMISSIONS.auditView], children: [] },
   { id: 7, tenantId: 1, parentId: null, menuCode: 'platform.approvalTasks', menuType: 'MENU', titleKey: 'menu.approvalTasks', routePath: '/platform/approval/tasks', componentKey: 'platform/approval/ApprovalTaskCenterPage', icon: 'AuditOutlined', sortNo: 170, visible: true, enabled: true, version: 0, permissionCodes: [], children: [] },
-  { id: 8, tenantId: 1, parentId: null, menuCode: 'platform.kanban', menuType: 'MENU', titleKey: 'menu.kanban', routePath: '/platform/kanban', componentKey: 'platform/kanban/PlatformKanbanPage', icon: 'DashboardOutlined', sortNo: 180, visible: true, enabled: true, version: 0, permissionCodes: [], children: [] }
+  { id: 8, tenantId: 1, parentId: null, menuCode: 'platform.kanban', menuType: 'MENU', titleKey: 'menu.kanban', routePath: '/platform/kanban', componentKey: 'platform/kanban/PlatformKanbanPage', icon: 'DashboardOutlined', sortNo: 180, visible: true, enabled: true, version: 0, permissionCodes: [], children: [] },
+  { id: 9, tenantId: 1, parentId: null, menuCode: 'qms.engineering.parts', menuType: 'MENU', titleKey: 'menu.qmsParts', routePath: '/qms/engineering/parts', componentKey: 'qms/engineering/QmsPartListPage', icon: 'FileSearchOutlined', sortNo: 410, visible: true, enabled: true, version: 0, permissionCodes: [QMS_PERMISSIONS.partView], children: [] }
 ];
 
 const clampSidebarWidth = (width: number) => Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, width));
@@ -86,6 +88,8 @@ const menuIcon = (icon?: string | null): ReactNode => {
       return <AuditOutlined />;
     case 'DashboardOutlined':
       return <DashboardOutlined />;
+    case 'FileSearchOutlined':
+      return <FileSearchOutlined />;
     default:
       return <AppstoreOutlined />;
   }

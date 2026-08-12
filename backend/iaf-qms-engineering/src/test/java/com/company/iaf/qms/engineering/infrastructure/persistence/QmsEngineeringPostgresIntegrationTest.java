@@ -79,6 +79,18 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(jdbc.queryForObject(
                 "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(6);
         assertThat(jdbc.queryForObject(
+                "select count(*) from sys_menu where menu_code in ('qms', 'qms.engineering.parts')", Integer.class))
+                .isEqualTo(2);
+        assertThat(jdbc.queryForObject("""
+                select count(*)
+                  from sys_role_menu rm
+                  join sys_role r on r.id = rm.role_id and r.tenant_id = rm.tenant_id
+                  join sys_menu m on m.id = rm.menu_id and m.tenant_id = rm.tenant_id
+                 where r.role_code = 'platform_admin'
+                   and m.menu_code = 'qms.engineering.parts'
+                   and rm.deleted = false
+                """, Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
                 "select primary_org_id from sys_user where tenant_id = 1 and username = 'admin'", Long.class))
                 .isNotNull();
         assertThat(jdbc.queryForObject("""

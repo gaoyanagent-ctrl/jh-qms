@@ -60,6 +60,7 @@ Legacy placeholder folders still exist under `frontend/src/**` from the earlier 
     - Uses real HTTP by default.
     - When `VITE_IAF_MOCK_API=true`, synchronously registers `@iaf/mock-data` handlers before the API client is used.
   - `src/modules/platform/`: modularized platform pages. Users, orgs, roles, and system configuration API clients contain code-split files. Kanban, approval, and config pages currently use mock-first in-page data until their backend APIs are implemented.
+  - `src/modules/qms/engineering/`: TASK-0402 production-backed Part list/detail, Drawing hierarchy, metadata-only Revision history, typed API clients, TanStack Query hooks, and permission-filtered page/AI context.
   - `vite.config.ts`: development server config. `/api` is proxied to `VITE_IAF_API_PROXY_TARGET`, defaulting to `http://localhost:8080`.
   - `../../vitest.config.ts`: frontend-root Vitest config covering `apps/**/*.test.*` and `packages/**/*.test.*`.
 - Local access:
@@ -71,6 +72,7 @@ Legacy placeholder folders still exist under `frontend/src/**` from the earlier 
   - `src/layouts/MainLayout.test.tsx`: menu permission hiding, preference reset persistence, preference drawer sidebar save behavior, and direct shell sidebar collapse/resize backend persistence.
   - `src/workspace/RouteTabStore.test.ts`: workspace tab state unit tests.
   - `src/modules/platform/users/UserListPage.test.tsx`: user page create action permission visibility and user page dependency wiring.
+  - `src/modules/qms/engineering/*.test.tsx`: QMS list/error/permission and Part/Drawing/Revision creation/hierarchy coverage; `api.test.ts` pins TASK-0401 request paths and bodies.
 
 ## Quality Scripts
 
@@ -86,6 +88,7 @@ Legacy placeholder folders still exist under `frontend/src/**` from the earlier 
 - `frontend/e2e/platform-shell.spec.ts`: Playwright coverage for login, platform page navigation, sidebar profile viewport stability, screenshot nonblank checks, and light/dark shell behavior.
 - `frontend/e2e/login-templates.spec.ts`: Playwright coverage for the five login templates across desktop and mobile viewports, including no-horizontal-overflow checks and mock-auth submit coverage.
 - `frontend/e2e/platform-pages-visual.spec.ts`: TASK-0217 Playwright visual baseline coverage for the current login page, workbench, users, orgs, roles, menus, dictionaries, audit logs, approval tasks, and Kanban in mock mode. It checks route access after login, key page headings, horizontal overflow, nonblank screenshots, and basic heading contrast across desktop and mobile viewports. It uses SPA navigation after login because the current mock auth token registry is process-memory backed.
+- `frontend/e2e/qms-engineering.spec.ts`: mock-backed browser flow for Part -> Drawing -> Revision creation plus mobile viewport overflow/nonblank validation.
 
 ## Platform Foundation Productization
 
@@ -127,8 +130,23 @@ Legacy placeholder folders still exist under `frontend/src/**` from the earlier 
 | `/platform/audit-logs` | `PlatformAuditLogPage` | Bearer token | `platform:audit:view` |
 | `/platform/approval/tasks` | `ApprovalTaskCenterPage` | Bearer token | frontend mock-first |
 | `/platform/kanban` | `PlatformKanbanPage` | Bearer token | frontend mock-first |
+| `/qms/engineering/parts` | `QmsPartListPage` | Bearer token | `qms:part:view` |
+| `/qms/engineering/parts/:partId` | `QmsPartDetailPage` | Bearer token | `qms:part:view`; child actions use Drawing/Revision permissions |
 
 Route-level permission guards prevent direct URL access to protected platform pages. Backend APIs remain the final authority for access control.
+
+### `QmsPartListPage` and `QmsPartDetailPage`
+
+- Path: `frontend/apps/pc-admin/src/modules/qms/engineering/`.
+- Purpose: current-organization Part search/pagination/create and Part -> Drawing -> DrawingRevision navigation.
+- API client: `qmsEngineeringApi` in `api.ts`; all calls use the app `@iaf/api-client` instance.
+- Server state: `hooks.ts` owns QMS Query keys, reads, mutations, and parent-scoped invalidation.
+- UI: `ConfigurableListPage` for Parts; token-driven descriptions/tables and `FormInteractionSurface` for Part, Drawing, and metadata-only Revision creation.
+- Permissions: centralized `QMS_PERMISSIONS`; route uses `qms:part:view`, while each create control uses its corresponding create permission.
+- Context: `pageContext.tsx` registers `PageContext` and produces permission-filtered `PageAIContext`; hidden permissions/actions are not exported to the context.
+- Modes: simple mode shows business identifiers/status; expert mode adds organization/version/source/sequence/timestamp fields.
+- Mock seam: `frontend/packages/mock-data/src/qms/engineering.ts` supplies stateful sample records when `VITE_IAF_MOCK_API=true`.
+- Out of scope: file upload/preview/parsing, revision transitions, release, evidence, and AI extraction.
 
 ## Pages
 
@@ -323,6 +341,7 @@ Route-level permission guards prevent direct URL access to protected platform pa
   - `PlatformRole`
   - `PlatformMenu`
   - `PlatformPermission`
+  - `QmsPart`, `QmsDrawing`, `QmsDrawingRevision` and their create request/status types.
   - request DTO interfaces for user, org, role, role permission assignment, role menu assignment, and platform menu create/update.
 
 ### `frontend/packages/api-client`
@@ -362,6 +381,7 @@ Route-level permission guards prevent direct URL access to protected platform pa
 - Purpose: centralized permission constants, permission rendering components, and context-aware Hooks.
 - Key exports:
   - `PLATFORM_PERMISSIONS`
+  - `QMS_PERMISSIONS`
   - `PLATFORM_PERMISSION_OPTIONS`
   - `hasPermission`
   - `hasAnyPermission`
@@ -495,6 +515,7 @@ Route-level permission guards prevent direct URL access to protected platform pa
   - `src/platform/roles.ts`: Mock handlers for roles lists, permission mapping, assignable permission list, and role menu assignment.
   - `src/platform/systemConfig.ts`: Mock handlers for theme, brand, i18n resources, and current-user experience preferences, including sidebar collapsed state and sidebar width defaults.
   - `src/wms/receiptOrders.ts`: Prototype WMS receipt order mock handlers (lists, details, creations).
+  - `src/qms/engineering.ts`: stateful Part/Drawing/Revision list and create handlers matching TASK-0401 paths.
 - Mock login:
   - Mock tenant validation accepts any non-empty tenant code unless `VITE_IAF_MOCK_TENANT_CODE` is configured, in which case it must match that configured value.
   - `admin` with any non-empty password receives all seeded platform permissions.
@@ -514,7 +535,7 @@ Route-level permission guards prevent direct URL access to protected platform pa
   - `src/useListViewPreference.ts`: browser-storage backed list preferences with non-browser storage guard.
   - Row actions preserve confirmation dialogs even when permission gates are applied.
 - Behavior:
-  - `ConfigurableListPage` renders a professional list work surface with active filter count, visible column count, selected row count, row selection, sticky table header, horizontal overflow handling, refresh hook, and density-aware Ant Design table size through `@iaf/theme`.
+  - `ConfigurableListPage` renders a professional list work surface with active filter count, visible column count, selected row count, row selection, sticky table header, localized empty state, horizontal overflow handling, refresh hook, and density-aware Ant Design table size through `@iaf/theme`.
 
 ### `frontend/packages/form-engine`
 

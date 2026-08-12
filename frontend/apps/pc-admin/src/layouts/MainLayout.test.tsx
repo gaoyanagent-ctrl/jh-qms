@@ -1,5 +1,5 @@
 import { useAuthStore } from '@iaf/auth';
-import { PLATFORM_PERMISSIONS } from '@iaf/permissions';
+import { PLATFORM_PERMISSIONS, QMS_PERMISSIONS } from '@iaf/permissions';
 import { iafDefaultExperienceSettings, IafThemeProvider } from '@iaf/theme';
 import { App as AntApp } from 'antd';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -62,6 +62,36 @@ describe('MainLayout', () => {
     expect(screen.queryByText('操作日志')).not.toBeInTheDocument();
     expect(screen.getByLabelText('主题')).toBeInTheDocument();
     expect(screen.getByLabelText('偏好设置')).toBeInTheDocument();
+  });
+
+  it('shows the QMS engineering menu only with part view permission', () => {
+    useAuthStore.setState({
+      token: 'token',
+      principal: {
+        tenantId: 1,
+        userId: 1,
+        username: 'qms-user',
+        displayName: 'QMS User',
+        permissions: [QMS_PERMISSIONS.partView]
+      }
+    });
+
+    render(
+      <IafThemeProvider>
+        <AntApp>
+          <MemoryRouter initialEntries={['/qms/engineering/parts']}>
+            <Routes>
+              <Route element={<MainLayout />}>
+                <Route path="/qms/engineering/parts" element={<div>qms-content</div>} />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </AntApp>
+      </IafThemeProvider>
+    );
+
+    expect(screen.getAllByText('工程数据').length).toBeGreaterThan(0);
+    expect(screen.getByText('qms-content')).toBeInTheDocument();
   });
 
   it('persists reset preferences to backend', async () => {
