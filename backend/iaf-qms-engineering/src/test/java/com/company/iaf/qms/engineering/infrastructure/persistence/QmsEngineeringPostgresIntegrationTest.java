@@ -7,6 +7,7 @@ import com.company.iaf.qms.engineering.domain.model.DrawingStatus;
 import com.company.iaf.qms.engineering.domain.model.DrawingType;
 import com.company.iaf.qms.engineering.domain.model.Part;
 import com.company.iaf.qms.engineering.domain.model.PartStatus;
+import com.company.iaf.qms.engineering.domain.model.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -22,6 +23,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.nio.file.Path;
+import java.math.BigDecimal;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,13 +52,15 @@ class QmsEngineeringPostgresIntegrationTest {
     }
 
     @Test
-    void migrationRepositoriesSequenceAndAuditWorkTogether() {
+    void migrationRepositoriesSequenceAndAuditWorkTogether() throws Exception {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
         JdbcPartRepository parts = new JdbcPartRepository(jdbc);
         JdbcDrawingRepository drawings = new JdbcDrawingRepository(jdbc);
         JdbcDrawingRevisionRepository revisions = new JdbcDrawingRevisionRepository(jdbc);
+        JdbcDrawingParseJobRepository parseJobs = new JdbcDrawingParseJobRepository(jdbc);
         ObjectMapper mapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
         JdbcQmsAuditTrail audit = new JdbcQmsAuditTrail(jdbc, mapper);
+        JdbcDrawingParseResultRepository parseResults = new JdbcDrawingParseResultRepository(jdbc, mapper);
 
         Part draftPart = new Part(null, 1L, 10L, "P-100", null, "Bracket", null,
                 null, null, null, PartStatus.ACTIVE, 0, null, null);
@@ -72,13 +77,42 @@ class QmsEngineeringPostgresIntegrationTest {
         DrawingRevision revision = revisions.findById(1L, 10L, revisionId).orElseThrow();
         audit.record(1L, 1L, "DRAWING_REVISION_CREATED", "DrawingRevision", revisionId, revision);
 
+        JdbcQmsFileObjectRepository files = new JdbcQmsFileObjectRepository(jdbc);
+        long fileId = files.insert(1L, new QmsFileObject(null, 1, 10, "drawing.pdf",
+                "application/pdf", "pdf", 100, "checksum", "bucket", "object", 0, null));
+        assertThat(revisions.attachFile(1, 1, 10, revisionId, fileId, "PDF", "checksum", "UPLOADED", 0)).isTrue();
+        long parseJobId = parseJobs.enqueue(1, 1, 10, revisionId, fileId, "PDF", 1);
+        assertThat(parseJobs.transition(1, 1, 10, parseJobId, "QUEUED", "RUNNING", null, null, 0)).isTrue();
+        assertThat(revisions.transitionState(1, 1, 10, revisionId, "UPLOADED", "PARSING", "RUNNING", 1)).isTrue();
+        DrawingEntity entity = new DrawingEntity(null, 0, 0, 0, 0, "DIM-1", null,
+                DrawingEntityType.DIMENSION, "DIM", "1", BigDecimal.ONE, BigDecimal.ONE,
+                BigDecimal.TEN, BigDecimal.ONE, null, "8±0.5", "8±0.5", null, 0, null, null);
+        SourceEvidence evidence = new SourceEvidence(null, 0, 0, 0, 0, 0, "EV-1", "DIM-1", null,
+                "1", 1, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.TEN, BigDecimal.ONE,
+                "8±0.5", "8±0.5", EvidenceExtractorType.PDF_VECTOR, "1.0", null, null,
+                new BigDecimal("0.98"), 0, null, null);
+        DrawingParseResult parseResult = new DrawingParseResult("1.0.0", "DRAW-1", "Z1",
+                mapper.readTree("""
+                    {"schemaVersion":"1.0.0","documentId":"DRAW-1","revision":"Z1","sheets":[
+                    {"sheetNo":"1","width":100,"height":80,"titleBlock":{},"views":[],
+                    "entities":[{"entityId":"DIM-1","entityType":"DIMENSION","sheetNo":"1",
+                    "evidence":[{"evidenceKey":"EV-1"}]}],"notes":[],"characteristicCandidates":[]}]}
+                    """), List.of(entity), List.of(evidence));
+        parseResults.save(1, 1, 10, revisionId, parseJobId, fileId, parseResult);
+
         assertThat(parts.findById(1L, 10L, partId)).isPresent();
         assertThat(parts.findById(1L, 99L, partId)).isEmpty();
         assertThat(revision.revisionSeq()).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from qms_audit_log", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
                 "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(8);
-        assertThat(jdbc.queryForObject("select count(*) from qms_drawing_parse_job", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from qms_drawing_parse_job", Integer.class)).isEqualTo(1);
+        assertThat(parseResults.findModel(1, 10, revisionId)).isPresent();
+        assertThat(parseResults.findEntities(1, 10, revisionId)).extracting(DrawingEntity::entityId)
+                .containsExactly("DIM-1");
+        assertThat(parseResults.findEvidence(1, 10, revisionId)).extracting(SourceEvidence::sheetNo)
+                .containsExactly("1");
+        assertThat(parseResults.findEvidence(1, 99, revisionId)).isEmpty();
         assertThat(jdbc.queryForObject("""
                 select count(*)
                   from sys_role_permission rp

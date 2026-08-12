@@ -28,7 +28,7 @@ Required before dependent QMS flows:
 | TASK-0402 | Part and Drawing management pages with Revision history | TASK-0401 | Implemented |
 | TASK-0403 | File service contract, MinIO adapter, upload/checksum/deduplication | TASK-0401 | Implemented |
 | TASK-0404 | Revision state machine and upload-to-parse job orchestration | TASK-0403, platform state machine | Implemented |
-| TASK-0405 | SourceEvidence + Drawing Intermediate Model + evidence API | TASK-0404 | Planned |
+| TASK-0405 | SourceEvidence + Drawing Intermediate Model + evidence API | TASK-0404 | Implemented |
 | TASK-0406 | PDF preview, overlay, and Review Workbench shell | TASK-0402, TASK-0405 | Planned |
 | TASK-0407 | Python AI service skeleton and PDF parser golden-sample pipeline | TASK-0405 | Planned |
 | TASK-0408 | CAD parser SPI and DWG mock/provider contract | TASK-0405 | Planned |

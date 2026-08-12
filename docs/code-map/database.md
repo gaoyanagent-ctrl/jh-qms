@@ -263,3 +263,14 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
   index supports a later worker without changing the upload contract.
 - Seeds `qms:drawing-revision:retry-parse` for every active tenant and assigns it to each
   active `platform_admin` role.
+
+### `V0405__drawing_intermediate_model_evidence.sql`
+
+- Owner module: `iaf-qms-engineering`.
+- `qms_drawing_intermediate_model`: one versioned JSON DIM per revision and successful parse job.
+- `qms_drawing_entity`: indexed normalized entities with sheet, type, source handle, text,
+  geometry/style JSON, and optional bounding box.
+- `qms_source_evidence`: immutable source file/revision/job linkage, sheet/page and bounding
+  box, raw/normalized text, extractor/model provenance, and confidence constrained to 0..1.
+- All foreign keys are tenant-qualified; queries additionally enforce organization scope.
+- Adds no permission: result reads reuse `qms:drawing-revision:view`.

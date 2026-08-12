@@ -44,7 +44,14 @@ TASK-0403 attaches one controlled PDF/DWG source file to a revision through the
 MinIO under an opaque tenant/revision key. TASK-0404 validates every transition through
 `StateMachineService`: upload moves `DRAFT -> UPLOADED` and atomically enqueues parse
 attempt 1; retry moves a failed revision `FAILED -> UPLOADED` and enqueues the next attempt.
-The parser worker and later `PARSING/PARSED` transitions remain deferred.
+
+TASK-0405 defines the parser-facing result contract. Starting a queued attempt moves the
+revision `UPLOADED -> PARSING`; a schema-valid result atomically persists one versioned
+Drawing Intermediate Model, normalized DrawingEntities, and locatable SourceEvidence before
+moving `PARSING -> PARSED`. Failure moves `PARSING -> FAILED` and records a bounded diagnostic.
+Every normalized entity must have evidence with source file, sheet/page, bounding box,
+extractor version, and confidence. Parser algorithms and worker polling remain external to
+this module contract.
 
 ## 4. Commands And Idempotency
 
@@ -59,6 +66,8 @@ deferred to a later reliability slice.
 Creating a Part, Drawing, or DrawingRevision writes a `qms_audit_log` entry in the same
 transaction. The entry records actor, action, object type/id, JSON after-image, source,
 trace id, and UTC timestamp.
+Parse start, completion, failure, and result persistence write transition/result audit entries
+in the same transaction as their state and data changes.
 
 ## 6. Permissions
 
@@ -79,5 +88,5 @@ is not a security boundary.
 ## 7. Deferred Scope
 
 - PDF/DWG preview.
-- Parse execution workers, SourceEvidence, and Drawing Intermediate Model.
+- Parse execution workers and PDF/DWG adapters.
 - Updates, obsolescence, release, and physical deletion.

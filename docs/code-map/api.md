@@ -587,3 +587,14 @@ deferred to the upload workflow.
 - `GET /api/qms/drawings/{drawingId}/parse-jobs` — latest attempt for each drawing revision.
 - `POST /api/qms/drawing-revisions/{revisionId}/parse-job/retry` — retry a failed latest
   attempt; `qms:drawing-revision:retry-parse` permission.
+
+# QMS drawing parse results
+
+All endpoints require `qms:drawing-revision:view` and enforce the current tenant and organization.
+
+- `GET /api/qms/drawing-revisions/{revisionId}/intermediate-model` — versioned DIM JSON.
+- `GET /api/qms/drawing-revisions/{revisionId}/entities` — normalized entity projection.
+- `GET /api/qms/drawing-revisions/{revisionId}/evidence` — evidence list with viewer BBox.
+- `GET /api/qms/drawing-revisions/{revisionId}/evidence/{evidenceId}` — scoped evidence detail.
+
+The parser lifecycle is an internal application port, not an unauthenticated HTTP API.

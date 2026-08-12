@@ -801,6 +801,16 @@ TASK-0404 parse orchestration:
 - `DrawingParseJobRepository` / `JdbcDrawingParseJobRepository`: durable, tenant/org-scoped
   parse queue and latest-attempt projections.
 
+TASK-0405 parse-result contract:
+
+- `DrawingParseLifecycleService`: internal parser port for start/complete/fail with state
+  machine validation, atomic parse-job/revision transitions, result validation, and audit.
+- `DrawingParseResultRepository` / `JdbcDrawingParseResultRepository`: stores and queries one
+  versioned DIM plus normalized entities and source evidence under tenant/org/revision scope.
+- `DrawingParseResultQueryService`: permission-protected model/entity/evidence projections.
+- `DrawingIntermediateModel`, `DrawingEntity`, and `SourceEvidence`: immutable domain records;
+  parser adapters populate drafts while persistence supplies ownership and source identifiers.
+
 ### Manufacturing Modules
 
 `iaf-manufacturing-core`

@@ -7,5 +7,8 @@ import java.util.Optional;
 public interface DrawingParseJobRepository {
     long enqueue(long actorId, long tenantId, long orgId, long revisionId, long fileId, String parserType, int attemptNo);
     Optional<DrawingParseJob> findLatest(long tenantId, long orgId, long revisionId);
+    Optional<DrawingParseJob> findById(long tenantId, long orgId, long id);
     List<DrawingParseJob> findLatestByDrawingId(long tenantId, long orgId, long drawingId);
+    boolean transition(long actorId, long tenantId, long orgId, long id, String fromStatus,
+                       String targetStatus, String errorCode, String errorMessage, int expectedVersion);
 }

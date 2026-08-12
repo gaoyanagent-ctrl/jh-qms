@@ -43,6 +43,16 @@ public class JdbcDrawingParseJobRepository implements DrawingParseJobRepository 
     }
 
     @Override
+    public Optional<DrawingParseJob> findById(long tenantId, long orgId, long id) {
+        return jdbc.query("""
+            select id, tenant_id, org_id, revision_id, file_id, attempt_no, status, parser_type,
+                   error_code, error_message, version, created_at, updated_at
+              from qms_drawing_parse_job
+             where tenant_id=? and org_id=? and id=? and deleted=false
+            """, this::map, tenantId, orgId, id).stream().findFirst();
+    }
+
+    @Override
     public List<DrawingParseJob> findLatestByDrawingId(long tenantId, long orgId, long drawingId) {
         return jdbc.query("""
             select distinct on (j.revision_id)
@@ -53,6 +63,20 @@ public class JdbcDrawingParseJobRepository implements DrawingParseJobRepository 
              where j.tenant_id=? and j.org_id=? and r.drawing_id=? and j.deleted=false
              order by j.revision_id, j.attempt_no desc
             """, this::map, tenantId, orgId, drawingId);
+    }
+
+    @Override
+    public boolean transition(long actorId, long tenantId, long orgId, long id, String fromStatus,
+                              String targetStatus, String errorCode, String errorMessage, int expectedVersion) {
+        return jdbc.update("""
+            update qms_drawing_parse_job
+               set status=?, error_code=?, error_message=?,
+                   started_at=case when ?='RUNNING' then current_timestamp else started_at end,
+                   completed_at=case when ? in ('SUCCEEDED','FAILED','CANCELLED') then current_timestamp else completed_at end,
+                   updated_by=?, updated_at=current_timestamp, version=version+1
+             where tenant_id=? and org_id=? and id=? and status=? and version=? and deleted=false
+            """, targetStatus, errorCode, errorMessage, targetStatus, targetStatus, actorId,
+                tenantId, orgId, id, fromStatus, expectedVersion) == 1;
     }
 
     private DrawingParseJob map(ResultSet rs, int row) throws SQLException {

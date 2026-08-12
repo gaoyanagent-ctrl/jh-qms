@@ -22,6 +22,10 @@ public enum QmsEngineeringErrorCode implements ErrorCode {
     REVISION_INVALID_STATE("QMS_DRAWING_REVISION_INVALID_STATE", "Drawing revision action is not allowed in its current state"),
     PARSE_JOB_NOT_FOUND("QMS_PARSE_JOB_NOT_FOUND", "Drawing parse job not found"),
     PARSE_JOB_NOT_RETRYABLE("QMS_PARSE_JOB_NOT_RETRYABLE", "Only a failed latest parse job can be retried"),
+    PARSE_JOB_INVALID_STATE("QMS_PARSE_JOB_INVALID_STATE", "Parse job action is not allowed in its current state"),
+    PARSE_RESULT_INVALID("QMS_PARSE_RESULT_INVALID", "Drawing parse result does not satisfy the DIM contract"),
+    INTERMEDIATE_MODEL_NOT_FOUND("QMS_INTERMEDIATE_MODEL_NOT_FOUND", "Drawing intermediate model not found"),
+    EVIDENCE_NOT_FOUND("QMS_SOURCE_EVIDENCE_NOT_FOUND", "Source evidence not found"),
     AUDIT_WRITE_FAILED("QMS_AUDIT_WRITE_FAILED", "QMS audit record could not be written");
 
     private final String code;
