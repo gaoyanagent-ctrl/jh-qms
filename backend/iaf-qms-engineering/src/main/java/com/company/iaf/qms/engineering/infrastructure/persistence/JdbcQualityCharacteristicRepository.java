@@ -31,14 +31,16 @@ public class JdbcQualityCharacteristicRepository implements QualityCharacteristi
             where e.tenant_id=? and e.org_id=? and e.drawing_revision_id=? and e.deleted=false order by e.id
             """,tenantId,orgId,revisionId);
         for(var row:rows){ String text=(String)row.get("normalized_text"); Matcher matcher=DIMENSION.matcher(text==null?"":text);
-            BigDecimal nominal; BigDecimal upper; BigDecimal lower;
+            BigDecimal nominal; BigDecimal upper; BigDecimal lower; String name;
             if (matcher.find()) {
                 nominal=new BigDecimal(matcher.group(1)); upper=new BigDecimal(matcher.group(2)); lower=upper.negate();
+                name=matcher.group();
             } else if ("DWG_ENTITY".equals(row.get("extractor_type")) && "DIMENSION".equals(row.get("entity_type"))) {
                 Object geometry = row.get("geometry_json");
                 try { nominal = new BigDecimal(JSON.readTree(String.valueOf(geometry)).path("act_measurement").asText()); }
                 catch (Exception ignored) { continue; }
                 upper=null; lower=null;
+                name=text;
             } else continue;
             jdbc.update("""
                 insert into qms_quality_characteristic
@@ -47,7 +49,7 @@ public class JdbcQualityCharacteristicRepository implements QualityCharacteristi
                  unit,confidence,created_by,updated_by)
                 values (?,?,?,?,?,?,?,'DIMENSION',?,?,?,?,?,?,'mm',?,?,?) on conflict do nothing
                 """,tenantId,orgId,row.get("part_id"),revisionId,row.get("entity_id"),row.get("evidence_id"),
-                    "DIM-EV-"+row.get("evidence_id"),text,nominal,upper,lower,
+                    "DIM-EV-"+row.get("evidence_id"),name,nominal,upper,lower,
                     upper == null ? null : nominal.add(upper),lower == null ? null : nominal.add(lower),
                     row.get("confidence"),actorId,actorId);
         }
