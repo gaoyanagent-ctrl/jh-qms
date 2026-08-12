@@ -62,13 +62,13 @@ public class JdbcMenuRepository implements MenuRepository {
 
     @Override
     public List<Menu> findAll(long tenantId) {
-        return jdbcTemplate.query("""
-                        select """ + SELECT_COLUMNS + """
+        return jdbcTemplate.query(("""
+                        select %s
                           from sys_menu
                          where tenant_id = ?
-                           and """ + DELETED_FALSE + """
+                           and %s
                          order by sort_no, id
-                        """,
+                        """).formatted(SELECT_COLUMNS, DELETED_FALSE),
                 this::mapMenu,
                 tenantId
         );
@@ -144,8 +144,8 @@ public class JdbcMenuRepository implements MenuRepository {
                     """;
             params.addAll(permissionCodes);
         }
-        return jdbcTemplate.query("""
-                        select distinct """ + MENU_SELECT_COLUMNS + """
+        return jdbcTemplate.query(("""
+                        select distinct %s
                           from sys_menu m
                           join sys_role_menu rm
                             on rm.menu_id = m.id
@@ -160,9 +160,9 @@ public class JdbcMenuRepository implements MenuRepository {
                            and m.visible = true
                            and m.enabled = true
                            and m.deleted = false
-                    """ + permissionFilter + """
+                    %s
                          order by m.sort_no, m.id
-                        """,
+                        """).formatted(MENU_SELECT_COLUMNS, permissionFilter),
                 this::mapMenu,
                 params.toArray()
         );
@@ -270,7 +270,8 @@ public class JdbcMenuRepository implements MenuRepository {
                  where tenant_id = ?
                    and id = ?
                    and version = ?
-                   and """ + DELETED_FALSE,
+                   and %s
+                """.formatted(DELETED_FALSE),
                 menu.parentId(),
                 menu.menuCode(),
                 menu.menuType(),

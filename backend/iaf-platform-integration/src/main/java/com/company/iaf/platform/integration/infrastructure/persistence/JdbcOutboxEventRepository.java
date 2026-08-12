@@ -52,7 +52,7 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
                                payload_json::text, status, retry_count, next_retry_at
                           from platform_outbox_event
                          where tenant_id = ?
-                           and (? is null or status = ?)
+                           and (cast(? as varchar) is null or status = ?)
                            and deleted = false
                          order by id desc
                          limit ? offset ?
@@ -68,7 +68,7 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
                         select count(*)
                           from platform_outbox_event
                          where tenant_id = ?
-                           and (? is null or status = ?)
+                           and (cast(? as varchar) is null or status = ?)
                            and deleted = false
                         """,
                 Long.class,

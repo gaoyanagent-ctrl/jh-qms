@@ -53,17 +53,17 @@ public class JdbcRoleRepository implements RoleRepository {
     public List<Role> findPage(long tenantId, String keyword, int pageNo, int pageSize) {
         int offset = Math.max(0, (pageNo - 1)) * Math.max(1, pageSize);
         String pattern = keyword == null || keyword.isBlank() ? null : "%" + keyword.trim() + "%";
-        return jdbcTemplate.query("""
-                        select """ + SELECT_COLUMNS + """
+        return jdbcTemplate.query(("""
+                        select %s
                           from sys_role
                          where tenant_id = ?
-                           and ( ? is null
+                           and ( cast(? as varchar) is null
                                  or role_code ilike ?
                                  or role_name ilike ? )
-                           and """ + DELETED_FALSE + """
+                           and %s
                          order by id
                          limit ? offset ?
-                        """,
+                        """).formatted(SELECT_COLUMNS, DELETED_FALSE),
                 this::mapRole,
                 tenantId, pattern, pattern, pattern,
                 Math.max(1, pageSize), offset
@@ -74,13 +74,14 @@ public class JdbcRoleRepository implements RoleRepository {
     public long count(long tenantId, String keyword) {
         String pattern = keyword == null || keyword.isBlank() ? null : "%" + keyword.trim() + "%";
         Long count = jdbcTemplate.queryForObject(
-                """
+                ("""
                 select count(*) from sys_role
                  where tenant_id = ?
-                   and ( ? is null
+                   and ( cast(? as varchar) is null
                          or role_code ilike ?
                          or role_name ilike ? )
-                   and """ + DELETED_FALSE,
+                   and %s
+                """).formatted(DELETED_FALSE),
                 Long.class,
                 tenantId, pattern, pattern, pattern
         );
@@ -113,7 +114,7 @@ public class JdbcRoleRepository implements RoleRepository {
     @Override
     public boolean update(long operatorUserId, Role role) {
         int rows = jdbcTemplate.update(
-                """
+                ("""
                 update sys_role
                    set role_code = ?,
                        role_name = ?,
@@ -125,7 +126,8 @@ public class JdbcRoleRepository implements RoleRepository {
                  where tenant_id = ?
                    and id = ?
                    and version = ?
-                   and """ + DELETED_FALSE,
+                   and %s
+                """).formatted(DELETED_FALSE),
                 role.roleCode(),
                 role.roleName(),
                 role.roleType(),
@@ -141,7 +143,7 @@ public class JdbcRoleRepository implements RoleRepository {
     @Override
     public boolean updateStatus(long operatorUserId, long tenantId, long id, RoleStatus status, int expectedVersion) {
         int rows = jdbcTemplate.update(
-                """
+                ("""
                 update sys_role
                    set status = ?,
                        version = version + 1,
@@ -150,7 +152,8 @@ public class JdbcRoleRepository implements RoleRepository {
                  where tenant_id = ?
                    and id = ?
                    and version = ?
-                   and """ + DELETED_FALSE,
+                   and %s
+                """).formatted(DELETED_FALSE),
                 status.name(),
                 operatorUserId,
                 tenantId,

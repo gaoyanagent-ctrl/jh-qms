@@ -66,7 +66,7 @@ public class JdbcTenantRepository implements TenantRepository {
                                initialization_status, initialization_error,
                                version, created_at, updated_at
                           from sys_tenant
-                         where (? is null or tenant_code ilike ? or tenant_name ilike ?)
+                         where (cast(? as varchar) is null or tenant_code ilike ? or tenant_name ilike ?)
                            and deleted = false
                          order by tenant_id
                          limit ? offset ?
@@ -82,7 +82,7 @@ public class JdbcTenantRepository implements TenantRepository {
         Long count = jdbcTemplate.queryForObject("""
                         select count(*)
                           from sys_tenant
-                         where (? is null or tenant_code ilike ? or tenant_name ilike ?)
+                         where (cast(? as varchar) is null or tenant_code ilike ? or tenant_name ilike ?)
                            and deleted = false
                         """,
                 Long.class,

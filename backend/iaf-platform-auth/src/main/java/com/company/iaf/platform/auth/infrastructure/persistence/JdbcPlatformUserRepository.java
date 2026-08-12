@@ -73,7 +73,7 @@ public class JdbcPlatformUserRepository implements PlatformUserRepository {
                                status, primary_org_id, version, created_at, updated_at
                           from sys_user
                          where tenant_id = ?
-                           and ( ? is null
+                           and ( cast(? as varchar) is null
                                  or username ilike ?
                                  or display_name ilike ?
                                  or coalesce(mobile, '') ilike ?
@@ -103,7 +103,7 @@ public class JdbcPlatformUserRepository implements PlatformUserRepository {
                 String.format("""
                 select count(*) from sys_user
                  where tenant_id = ?
-                   and ( ? is null
+                   and ( cast(? as varchar) is null
                          or username ilike ?
                          or display_name ilike ?
                          or coalesce(mobile, '') ilike ?
