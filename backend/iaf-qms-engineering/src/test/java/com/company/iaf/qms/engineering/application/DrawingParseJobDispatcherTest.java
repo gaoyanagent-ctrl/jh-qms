@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import com.company.iaf.qms.engineering.infrastructure.parser.UnavailableCadParserAdapter;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -19,8 +20,9 @@ class DrawingParseJobDispatcherTest {
     private final QmsObjectStorage storage = mock(QmsObjectStorage.class);
     private final DrawingParseLifecycleService lifecycle = mock(DrawingParseLifecycleService.class);
     private final PdfParserPort parser = mock(PdfParserPort.class);
+    private final CadParserPort cadParser = mock(CadParserPort.class);
     private final DrawingParseJobDispatcher dispatcher = new DrawingParseJobDispatcher(
-            jobs, revisions, files, storage, lifecycle, parser, true);
+            jobs, revisions, files, storage, lifecycle, parser, cadParser, true);
 
     @Test
     void claimsParsesAndCompletesQueuedPdf() {
@@ -57,5 +59,26 @@ class DrawingParseJobDispatcherTest {
 
         verify(lifecycle).start(0, 1, 10, 7);
         verify(lifecycle).fail(0, 1, 10, 7, "PDF_PARSE_FAILED", "missing revision");
+    }
+
+    @Test
+    void reportsUnavailableCadProviderWithoutFabricatingEvidence() {
+        DrawingParseJob job = new DrawingParseJob(8L, 1, 10, 6, 12, 1,
+                ParseJobStatus.QUEUED, "DWG", null, null, 0, null, null);
+        DrawingRevision revision = new DrawingRevision(6L, 1, 10, 3, "E", 5, 12L, "DWG",
+                null, null, null, ParseStatus.PENDING, ReviewStatus.PENDING,
+                DrawingRevisionStatus.UPLOADED, "sum", null, null, 0, null, null);
+        QmsFileObject file = new QmsFileObject(12L, 1, 10, "drawing.dwg", "image/vnd.dwg",
+                "dwg", 6, "sum", "bucket", "dwg-key", 0, OffsetDateTime.now());
+        when(revisions.findById(1, 10, 6)).thenReturn(Optional.of(revision));
+        when(files.findById(1, 10, 12)).thenReturn(Optional.of(file));
+        when(storage.get("dwg-key")).thenReturn(new ByteArrayInputStream("AC1027".getBytes()));
+        when(cadParser.parse(any(), any(), any(), any())).thenThrow(
+                new UnavailableCadParserAdapter.CadProviderUnavailableException("not configured"));
+
+        dispatcher.process(job);
+
+        verify(lifecycle).fail(0, 1, 10, 8, "CAD_PROVIDER_UNAVAILABLE", "not configured");
+        verify(lifecycle, never()).complete(anyLong(), anyLong(), anyLong(), anyLong(), any());
     }
 }

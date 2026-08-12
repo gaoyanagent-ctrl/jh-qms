@@ -809,6 +809,9 @@ TASK-0405 parse-result contract:
 - `DrawingParseJobDispatcher` polls bounded queued-job batches, claims them through
   `DrawingParseLifecycleService`, reads the controlled object, invokes `PdfParserPort`, and
   completes or fails the durable job. `HttpPdfParserAdapter` is the internal HTTP adapter.
+- TASK-0408 routes DWG jobs through `CadParserPort`. The default
+  `UnavailableCadParserAdapter` records `CAD_PROVIDER_UNAVAILABLE`; the deterministic Mock
+  Provider exists only under tests to enforce handle/layer/entity/evidence contract parity.
 
 - `DrawingParseLifecycleService`: internal parser port for start/complete/fail with state
   machine validation, atomic parse-job/revision transitions, result validation, and audit.

@@ -17,13 +17,15 @@ public class DrawingParseJobDispatcher {
     private final QmsObjectStorage storage;
     private final DrawingParseLifecycleService lifecycle;
     private final PdfParserPort parser;
+    private final CadParserPort cadParser;
     private final boolean enabled;
 
     public DrawingParseJobDispatcher(DrawingParseJobRepository jobs, DrawingRevisionRepository revisions,
             QmsFileObjectRepository files, QmsObjectStorage storage, DrawingParseLifecycleService lifecycle,
-            PdfParserPort parser, @Value("${qms.parser.worker-enabled:false}") boolean enabled) {
+            PdfParserPort parser, CadParserPort cadParser,
+            @Value("${qms.parser.worker-enabled:false}") boolean enabled) {
         this.jobs = jobs; this.revisions = revisions; this.files = files; this.storage = storage;
-        this.lifecycle = lifecycle; this.parser = parser; this.enabled = enabled;
+        this.lifecycle = lifecycle; this.parser = parser; this.cadParser = cadParser; this.enabled = enabled;
     }
 
     @Scheduled(fixedDelayString = "${qms.parser.poll-delay-ms:3000}")
@@ -43,17 +45,28 @@ public class DrawingParseJobDispatcher {
                     .orElseThrow(() -> new IllegalStateException("Revision disappeared after claim"));
             QmsFileObject file = files.findById(queued.tenantId(), queued.orgId(), queued.fileId())
                     .orElseThrow(() -> new IllegalStateException("Source file disappeared after claim"));
-            if (!"PDF".equals(queued.parserType())) throw new IllegalArgumentException("Unsupported parser type: " + queued.parserType());
             byte[] content;
             try (var input = storage.get(file.storageObjectKey())) { content = input.readAllBytes(); }
-            var result = parser.parse(content, file.originalName(), "drawing-revision-" + revision.id(), revision.revisionCode());
+            String documentId = "drawing-revision-" + revision.id();
+            var result = switch (queued.parserType()) {
+                case "PDF" -> parser.parse(content, file.originalName(), documentId, revision.revisionCode());
+                case "DWG" -> cadParser.parse(content, file.originalName(), documentId, revision.revisionCode());
+                default -> throw new IllegalArgumentException("Unsupported parser type: " + queued.parserType());
+            };
             lifecycle.complete(SYSTEM_ACTOR, queued.tenantId(), queued.orgId(), queued.id(), result);
         } catch (Exception failure) {
             try {
                 lifecycle.fail(SYSTEM_ACTOR, queued.tenantId(), queued.orgId(), queued.id(),
-                        "PDF_PARSE_FAILED", message(failure));
+                        errorCode(queued, failure), message(failure));
             } catch (RuntimeException ignored) { }
         }
+    }
+
+    private static String errorCode(DrawingParseJob job, Exception failure) {
+        if (failure instanceof com.company.iaf.qms.engineering.infrastructure.parser.UnavailableCadParserAdapter.CadProviderUnavailableException) {
+            return "CAD_PROVIDER_UNAVAILABLE";
+        }
+        return "DWG".equals(job.parserType()) ? "DWG_PARSE_FAILED" : "PDF_PARSE_FAILED";
     }
 
     private static String message(Exception failure) {

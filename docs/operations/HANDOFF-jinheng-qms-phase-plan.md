@@ -31,7 +31,7 @@ Required before dependent QMS flows:
 | TASK-0405 | SourceEvidence + Drawing Intermediate Model + evidence API | TASK-0404 | Implemented |
 | TASK-0406 | PDF preview, overlay, and Review Workbench shell | TASK-0402, TASK-0405 | Implemented |
 | TASK-0407 | Python AI service skeleton and PDF parser golden-sample pipeline | TASK-0405 | Implemented |
-| TASK-0408 | CAD parser SPI and DWG mock/provider contract | TASK-0405 | Planned |
+| TASK-0408 | CAD parser SPI and DWG mock/provider contract | TASK-0405 | Implemented |
 | TASK-0409 | Quality Characteristic review/confirm/reject closed loop | TASK-0405, TASK-0407 | Planned |
 | TASK-0410 | Inspection Standard draft generation and editable document | TASK-0409, platform rules | Planned |
 | TASK-0411 | Coverage/consistency checker and release gate | TASK-0410 | Planned |
