@@ -43,6 +43,18 @@ services:
     restart: unless-stopped
     networks: [jh-qms-internal]
 
+  ai-service:
+    build:
+      context: ../..
+      dockerfile: deploy/production/ai-service.Dockerfile
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+    networks: [jh-qms-internal]
+
   minio:
     image: minio/minio:RELEASE.2025-07-23T15-54-02Z
     command: server /data
