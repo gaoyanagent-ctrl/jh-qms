@@ -37,6 +37,7 @@ export const QmsPartDetailPage = () => {
   const permissions = useUserPermissions();
   const canViewDrawings = hasPermission(permissions, QMS_PERMISSIONS.drawingView);
   const canViewRevisions = hasPermission(permissions, QMS_PERMISSIONS.drawingRevisionView);
+  const canUploadRevisionFile = hasPermission(permissions, QMS_PERMISSIONS.drawingRevisionUpload);
   const { formInteractionMode, surfaceWidth, workspaceMode } = useIafTheme();
   const [selectedDrawingId, setSelectedDrawingId] = useState<number>();
   const [drawingOpen, setDrawingOpen] = useState(false);
@@ -99,13 +100,13 @@ export const QmsPartDetailPage = () => {
     { title: t('qmsRevisions.fields.parseStatus'), dataIndex: 'parseStatus', width: 135, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
     { title: t('qmsRevisions.fields.reviewStatus'), dataIndex: 'reviewStatus', width: 135, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
     { title: t('common.fields.status'), dataIndex: 'status', width: 120, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
-    { title: t('qmsRevisions.fields.file'), width: 190, render: (_, revision) => revision.fileId
+    { title: t('qmsRevisions.fields.file'), width: 190, fixed: 'right', render: (_, revision) => revision.fileId
       ? <Typography.Text>{revision.fileType} · {revision.checksum?.slice(0, 8)}</Typography.Text>
-      : <Upload accept=".pdf,.dwg" maxCount={1} showUploadList={false} beforeUpload={(file) => { uploadFile.mutate({ revisionId: revision.id, file }); return false; }}>
-          <PermissionButton require={QMS_PERMISSIONS.drawingRevisionUpload} size="small" loading={uploadFile.isPending}>{t('qmsRevisions.actions.upload')}</PermissionButton>
+      : <Upload disabled={!canUploadRevisionFile} accept=".pdf,.dwg" maxCount={1} showUploadList={false} beforeUpload={(file) => { uploadFile.mutate({ revisionId: revision.id, file }); return false; }}>
+          <Button disabled={!canUploadRevisionFile} title={!canUploadRevisionFile ? t('qmsRevisions.feedback.uploadPermissionRequired') : undefined} size="small" loading={uploadFile.isPending}>{t('qmsRevisions.actions.upload')}</Button>
         </Upload> },
     ...(workspaceMode === 'expert' ? [{ title: t('common.fields.createdAt'), dataIndex: 'createdAt', width: 190, render: (value: string) => formatDateTime(value) }] : [])
-  ], [i18n.language, t, workspaceMode, uploadFile]);
+  ], [canUploadRevisionFile, i18n.language, t, workspaceMode, uploadFile]);
 
   const submitDrawing = async (values: QmsDrawingCreateRequest) => {
     try {
@@ -133,7 +134,8 @@ export const QmsPartDetailPage = () => {
     permissions: permissions.filter((permission) => permission.startsWith('qms:')),
     availableActions: [
       ...(hasPermission(permissions, QMS_PERMISSIONS.drawingCreate) ? ['createDrawing'] : []),
-      ...(hasPermission(permissions, QMS_PERMISSIONS.drawingRevisionCreate) && selectedDrawing ? ['createRevision'] : [])
+      ...(hasPermission(permissions, QMS_PERMISSIONS.drawingRevisionCreate) && selectedDrawing ? ['createRevision'] : []),
+      ...(canUploadRevisionFile && selectedDrawing ? ['uploadRevisionFile'] : [])
     ],
     visibleFields: [
       'partNo', 'partName', 'materialNo', 'vehicleModel', 'importanceLevel', 'status',

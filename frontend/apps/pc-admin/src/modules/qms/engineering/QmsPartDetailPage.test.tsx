@@ -70,6 +70,19 @@ describe('QmsPartDetailPage', () => {
     expect(await screen.findByText('JH-BRK-001 · Bracket')).toBeInTheDocument();
     expect(await screen.findByText('DWG-BRK-001')).toBeInTheDocument();
     expect((await screen.findAllByText('A')).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: '上传文件' })).toBeEnabled();
+  });
+
+  it('keeps the upload action visible but disabled without upload permission', async () => {
+    useAuthStore.setState({
+      token: 'token',
+      principal: {
+        tenantId: 1, userId: 2, username: 'viewer', displayName: 'Viewer',
+        permissions: Object.values(QMS_PERMISSIONS).filter((permission) => permission !== QMS_PERMISSIONS.drawingRevisionUpload)
+      }
+    });
+    renderPage();
+    expect(await screen.findByRole('button', { name: '上传文件' })).toBeDisabled();
   });
 
   it('creates a drawing through the permission-aware form', async () => {

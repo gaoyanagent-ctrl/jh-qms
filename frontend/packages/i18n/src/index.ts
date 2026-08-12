@@ -253,7 +253,7 @@ export const resources = {
       },
       qmsRevisions: {
         title: '版本历史', empty: '当前图纸暂无版本', selectDrawing: '选择一张图纸以查看版本历史。', actions: { create: '新增版本', upload: '上传文件' },
-        feedback: { uploadSucceeded: '图纸文件上传成功' },
+        feedback: { uploadSucceeded: '图纸文件上传成功', uploadPermissionRequired: '当前登录身份缺少上传权限，请重新登录或联系管理员。' },
         fields: {
           revisionCode: '版本号', revisionSeq: '版本序号', effectiveDate: '生效日期', parseStatus: '解析状态',
           reviewStatus: '复核状态', supersedesRevision: '替代版本', file: '源文件'
@@ -887,7 +887,7 @@ export const resources = {
       },
       qmsRevisions: {
         title: 'Revision History', empty: 'No revisions for this drawing', selectDrawing: 'Select a drawing to view its revision history.', actions: { create: 'Create Revision', upload: 'Upload File' },
-        feedback: { uploadSucceeded: 'Drawing file uploaded' },
+        feedback: { uploadSucceeded: 'Drawing file uploaded', uploadPermissionRequired: 'The current session lacks upload permission. Sign in again or contact an administrator.' },
         fields: {
           revisionCode: 'Revision', revisionSeq: 'Sequence', effectiveDate: 'Effective date', parseStatus: 'Parse status',
           reviewStatus: 'Review status', supersedesRevision: 'Supersedes revision', file: 'Source file'
