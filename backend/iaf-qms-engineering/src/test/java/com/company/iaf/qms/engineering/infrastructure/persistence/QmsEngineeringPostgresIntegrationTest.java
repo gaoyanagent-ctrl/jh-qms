@@ -105,7 +105,7 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(revision.revisionSeq()).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from qms_audit_log", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
-                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(8);
+                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(9);
         assertThat(jdbc.queryForObject("select count(*) from qms_drawing_parse_job", Integer.class)).isEqualTo(1);
         assertThat(parseResults.findModel(1, 10, revisionId)).isPresent();
         assertThat(parseResults.findEntities(1, 10, revisionId)).extracting(DrawingEntity::entityId)
@@ -113,6 +113,15 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(parseResults.findEvidence(1, 10, revisionId)).extracting(SourceEvidence::sheetNo)
                 .containsExactly("1");
         assertThat(parseResults.findEvidence(1, 99, revisionId)).isEmpty();
+        JdbcQualityCharacteristicRepository characteristics = new JdbcQualityCharacteristicRepository(jdbc);
+        characteristics.generateDimensionCandidates(1, 1, 10, revisionId);
+        assertThat(characteristics.findByRevision(1, 10, revisionId))
+                .singleElement().satisfies(candidate -> {
+                    assertThat(candidate.nominalValue()).isEqualByComparingTo("8");
+                    assertThat(candidate.upperTolerance()).isEqualByComparingTo("0.5");
+                    assertThat(candidate.reviewStatus()).isEqualTo("PENDING");
+                    assertThat(candidate.evidenceId()).isPositive();
+                });
         assertThat(jdbc.queryForObject("""
                 select count(*)
                   from sys_role_permission rp

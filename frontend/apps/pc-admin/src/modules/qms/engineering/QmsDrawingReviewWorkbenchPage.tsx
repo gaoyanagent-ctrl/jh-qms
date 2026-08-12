@@ -1,13 +1,14 @@
-import type { QmsSourceEvidence } from '@iaf/domain-types';
+import type { QmsQualityCharacteristic, QmsQualityCharacteristicReviewRequest, QmsSourceEvidence } from '@iaf/domain-types';
+import { QMS_PERMISSIONS, useHasPermission } from '@iaf/permissions';
 import { AppPageContainer, StatusTag } from '@iaf/ui-core';
-import { Alert, Button, Card, Empty, List, Segmented, Space, Spin, Tag, Typography, theme } from 'antd';
+import { Alert, App, Button, Card, Empty, Form, Input, InputNumber, List, Modal, Segmented, Space, Spin, Tag, Typography, theme } from 'antd';
 import { ApiError } from '@iaf/api-client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { useQmsEvidenceQuery, useQmsIntermediateModelQuery, useQmsRevisionFileQuery, useQmsRevisionQuery } from './hooks';
+import { useQmsCharacteristicsQuery, useQmsEvidenceQuery, useQmsIntermediateModelQuery, useQmsRevisionFileQuery, useQmsRevisionQuery, useReviewQmsCharacteristicMutation } from './hooks';
 
 // Keep the URL versioned independently from the application bundle. This prevents a
 // previously cached response with an invalid module MIME type from breaking PDF.js.
@@ -17,12 +18,16 @@ const confidenceLevel = (value: number) => value >= 0.9 ? 'high' : value >= 0.7 
 
 export const QmsDrawingReviewWorkbenchPage = () => {
   const { t } = useTranslation();
+  const { message } = App.useApp();
   const { token } = theme.useToken();
   const navigate = useNavigate();
   const params = useParams<{ revisionId: string }>();
   const revisionId = Number(params.revisionId);
   const validId = Number.isSafeInteger(revisionId) && revisionId > 0;
   const [selected, setSelected] = useState<QmsSourceEvidence>();
+  const [editing, setEditing] = useState<QmsQualityCharacteristic>();
+  const [form] = Form.useForm<QmsQualityCharacteristicReviewRequest>();
+  const canReview = useHasPermission(QMS_PERMISSIONS.qualityCharacteristicReview);
   const [filter, setFilter] = useState<string>('all');
   const [pageNo, setPageNo] = useState(1);
   const [pageCount, setPageCount] = useState(0);
@@ -35,6 +40,20 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const parseResultAvailable = revision?.parseStatus === 'SUCCESS' || revision?.parseStatus === 'PARTIAL_SUCCESS';
   const dimQuery = useQmsIntermediateModelQuery(validId ? revisionId : undefined, validId && parseResultAvailable);
   const evidenceQuery = useQmsEvidenceQuery(validId ? revisionId : undefined, validId && parseResultAvailable);
+  const characteristicsQuery = useQmsCharacteristicsQuery(validId ? revisionId : undefined, validId && parseResultAvailable);
+  const confirmMutation = useReviewQmsCharacteristicMutation(revisionId, 'confirm', () => { setEditing(undefined); message.success(t('qmsReview.reviewSucceeded')); });
+  const rejectMutation = useReviewQmsCharacteristicMutation(revisionId, 'reject', () => message.success(t('qmsReview.rejectSucceeded')));
+
+  const locateCharacteristic = (item: QmsQualityCharacteristic) => {
+    const source = evidenceQuery.data?.find((evidenceItem) => evidenceItem.id === item.evidenceId);
+    if (source) setSelected(source);
+  };
+  const openReview = (item: QmsQualityCharacteristic) => {
+    setEditing(item);
+    form.setFieldsValue({ version: item.version, name: item.name, nominalValue: item.nominalValue,
+      upperTolerance: item.upperTolerance, lowerTolerance: item.lowerTolerance, unit: item.unit, comment: item.reviewComment });
+    locateCharacteristic(item);
+  };
 
   useEffect(() => {
     if (selected?.pageNo) setPageNo(selected.pageNo);
@@ -92,6 +111,19 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     </Card>
     {modelMissing && <Alert style={{ marginBottom: token.marginMD }} type="info" showIcon message={t('qmsReview.waitingForParse')} description={t('qmsReview.waitingForParseDescription')} />}
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) minmax(0, 1fr)', gap: token.marginMD, alignItems: 'start' }}>
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      <Card title={t('qmsReview.characteristics')}>
+        <List loading={characteristicsQuery.isLoading} dataSource={characteristicsQuery.data ?? []}
+          locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('qmsReview.noCharacteristics')} /> }}
+          renderItem={(item) => <List.Item onClick={() => locateCharacteristic(item)} style={{ cursor: 'pointer', paddingInline: token.paddingSM }}
+            actions={item.reviewStatus === 'PENDING' && canReview ? [
+              <Button key="edit" size="small" type="link" onClick={(event) => { event.stopPropagation(); openReview(item); }}>{t('qmsReview.editConfirm')}</Button>,
+              <Button key="reject" size="small" type="link" danger loading={rejectMutation.isPending} onClick={(event) => { event.stopPropagation(); rejectMutation.mutate({ id: item.id, request: { version: item.version } }); }}>{t('qmsReview.reject')}</Button>
+            ] : undefined}>
+            <List.Item.Meta title={<Space><Typography.Text strong>{item.characteristicCode}</Typography.Text><Tag>{item.reviewStatus}</Tag></Space>}
+              description={`${item.name} · ${item.nominalValue ?? '-'} ${item.unit ?? ''} (${item.upperTolerance ?? '-'} / ${item.lowerTolerance ?? '-'})`} />
+          </List.Item>} />
+      </Card>
       <Card title={t('qmsReview.evidence')} extra={<Segmented size="small" value={filter} onChange={(value) => setFilter(String(value))}
         options={[{ label: t('qmsReview.filters.all'), value: 'all' }, { label: t('qmsReview.filters.high'), value: 'high' }, { label: t('qmsReview.filters.medium'), value: 'medium' }, { label: t('qmsReview.filters.low'), value: 'low' }]} />}>
         <List loading={evidenceQuery.isLoading} dataSource={evidence} locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('qmsReview.noEvidence')} /> }}
@@ -100,6 +132,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
               description={`${t('qmsReview.sheet')} ${item.sheetNo}${item.pageNo ? ` · ${t('qmsReview.page')} ${item.pageNo}` : ''} · ${item.extractorType}`} />
           </List.Item>} />
       </Card>
+      </Space>
       <Card title={t('qmsReview.viewer')} extra={pageCount > 0 && <Space><Button size="small" disabled={pageNo <= 1} onClick={() => setPageNo((value) => value - 1)}>{t('qmsReview.previousPage')}</Button><Typography.Text>{pageNo}/{pageCount}</Typography.Text><Button size="small" disabled={pageNo >= pageCount} onClick={() => setPageNo((value) => value + 1)}>{t('qmsReview.nextPage')}</Button></Space>}>
         {fileQuery.isLoading ? <Spin /> : revision?.fileType === 'DWG' ? <Alert type="info" showIcon message={t('qmsReview.cadPending')} /> : renderError ? <Alert type="error" showIcon message={t('qmsReview.renderFailed')} /> :
           <div style={{ overflow: 'auto', maxHeight: '72vh', textAlign: 'center', background: token.colorFillTertiary, padding: token.paddingSM }}>
@@ -110,5 +143,19 @@ export const QmsDrawingReviewWorkbenchPage = () => {
           </div>}
       </Card>
     </div>
+    <Modal open={Boolean(editing)} title={t('qmsReview.reviewCharacteristic')} confirmLoading={confirmMutation.isPending}
+      onCancel={() => setEditing(undefined)} onOk={() => form.validateFields().then((request) => editing && confirmMutation.mutate({ id: editing.id, request }))}>
+      <Form form={form} layout="vertical">
+        <Form.Item name="version" hidden><InputNumber /></Form.Item>
+        <Form.Item name="name" label={t('qmsReview.fields.name')} rules={[{ required: true }]}><Input /></Form.Item>
+        <Space align="start" wrap>
+          <Form.Item name="nominalValue" label={t('qmsReview.fields.nominal')} rules={[{ required: true }]}><InputNumber /></Form.Item>
+          <Form.Item name="upperTolerance" label={t('qmsReview.fields.upperTolerance')}><InputNumber /></Form.Item>
+          <Form.Item name="lowerTolerance" label={t('qmsReview.fields.lowerTolerance')}><InputNumber /></Form.Item>
+          <Form.Item name="unit" label={t('qmsReview.fields.unit')}><Input style={{ width: 90 }} /></Form.Item>
+        </Space>
+        <Form.Item name="comment" label={t('qmsReview.fields.comment')}><Input.TextArea rows={2} /></Form.Item>
+      </Form>
+    </Modal>
   </AppPageContainer>;
 };

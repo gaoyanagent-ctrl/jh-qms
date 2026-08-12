@@ -274,3 +274,11 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
   box, raw/normalized text, extractor/model provenance, and confidence constrained to 0..1.
 - All foreign keys are tenant-qualified; queries additionally enforce organization scope.
 - Adds no permission: result reads reuse `qms:drawing-revision:view`.
+
+### `V0406__quality_characteristic_review.sql`
+
+- Creates `qms_quality_characteristic`, linked by tenant-qualified foreign keys to Part,
+  DrawingRevision and immutable SourceEvidence.
+- Stores nominal/tolerance/limit values, parser confidence, pending review state, reviewer,
+  comment, audit metadata and optimistic-lock version.
+- Seeds `qms:quality-characteristic:review` and assigns it to active platform administrators.

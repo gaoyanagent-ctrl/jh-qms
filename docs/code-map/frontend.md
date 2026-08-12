@@ -599,3 +599,5 @@ Planned stack:
   coordinates onto the Canvas overlay.
 - DWG preview remains behind a future CAD adapter and is represented by an explicit UI state.
 - `packages/api-client#getBlob` is the shared authenticated binary-download entry point.
+- TASK-0409 adds the candidate list to the same workbench. Selecting a candidate locates its
+  retained evidence; permitted reviewers can edit dimension values and confirm or reject it.

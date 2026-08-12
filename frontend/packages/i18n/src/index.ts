@@ -262,6 +262,9 @@ export const resources = {
       },
       qmsReview: {
         title: '图纸复核工作台', invalidRevision: '无效的图纸版本 ID', evidence: '来源证据', viewer: '图纸预览',
+        characteristics: '质量特性候选', noCharacteristics: '暂无可复核的质量特性候选', editConfirm: '编辑并确认', reject: '驳回',
+        reviewCharacteristic: '复核质量特性', reviewSucceeded: '质量特性已确认', rejectSucceeded: '质量特性已驳回',
+        fields: { name: '特性名称', nominal: '名义值', upperTolerance: '上偏差', lowerTolerance: '下偏差', unit: '单位', comment: '复核意见' },
         evidenceCount: '共 {{count}} 条证据', noEvidence: '暂无解析证据', sheet: '图幅', page: '页码',
         previousPage: '上一页', nextPage: '下一页', pdfCanvas: 'PDF 图纸画布',
         waitingForParse: '图纸尚未生成解析结果', waitingForParseDescription: '文件仍可预览。解析器完成后，证据列表和定位高亮会自动可用。',
@@ -905,6 +908,9 @@ export const resources = {
       },
       qmsReview: {
         title: 'Drawing Review Workbench', invalidRevision: 'Invalid drawing revision ID', evidence: 'Source Evidence', viewer: 'Drawing Viewer',
+        characteristics: 'Quality Characteristic Candidates', noCharacteristics: 'No quality characteristic candidates', editConfirm: 'Edit and confirm', reject: 'Reject',
+        reviewCharacteristic: 'Review Quality Characteristic', reviewSucceeded: 'Quality characteristic confirmed', rejectSucceeded: 'Quality characteristic rejected',
+        fields: { name: 'Name', nominal: 'Nominal', upperTolerance: 'Upper tolerance', lowerTolerance: 'Lower tolerance', unit: 'Unit', comment: 'Review comment' },
         evidenceCount: '{{count}} evidence items', noEvidence: 'No parse evidence', sheet: 'Sheet', page: 'Page',
         previousPage: 'Previous', nextPage: 'Next', pdfCanvas: 'PDF drawing canvas',
         waitingForParse: 'No parse result is available yet', waitingForParseDescription: 'The file remains previewable. Evidence and location highlights become available after parsing.',

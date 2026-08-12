@@ -124,6 +124,20 @@ export interface QmsSourceEvidence {
   extractorVersion: string; modelName: string | null; modelVersion: string | null;
   confidence: number; createdAt: string;
 }
+export interface QmsQualityCharacteristic {
+  id: number; partId: number; drawingRevisionId: number; sourceEntityId: string | null;
+  evidenceId: number; characteristicCode: string; characteristicType: string; name: string;
+  nominalValue: number | null; upperTolerance: number | null; lowerTolerance: number | null;
+  upperLimit: number | null; lowerLimit: number | null; unit: string | null;
+  specialCharacteristicCode: string | null; confidence: number; status: string;
+  reviewStatus: 'PENDING' | 'CONFIRMED' | 'REJECTED'; reviewedBy: number | null;
+  reviewedAt: string | null; reviewComment: string | null; version: number;
+}
+export interface QmsQualityCharacteristicReviewRequest {
+  version: number; name?: string | null; nominalValue?: number | null;
+  upperTolerance?: number | null; lowerTolerance?: number | null; unit?: string | null;
+  comment?: string | null;
+}
 export interface QmsDrawingIntermediateModel {
   id: number; revisionId: number; parseJobId: number; schemaVersion: string;
   documentId: string; revisionCode: string;

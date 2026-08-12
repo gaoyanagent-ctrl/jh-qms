@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { QmsDrawingCreateRequest, QmsDrawingRevisionCreateRequest } from '@iaf/domain-types';
+import type { QmsDrawingCreateRequest, QmsDrawingRevisionCreateRequest, QmsQualityCharacteristicReviewRequest } from '@iaf/domain-types';
 import { qmsEngineeringApi } from './api';
 
 export const qmsEngineeringKeys = {
@@ -11,7 +11,8 @@ export const qmsEngineeringKeys = {
   parseJobs: (drawingId: number) => ['qms-engineering-drawing-parse-jobs', drawingId] as const,
   revisionFile: (revisionId: number) => ['qms-engineering-revision-file', revisionId] as const,
   intermediateModel: (revisionId: number) => ['qms-engineering-intermediate-model', revisionId] as const,
-  evidence: (revisionId: number) => ['qms-engineering-evidence', revisionId] as const
+  evidence: (revisionId: number) => ['qms-engineering-evidence', revisionId] as const,
+  characteristics: (revisionId: number) => ['qms-engineering-characteristics', revisionId] as const
 };
 
 export const useQmsPartsQuery = (params: { keyword?: string; pageNo: number; pageSize: number }) =>
@@ -59,6 +60,23 @@ export const useQmsIntermediateModelQuery = (revisionId?: number, enabled = true
 export const useQmsEvidenceQuery = (revisionId?: number, enabled = true) =>
   useQuery({ queryKey: qmsEngineeringKeys.evidence(revisionId ?? 0),
     queryFn: () => qmsEngineeringApi.listEvidence(revisionId!), enabled: Boolean(revisionId) && enabled });
+
+export const useQmsCharacteristicsQuery = (revisionId?: number, enabled = true) =>
+  useQuery({ queryKey: qmsEngineeringKeys.characteristics(revisionId ?? 0),
+    queryFn: () => qmsEngineeringApi.listCharacteristics(revisionId!), enabled: Boolean(revisionId) && enabled });
+
+export const useReviewQmsCharacteristicMutation = (revisionId: number, decision: 'confirm' | 'reject', onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, request }: { id: number; request: QmsQualityCharacteristicReviewRequest }) =>
+      decision === 'confirm' ? qmsEngineeringApi.confirmCharacteristic(revisionId, id, request)
+        : qmsEngineeringApi.rejectCharacteristic(revisionId, id, request),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.characteristics(revisionId) });
+      onSuccess?.();
+    }
+  });
+};
 
 export const useCreateQmsPartMutation = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();

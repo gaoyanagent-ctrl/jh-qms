@@ -25,14 +25,17 @@ public class DrawingParseLifecycleService {
     private final DrawingParseResultRepository results;
     private final QmsAuditTrail audit;
     private final StateMachineService stateMachine;
+    private final QualityCharacteristicRepository characteristics;
 
     public DrawingParseLifecycleService(DrawingRevisionRepository revisions, DrawingParseJobRepository jobs,
-            DrawingParseResultRepository results, QmsAuditTrail audit, StateMachineService stateMachine) {
+            DrawingParseResultRepository results, QmsAuditTrail audit, StateMachineService stateMachine,
+            QualityCharacteristicRepository characteristics) {
         this.revisions = revisions;
         this.jobs = jobs;
         this.results = results;
         this.audit = audit;
         this.stateMachine = stateMachine;
+        this.characteristics = characteristics;
     }
 
     @Transactional
@@ -60,6 +63,7 @@ public class DrawingParseLifecycleService {
             throw new BusinessException(QmsEngineeringErrorCode.PARSE_JOB_INVALID_STATE);
         }
         results.save(actorId, tenantId, orgId, revision.id(), job.id(), job.fileId(), result);
+        characteristics.generateDimensionCandidates(actorId, tenantId, orgId, revision.id());
         if (!jobs.transition(actorId, tenantId, orgId, job.id(), job.status().name(),
                 ParseJobStatus.SUCCEEDED.name(), null, null, job.version())
                 || !revisions.transitionState(actorId, tenantId, orgId, revision.id(), revision.status().name(),

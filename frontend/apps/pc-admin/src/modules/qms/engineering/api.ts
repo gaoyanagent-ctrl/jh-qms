@@ -7,6 +7,8 @@ import type {
   QmsDrawingParseJob,
   QmsDrawingIntermediateModel,
   QmsSourceEvidence,
+  QmsQualityCharacteristic,
+  QmsQualityCharacteristicReviewRequest,
   QmsPart,
   QmsPartCreateRequest
 } from '@iaf/domain-types';
@@ -35,6 +37,12 @@ export const qmsEngineeringApi = {
     apiClient.get<QmsDrawingIntermediateModel>(`/api/qms/drawing-revisions/${revisionId}/intermediate-model`),
   listEvidence: (revisionId: number) =>
     apiClient.get<QmsSourceEvidence[]>(`/api/qms/drawing-revisions/${revisionId}/evidence`),
+  listCharacteristics: (revisionId: number) =>
+    apiClient.get<QmsQualityCharacteristic[]>(`/api/qms/drawing-revisions/${revisionId}/characteristics`),
+  confirmCharacteristic: (revisionId: number, id: number, request: QmsQualityCharacteristicReviewRequest) =>
+    apiClient.post<QmsQualityCharacteristic>(`/api/qms/drawing-revisions/${revisionId}/characteristics/${id}/confirm`, request),
+  rejectCharacteristic: (revisionId: number, id: number, request: QmsQualityCharacteristicReviewRequest) =>
+    apiClient.post<QmsQualityCharacteristic>(`/api/qms/drawing-revisions/${revisionId}/characteristics/${id}/reject`, request),
   getRevisionFileContent: (revisionId: number) =>
     apiClient.getBlob(`/api/qms/drawing-revisions/${revisionId}/file/content`),
   uploadRevisionFile: (revisionId: number, file: File) => {
