@@ -117,7 +117,10 @@ export const QmsPartDetailPage = () => {
     { title: t('qmsRevisions.fields.reviewStatus'), dataIndex: 'reviewStatus', width: 135, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
     { title: t('common.fields.status'), dataIndex: 'status', width: 120, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
     { title: t('qmsRevisions.fields.file'), width: 190, fixed: 'right', render: (_, revision) => revision.fileId
-      ? <Space><Typography.Text>{revision.fileType} · {revision.checksum?.slice(0, 8)}</Typography.Text><Button size="small" onClick={() => navigate(`/qms/engineering/drawing-revisions/${revision.id}/review`)}>{t('qmsRevisions.actions.review')}</Button></Space>
+      ? <Space><Typography.Text>{revision.fileType} · {revision.checksum?.slice(0, 8)}</Typography.Text><Button size="small" onClick={(event) => {
+          event.currentTarget.blur();
+          navigate(`/qms/engineering/drawing-revisions/${revision.id}/review`);
+        }}>{t('qmsRevisions.actions.review')}</Button></Space>
       : <Upload disabled={!canUploadRevisionFile} accept=".pdf,.dwg" maxCount={1} showUploadList={false} beforeUpload={(file) => { uploadFile.mutate({ revisionId: revision.id, file }); return false; }}>
           <Button disabled={!canUploadRevisionFile} title={!canUploadRevisionFile ? t('qmsRevisions.feedback.uploadPermissionRequired') : undefined} size="small" loading={uploadFile.isPending}>{t('qmsRevisions.actions.upload')}</Button>
         </Upload> },

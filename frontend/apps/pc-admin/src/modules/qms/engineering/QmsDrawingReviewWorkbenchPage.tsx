@@ -9,7 +9,9 @@ import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useQmsEvidenceQuery, useQmsIntermediateModelQuery, useQmsRevisionFileQuery, useQmsRevisionQuery } from './hooks';
 
-GlobalWorkerOptions.workerSrc = workerUrl;
+// Keep the URL versioned independently from the application bundle. This prevents a
+// previously cached response with an invalid module MIME type from breaking PDF.js.
+GlobalWorkerOptions.workerSrc = `${workerUrl}?v=task-0406-1`;
 
 const confidenceLevel = (value: number) => value >= 0.9 ? 'high' : value >= 0.7 ? 'medium' : 'low';
 
@@ -30,8 +32,9 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const fileQuery = useQmsRevisionFileQuery(validId ? revisionId : undefined, validId);
   const revisionQuery = useQmsRevisionQuery(validId ? revisionId : undefined, validId);
   const revision = revisionQuery.data;
-  const dimQuery = useQmsIntermediateModelQuery(validId ? revisionId : undefined, validId);
-  const evidenceQuery = useQmsEvidenceQuery(validId ? revisionId : undefined, validId);
+  const parseResultAvailable = revision?.parseStatus === 'SUCCESS' || revision?.parseStatus === 'PARTIAL_SUCCESS';
+  const dimQuery = useQmsIntermediateModelQuery(validId ? revisionId : undefined, validId && parseResultAvailable);
+  const evidenceQuery = useQmsEvidenceQuery(validId ? revisionId : undefined, validId && parseResultAvailable);
 
   useEffect(() => {
     if (selected?.pageNo) setPageNo(selected.pageNo);
@@ -72,7 +75,8 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     width: selected.bbox.width / currentSheet.width * viewportSize.width,
     height: selected.bbox.height / currentSheet.height * viewportSize.height
   } : undefined;
-  const modelMissing = dimQuery.error instanceof ApiError && dimQuery.error.code === 'QMS_INTERMEDIATE_MODEL_NOT_FOUND';
+  const modelMissing = Boolean(revision && !parseResultAvailable)
+    || (dimQuery.error instanceof ApiError && dimQuery.error.code === 'QMS_INTERMEDIATE_MODEL_NOT_FOUND');
 
   if (!validId) return <AppPageContainer title={t('qmsReview.title')}><Alert type="error" showIcon message={t('qmsReview.invalidRevision')} /></AppPageContainer>;
 

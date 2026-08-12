@@ -1,7 +1,7 @@
 import { IafThemeProvider } from '@iaf/theme';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App as AntApp } from 'antd';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { qmsEngineeringApi } from './api';
@@ -40,5 +40,9 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     expect(await screen.findByText('DWG 在线预览将在 CAD 解析适配器阶段接入。')).toBeInTheDocument();
     expect(screen.getByText('暂无解析证据')).toBeInTheDocument();
     expect(screen.getByText('已上传')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(qmsEngineeringApi.getIntermediateModel).not.toHaveBeenCalled();
+      expect(qmsEngineeringApi.listEvidence).not.toHaveBeenCalled();
+    });
   });
 });
