@@ -252,3 +252,4 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
 
 - `qms_file_object`: tenant/org-scoped immutable source-file metadata, SHA-256 and private object key.
 - `qms_drawing_revision.file_id` references `qms_file_object(tenant_id,id)`.
+- `V0403_1__assign_qms_upload_permission.sql` assigns upload permission to `platform_admin`.
