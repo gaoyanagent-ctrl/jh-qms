@@ -89,7 +89,7 @@ class QmsEngineeringPostgresIntegrationTest {
                 BigDecimal.TEN, BigDecimal.ONE, null, "8±0.5", "8±0.5", null, 0, null, null);
         SourceEvidence evidence = new SourceEvidence(null, 0, 0, 0, 0, 0, "EV-1", "DIM-1", null,
                 "1", 1, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.TEN, BigDecimal.ONE,
-                "8±0.5", "8±0.5", EvidenceExtractorType.PDF_VECTOR, "1.0", null, null,
+                "technical requirement ".repeat(20) + "8±0.5", "technical requirement ".repeat(20) + "8±0.5", EvidenceExtractorType.PDF_VECTOR, "1.0", null, null,
                 new BigDecimal("0.98"), 0, null, null);
         DrawingEntity cadEntity = new DrawingEntity(null, 0, 0, 0, 0, "DWG-DIM-20", "20",
                 DrawingEntityType.DIMENSION, "细实线", "MODEL", BigDecimal.ZERO, BigDecimal.ZERO,
@@ -127,6 +127,7 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(characteristics.findByRevision(1, 10, revisionId).get(0)).satisfies(candidate -> {
                     assertThat(candidate.nominalValue()).isEqualByComparingTo("8");
                     assertThat(candidate.upperTolerance()).isEqualByComparingTo("0.5");
+                    assertThat(candidate.name()).isEqualTo("8±0.5");
                     assertThat(candidate.reviewStatus()).isEqualTo("PENDING");
                     assertThat(candidate.evidenceId()).isPositive();
                 });
