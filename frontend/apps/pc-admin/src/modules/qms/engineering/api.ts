@@ -7,6 +7,7 @@ import type {
   QmsPart,
   QmsPartCreateRequest
 } from '@iaf/domain-types';
+import type { QmsFileObject } from '@iaf/domain-types';
 import { apiClient } from '../../../api/client';
 
 export const qmsEngineeringApi = {
@@ -20,5 +21,10 @@ export const qmsEngineeringApi = {
   listRevisions: (drawingId: number) =>
     apiClient.get<QmsDrawingRevision[]>(`/api/qms/drawings/${drawingId}/revisions`),
   createRevision: (drawingId: number, request: QmsDrawingRevisionCreateRequest) =>
-    apiClient.post<QmsDrawingRevision>(`/api/qms/drawings/${drawingId}/revisions`, request)
+    apiClient.post<QmsDrawingRevision>(`/api/qms/drawings/${drawingId}/revisions`, request),
+  uploadRevisionFile: (revisionId: number, file: File) => {
+    const body = new FormData();
+    body.append('file', file);
+    return apiClient.post<QmsFileObject>(`/api/qms/drawing-revisions/${revisionId}/file`, body);
+  }
 };

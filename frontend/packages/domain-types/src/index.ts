@@ -101,6 +101,16 @@ export interface QmsDrawingRevisionCreateRequest {
   supersedesRevisionId?: number | null;
 }
 
+export interface QmsFileObject {
+  id: number;
+  originalName: string;
+  mediaType: string;
+  fileExtension: string;
+  sizeBytes: number;
+  checksumSha256: string;
+  createdAt: string;
+}
+
 export interface LoginRequest {
   tenantCode: string;
   username: string;

@@ -194,5 +194,11 @@ class DrawingApplicationServiceTest {
                     null, null, null, 0, now, now));
             return id;
         }
+
+        @Override
+        public boolean attachFile(long operatorUserId, long tenantId, long orgId, long revisionId,
+                                  long fileId, String fileType, String checksum, int expectedVersion) {
+            return false;
+        }
     }
 }

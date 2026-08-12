@@ -252,10 +252,11 @@ export const resources = {
         fields: { drawingNo: '图号', drawingName: '图纸名称', drawingType: '图纸类型', sourceSystem: '来源系统' }
       },
       qmsRevisions: {
-        title: '版本历史', empty: '当前图纸暂无版本', selectDrawing: '选择一张图纸以查看版本历史。', actions: { create: '新增版本' },
+        title: '版本历史', empty: '当前图纸暂无版本', selectDrawing: '选择一张图纸以查看版本历史。', actions: { create: '新增版本', upload: '上传文件' },
+        feedback: { uploadSucceeded: '图纸文件上传成功' },
         fields: {
           revisionCode: '版本号', revisionSeq: '版本序号', effectiveDate: '生效日期', parseStatus: '解析状态',
-          reviewStatus: '复核状态', supersedesRevision: '替代版本'
+          reviewStatus: '复核状态', supersedesRevision: '替代版本', file: '源文件'
         }
       },
       settings: {
@@ -885,10 +886,11 @@ export const resources = {
         fields: { drawingNo: 'Drawing no.', drawingName: 'Drawing name', drawingType: 'Drawing type', sourceSystem: 'Source system' }
       },
       qmsRevisions: {
-        title: 'Revision History', empty: 'No revisions for this drawing', selectDrawing: 'Select a drawing to view its revision history.', actions: { create: 'Create Revision' },
+        title: 'Revision History', empty: 'No revisions for this drawing', selectDrawing: 'Select a drawing to view its revision history.', actions: { create: 'Create Revision', upload: 'Upload File' },
+        feedback: { uploadSucceeded: 'Drawing file uploaded' },
         fields: {
           revisionCode: 'Revision', revisionSeq: 'Sequence', effectiveDate: 'Effective date', parseStatus: 'Parse status',
-          reviewStatus: 'Review status', supersedesRevision: 'Supersedes revision'
+          reviewStatus: 'Review status', supersedesRevision: 'Supersedes revision', file: 'Source file'
         }
       },
       settings: {

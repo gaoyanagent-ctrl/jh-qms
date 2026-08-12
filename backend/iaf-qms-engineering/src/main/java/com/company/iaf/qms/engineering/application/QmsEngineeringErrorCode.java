@@ -11,6 +11,14 @@ public enum QmsEngineeringErrorCode implements ErrorCode {
     REVISION_NOT_FOUND("QMS_DRAWING_REVISION_NOT_FOUND", "Drawing revision not found"),
     REVISION_CODE_ALREADY_EXISTS("QMS_DRAWING_REVISION_CODE_ALREADY_EXISTS", "Revision code already exists for this drawing"),
     SUPERSEDES_REVISION_INVALID("QMS_DRAWING_REVISION_SUPERSEDES_INVALID", "Superseded revision does not belong to this drawing"),
+    FILE_REQUIRED("QMS_FILE_REQUIRED", "A non-empty file is required"),
+    FILE_TYPE_UNSUPPORTED("QMS_FILE_TYPE_UNSUPPORTED", "Only PDF and DWG files are supported"),
+    FILE_TOO_LARGE("QMS_FILE_TOO_LARGE", "File exceeds the 100 MiB limit"),
+    FILE_ALREADY_ATTACHED("QMS_FILE_ALREADY_ATTACHED", "This revision already has a file"),
+    FILE_DUPLICATE("QMS_FILE_DUPLICATE", "The same file is already attached to this revision"),
+    FILE_NOT_FOUND("QMS_FILE_NOT_FOUND", "Drawing revision file not found"),
+    FILE_STORAGE_FAILED("QMS_FILE_STORAGE_FAILED", "Object storage operation failed"),
+    FILE_UPLOAD_FAILED("QMS_FILE_UPLOAD_FAILED", "File upload could not be completed"),
     AUDIT_WRITE_FAILED("QMS_AUDIT_WRITE_FAILED", "QMS audit record could not be written");
 
     private final String code;

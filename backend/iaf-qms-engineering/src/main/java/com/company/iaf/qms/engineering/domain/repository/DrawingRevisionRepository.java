@@ -11,4 +11,6 @@ public interface DrawingRevisionRepository {
     int reserveNextSequence(long tenantId, long drawingId);
     List<DrawingRevision> findByDrawingId(long tenantId, long orgId, long drawingId);
     long insert(long operatorUserId, DrawingRevision revision);
+    boolean attachFile(long operatorUserId, long tenantId, long orgId, long revisionId,
+                       long fileId, String fileType, String checksum, int expectedVersion);
 }

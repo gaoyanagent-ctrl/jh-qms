@@ -83,6 +83,16 @@ public class JdbcDrawingRevisionRepository implements DrawingRevisionRepository 
         );
     }
 
+    @Override
+    public boolean attachFile(long actorId, long tenantId, long orgId, long revisionId,
+                              long fileId, String fileType, String checksum, int expectedVersion) {
+        return jdbcTemplate.update("""
+            update qms_drawing_revision set file_id=?, file_type=?, checksum=?,
+                   updated_by=?, updated_at=current_timestamp, version=version+1
+             where tenant_id=? and org_id=? and id=? and version=? and file_id is null and deleted=false
+            """, fileId, fileType, checksum, actorId, tenantId, orgId, revisionId, expectedVersion) == 1;
+    }
+
     private DrawingRevision map(ResultSet rs, int rowNum) throws SQLException {
         Date effectiveDate = rs.getDate("effective_date");
         Date releaseDate = rs.getDate("release_date");

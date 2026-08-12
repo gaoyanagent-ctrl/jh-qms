@@ -248,3 +248,7 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
 - Links the route menu to `qms:part:view` and assigns the group/route to each tenant's
   active `platform_admin` role.
 - All inserts are conflict-safe; this migration adds no QMS business table or API change.
+# TASK-0403 file storage
+
+- `qms_file_object`: tenant/org-scoped immutable source-file metadata, SHA-256 and private object key.
+- `qms_drawing_revision.file_id` references `qms_file_object(tenant_id,id)`.

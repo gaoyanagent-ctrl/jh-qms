@@ -64,3 +64,14 @@ export const useCreateQmsRevisionMutation = (drawingId?: number, onSuccess?: () 
     }
   });
 };
+
+export const useUploadQmsRevisionFileMutation = (drawingId?: number, onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ revisionId, file }: { revisionId: number; file: File }) => qmsEngineeringApi.uploadRevisionFile(revisionId, file),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0) });
+      onSuccess?.();
+    }
+  });
+};

@@ -39,16 +39,18 @@ A revision belongs to one Drawing. `revisionCode` is unique within a Drawing and
 `revisionSeq` increases monotonically. A metadata-only revision starts in `DRAFT`, with
 `parseStatus=PENDING` and `reviewStatus=PENDING`.
 
-This first slice does not attach files or change revision status. File attachment and
-all later status changes must use the platform file and state-machine capabilities once
-those contracts are implemented.
+TASK-0403 attaches one controlled PDF/DWG source file to a revision through the
+`QmsObjectStorage` port. Metadata is stored in `qms_file_object`; content is stored in
+MinIO under an opaque tenant/revision key. Attachment does not change revision status;
+TASK-0404 owns later state transitions.
 
 ## 4. Commands And Idempotency
 
 Create commands are protected by tenant-scoped natural keys and database unique
 constraints. Repeating a command with the same business key returns a stable conflict
-error and never creates a second record. A durable `Idempotency-Key` command ledger is
-deferred to the file-upload slice, where transport retries become part of the flow.
+error and never creates a second record. File attachment is guarded by optimistic
+locking and a single-file constraint. A durable `Idempotency-Key` command ledger remains
+deferred to a later reliability slice.
 
 ## 5. Audit
 
@@ -65,6 +67,7 @@ qms:drawing:view
 qms:drawing:create
 qms:drawing-revision:view
 qms:drawing-revision:create
+qms:drawing-revision:upload
 ```
 
 Read and write permissions are enforced in the application layer. Frontend visibility
@@ -72,9 +75,7 @@ is not a security boundary.
 
 ## 7. Deferred Scope
 
-- Object-storage upload, checksum calculation, and duplicate-file handling.
 - Revision state transitions and transition audit.
 - PDF/DWG preview.
 - Parse jobs, SourceEvidence, and Drawing Intermediate Model.
 - Updates, obsolescence, release, and physical deletion.
-

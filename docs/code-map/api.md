@@ -575,3 +575,8 @@ The frontend does not redefine, wrap, or version these endpoints.
 Create idempotency currently uses tenant-scoped natural-key constraints to reject replayed
 business keys without creating duplicate rows. A transport `Idempotency-Key` ledger is
 deferred to the upload workflow.
+# QMS drawing revision files
+
+- `POST /api/qms/drawing-revisions/{revisionId}/file` — multipart PDF/DWG upload.
+- `GET /api/qms/drawing-revisions/{revisionId}/file` — file metadata.
+- `GET /api/qms/drawing-revisions/{revisionId}/file/content` — authenticated content download.

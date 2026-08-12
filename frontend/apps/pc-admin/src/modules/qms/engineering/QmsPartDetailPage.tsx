@@ -7,7 +7,7 @@ import type {
 import { PermissionButton, QMS_PERMISSIONS, hasPermission, useUserPermissions } from '@iaf/permissions';
 import { useIafTheme, iafSurfaceWidths } from '@iaf/theme';
 import { AppPageContainer, FormInteractionSurface, StatusTag } from '@iaf/ui-core';
-import { Alert, App, Button, Card, Descriptions, Form, Input, Select, Space, Table, Typography, theme } from 'antd';
+import { Alert, App, Button, Card, Descriptions, Form, Input, Select, Space, Table, Typography, Upload, theme } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +18,8 @@ import {
   useCreateQmsRevisionMutation,
   useQmsDrawingsQuery,
   useQmsPartQuery,
-  useQmsRevisionsQuery
+  useQmsRevisionsQuery,
+  useUploadQmsRevisionFileMutation
 } from './hooks';
 import { buildPageAIContext, QmsPageContextProvider } from './pageContext';
 
@@ -48,6 +49,7 @@ export const QmsPartDetailPage = () => {
   const partQuery = useQmsPartQuery(validPartId ? partId : undefined);
   const drawingsQuery = useQmsDrawingsQuery(validPartId ? partId : undefined, canViewDrawings);
   const revisionsQuery = useQmsRevisionsQuery(selectedDrawingId, canViewRevisions);
+  const uploadFile = useUploadQmsRevisionFileMutation(selectedDrawingId, () => message.success(t('qmsRevisions.feedback.uploadSucceeded')));
   const selectedDrawing = drawingsQuery.data?.find((drawing) => drawing.id === selectedDrawingId);
 
   useEffect(() => {
@@ -97,8 +99,13 @@ export const QmsPartDetailPage = () => {
     { title: t('qmsRevisions.fields.parseStatus'), dataIndex: 'parseStatus', width: 135, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
     { title: t('qmsRevisions.fields.reviewStatus'), dataIndex: 'reviewStatus', width: 135, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
     { title: t('common.fields.status'), dataIndex: 'status', width: 120, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
+    { title: t('qmsRevisions.fields.file'), width: 190, render: (_, revision) => revision.fileId
+      ? <Typography.Text>{revision.fileType} · {revision.checksum?.slice(0, 8)}</Typography.Text>
+      : <Upload accept=".pdf,.dwg" maxCount={1} showUploadList={false} beforeUpload={(file) => { uploadFile.mutate({ revisionId: revision.id, file }); return false; }}>
+          <PermissionButton require={QMS_PERMISSIONS.drawingRevisionUpload} size="small" loading={uploadFile.isPending}>{t('qmsRevisions.actions.upload')}</PermissionButton>
+        </Upload> },
     ...(workspaceMode === 'expert' ? [{ title: t('common.fields.createdAt'), dataIndex: 'createdAt', width: 190, render: (value: string) => formatDateTime(value) }] : [])
-  ], [i18n.language, t, workspaceMode]);
+  ], [i18n.language, t, workspaceMode, uploadFile]);
 
   const submitDrawing = async (values: QmsDrawingCreateRequest) => {
     try {

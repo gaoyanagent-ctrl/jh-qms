@@ -582,3 +582,7 @@ Planned stack:
 - IndexedDB + Dexie for mobile offline runtime
 - Workbox / Vite PWA when offline capability is implemented
 - Unified request client via `packages/api-client`
+# QMS revision upload
+
+- The Part detail revision table uploads PDF/DWG source files with the dedicated
+  `qms:drawing-revision:upload` permission and displays file type/checksum after attachment.

@@ -14,6 +14,8 @@ import com.company.iaf.qms.engineering.domain.repository.DrawingRepository;
 import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionRepository;
 import com.company.iaf.qms.engineering.domain.repository.PartRepository;
 import com.company.iaf.qms.engineering.domain.repository.QmsAuditTrail;
+import com.company.iaf.qms.engineering.domain.repository.QmsFileObjectRepository;
+import com.company.iaf.qms.engineering.domain.repository.QmsObjectStorage;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -66,6 +68,12 @@ class IafApplicationTests {
 
     @MockBean
     private QmsAuditTrail qmsAuditTrail;
+
+    @MockBean
+    private QmsFileObjectRepository qmsFileObjectRepository;
+
+    @MockBean
+    private QmsObjectStorage qmsObjectStorage;
 
     @Test
     void contextLoads() {

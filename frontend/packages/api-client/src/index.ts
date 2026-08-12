@@ -61,7 +61,8 @@ export class ApiClient {
     const headers = new Headers(options.headers);
     headers.set('Accept', 'application/json');
 
-    if (options.body !== undefined) {
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+    if (options.body !== undefined && !isFormData) {
       headers.set('Content-Type', 'application/json');
     }
 
@@ -100,7 +101,7 @@ export class ApiClient {
     const response = await fetch(url, {
       ...options,
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body)
+      body: options.body === undefined ? undefined : isFormData ? options.body as FormData : JSON.stringify(options.body)
     });
 
     const payload = await this.readPayload<T>(response);

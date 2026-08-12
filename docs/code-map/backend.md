@@ -732,6 +732,11 @@ Platform Foundation stabilization documents
 ### QMS Modules
 
 `iaf-qms-engineering`
+
+- `DrawingFileApplicationService`: validates PDF/DWG uploads, computes SHA-256, stores
+  content through `QmsObjectStorage`, atomically binds file metadata to a revision, and audits upload.
+- `MinioQmsObjectStorage`: private S3-compatible MinIO adapter.
+- `JdbcQmsFileObjectRepository`: tenant/org-qualified file metadata persistence.
 - Purpose: first Jinheng QMS engineering-data boundary owning Part, Drawing, and
   DrawingRevision metadata plus its transactional audit trail.
 - Depends on: `iaf-platform-core`, Spring Web/JDBC/TX/Validation, Jackson, and springdoc

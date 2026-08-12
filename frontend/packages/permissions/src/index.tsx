@@ -49,7 +49,8 @@ export const QMS_PERMISSIONS = {
   drawingView: 'qms:drawing:view',
   drawingCreate: 'qms:drawing:create',
   drawingRevisionView: 'qms:drawing-revision:view',
-  drawingRevisionCreate: 'qms:drawing-revision:create'
+  drawingRevisionCreate: 'qms:drawing-revision:create',
+  drawingRevisionUpload: 'qms:drawing-revision:upload'
 } as const;
 
 export type QmsPermissionCode = (typeof QMS_PERMISSIONS)[keyof typeof QMS_PERMISSIONS];
