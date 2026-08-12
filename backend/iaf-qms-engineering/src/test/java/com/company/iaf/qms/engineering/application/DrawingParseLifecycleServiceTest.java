@@ -20,8 +20,9 @@ class DrawingParseLifecycleServiceTest {
     private final DrawingParseJobRepository jobs = mock(DrawingParseJobRepository.class);
     private final DrawingParseResultRepository results = mock(DrawingParseResultRepository.class);
     private final QmsAuditTrail audit = mock(QmsAuditTrail.class);
+    private final QualityCharacteristicRepository characteristics = mock(QualityCharacteristicRepository.class);
     private final DrawingParseLifecycleService service = new DrawingParseLifecycleService(
-            revisions, jobs, results, audit, new DefaultStateMachineService());
+            revisions, jobs, results, audit, new DefaultStateMachineService(), characteristics);
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
@@ -52,6 +53,7 @@ class DrawingParseLifecycleServiceTest {
         service.complete(9, 1, 10, 7, result);
 
         verify(results).save(9, 1, 10, 5, 7, 11, result);
+        verify(characteristics).generateDimensionCandidates(9, 1, 10, 5);
         verify(audit).record(eq(1L), eq(9L), eq("DRAWING_PARSE_RESULT_STORED"),
                 eq("DrawingRevision"), eq(5L), any());
     }

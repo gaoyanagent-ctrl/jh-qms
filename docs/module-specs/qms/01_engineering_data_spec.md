@@ -58,6 +58,10 @@ an authenticated Blob and rendered with PDF.js; selecting evidence changes to it
 and scales the DIM bounding box onto the rendered Canvas. DWG files deliberately show the
 deferred CAD-adapter state instead of attempting an inaccurate browser preview.
 
+TASK-0409 consumes SourceEvidence independently of its PDF or CAD origin. Explicit linear
+dimensions become pending `qms_quality_characteristic` records. A human must confirm or reject
+each candidate; edits and decisions preserve evidence linkage and are audit recorded.
+
 ## 4. Commands And Idempotency
 
 Create commands are protected by tenant-scoped natural keys and database unique
@@ -85,6 +89,7 @@ qms:drawing-revision:view
 qms:drawing-revision:create
 qms:drawing-revision:upload
 qms:drawing-revision:retry-parse
+qms:quality-characteristic:review
 ```
 
 Read and write permissions are enforced in the application layer. Frontend visibility

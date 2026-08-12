@@ -598,3 +598,12 @@ All endpoints require `qms:drawing-revision:view` and enforce the current tenant
 - `GET /api/qms/drawing-revisions/{revisionId}/evidence/{evidenceId}` — scoped evidence detail.
 
 The parser lifecycle is an internal application port, not an unauthenticated HTTP API.
+
+# QMS quality characteristic review
+
+- `GET /api/qms/drawing-revisions/{revisionId}/characteristics` — revision-scoped candidates;
+  `qms:drawing-revision:view` permission.
+- `POST /api/qms/drawing-revisions/{revisionId}/characteristics/{id}/confirm` — edit and
+  confirm one pending candidate; `qms:quality-characteristic:review` permission.
+- `POST /api/qms/drawing-revisions/{revisionId}/characteristics/{id}/reject` — reject one
+  pending candidate with optimistic-lock version; same review permission.
