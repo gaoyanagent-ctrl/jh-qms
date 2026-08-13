@@ -62,7 +62,7 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
       model: { schemaVersion: '1.0.0', documentId: '3', revision: 'C', sheets: [{
         sheetNo: 'MODEL', width: 200, height: 100, titleBlock: {}, views: [], entities: [], notes: [], characteristicCandidates: [],
         preview: { format: 'SVG', content: '<svg viewBox="0 0 200 100"></svg>', viewBox: { x: 0, y: 0, width: 200, height: 100 },
-          coordinateSystem: 'CAD_Y_UP', generatedBy: 'libredwg-0.14' }
+          coordinateSystem: 'SVG_NATIVE', generatedBy: 'libredwg-0.14+ezdxf-1.4.4' }
       }] }, createdAt: '2026-08-12T00:00:00Z'
     });
     vi.mocked(qmsEngineeringApi.listCharacteristics).mockResolvedValue([{
@@ -82,5 +82,9 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     expect(content).toHaveTextContent('34 · 34 mm (- / -)');
     expect(screen.getByTestId('dwg-viewer')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '放大' })).toBeEnabled();
+    const wheel = new WheelEvent('wheel', { deltaY: -1, cancelable: true });
+    screen.getByTestId('dwg-viewer').dispatchEvent(wheel);
+    expect(wheel.defaultPrevented).toBe(true);
+    expect(await screen.findByText('125%')).toBeInTheDocument();
   });
 });

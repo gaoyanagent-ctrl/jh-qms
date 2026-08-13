@@ -101,6 +101,16 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     setDwgUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [preview?.content]);
+  useEffect(() => {
+    const viewer = dwgViewerRef.current;
+    if (!viewer || revision?.fileType !== 'DWG' || !preview) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      setDwgZoom((value) => Math.min(6, Math.max(0.5, value + (event.deltaY < 0 ? 0.25 : -0.25))));
+    };
+    viewer.addEventListener('wheel', handleWheel, { passive: false });
+    return () => viewer.removeEventListener('wheel', handleWheel);
+  }, [dwgUrl, preview, revision?.fileType]);
   const centerDwgOnEvidence = (source: QmsSourceEvidence) => {
     if (!preview || !dwgViewerRef.current) return;
     const box = dwgViewerRef.current.getBoundingClientRect();
@@ -182,7 +192,6 @@ export const QmsDrawingReviewWorkbenchPage = () => {
       </Space> : pageCount > 0 && <Space><Button size="small" disabled={pageNo <= 1} onClick={() => setPageNo((value) => value - 1)}>{t('qmsReview.previousPage')}</Button><Typography.Text>{pageNo}/{pageCount}</Typography.Text><Button size="small" disabled={pageNo >= pageCount} onClick={() => setPageNo((value) => value + 1)}>{t('qmsReview.nextPage')}</Button></Space>}>
         {fileQuery.isLoading || dimQuery.isLoading ? <Spin /> : revision?.fileType === 'DWG' ? !dwgUrl || !preview ? <Alert type="info" showIcon message={t('qmsReview.cadPreviewMissing')} /> :
           <div ref={dwgViewerRef} data-testid="dwg-viewer" role="img" aria-label={t('qmsReview.dwgCanvas')} tabIndex={0}
-            onWheel={(event) => { event.preventDefault(); setDwgZoom((value) => Math.min(6, Math.max(0.5, value + (event.deltaY < 0 ? 0.25 : -0.25)))); }}
             onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { x: event.clientX, y: event.clientY, left: dwgPan.x, top: dwgPan.y }; }}
             onPointerMove={(event) => { if (dragRef.current) setDwgPan({ x: dragRef.current.left + event.clientX - dragRef.current.x, y: dragRef.current.top + event.clientY - dragRef.current.y }); }}
             onPointerUp={() => { dragRef.current = undefined; }}

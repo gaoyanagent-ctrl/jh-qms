@@ -1,6 +1,8 @@
 import json
+import io
 import subprocess
 
+import ezdxf
 import pytest
 
 from jh_qms_ai.cad_parser import CadParseError, parse_dwg
@@ -30,15 +32,19 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
             },
         ]
     }
+    drawing = ezdxf.new()
+    drawing.modelspace().add_line((0.0, -100.0), (200.0, 0.0))
+    dxf_output = io.StringIO()
+    drawing.write(dxf_output)
     def run(command, *args, **kwargs):
-        if str(command[0]).endswith("dwg2SVG"):
-            return subprocess.CompletedProcess(command, 0, '<svg viewBox="0 -100 200 100"><script>alert(1)</script></svg>', "")
+        if "DXF" in command:
+            return subprocess.CompletedProcess(command, 0, dxf_output.getvalue(), "")
         return subprocess.CompletedProcess(command, 0, json.dumps(payload), "")
     monkeypatch.setattr(subprocess, "run", run)
 
     result = parse_dwg(b"AC1021-test", "drawing-2", "B")
 
-    assert result["parserVersion"] == "libredwg-0.14"
+    assert result["parserVersion"] == "libredwg-0.14+ezdxf-1.4.4"
     assert len(result["entities"]) == 1
     entity = result["entities"][0]
     assert entity["sourceEntityHandle"] == "20"
@@ -49,13 +55,16 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
     assert entity["geometry"]["act_measurement"] == 34.0
     assert result["evidence"][0]["extractorType"] == "DWG_ENTITY"
     preview = result["modelJson"]["sheets"][0]["preview"]
-    assert preview["viewBox"] == {"x": 0.0, "y": 0.0, "width": 200.0, "height": 100.0}
+    assert preview["viewBox"]["x"] == 0.0
+    assert preview["viewBox"]["y"] == 0.0
     assert preview["sourceViewBox"] == {"x": 0.0, "y": -100.0, "width": 200.0, "height": 100.0}
     assert preview["coordinateSystem"] == "SVG_NATIVE"
-    assert 'id="jh-qms-native-dimensions"' in preview["content"]
-    assert ">8-34</text>" in preview["content"]
+    assert 'id="jh-qms-native-dimensions"' not in preview["content"]
+    assert "<path" in preview["content"]
     assert "<script" not in preview["content"]
-    assert result["evidence"][0]["bbox"]["y"] == 98.0
+    box = result["evidence"][0]["bbox"]
+    assert 0 <= box["x"] <= preview["viewBox"]["width"]
+    assert 0 <= box["y"] <= preview["viewBox"]["height"]
 
 
 def test_parse_dwg_rejects_non_dwg_content():

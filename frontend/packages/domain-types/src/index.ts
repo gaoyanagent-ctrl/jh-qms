@@ -145,7 +145,7 @@ export interface QmsDrawingIntermediateModel {
     sheetNo: string; width: number; height: number; titleBlock: Record<string, unknown>;
     views: unknown[]; entities: unknown[]; notes: unknown[]; characteristicCandidates: unknown[];
     preview?: { format: 'SVG'; content: string; viewBox: QmsBoundingBox;
-      coordinateSystem: 'CAD_Y_UP'; generatedBy: string };
+      coordinateSystem: 'CAD_Y_UP' | 'SVG_NATIVE'; generatedBy: string };
   }> }; createdAt: string;
 }
 
