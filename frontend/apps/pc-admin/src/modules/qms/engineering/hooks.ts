@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { QmsDrawingCreateRequest, QmsDrawingRevisionCreateRequest, QmsDrawingRevisionFileRole, QmsQualityCharacteristicReviewRequest } from '@iaf/domain-types';
+import type { QmsDrawingCreateRequest, QmsDrawingRevisionCreateRequest, QmsDrawingRevisionFileRole, QmsQualityCharacteristicBulkReviewRequest, QmsQualityCharacteristicCreateRequest, QmsQualityCharacteristicReviewRequest } from '@iaf/domain-types';
 import { qmsEngineeringApi } from './api';
 
 export const qmsEngineeringKeys = {
@@ -86,6 +86,18 @@ export const useReviewQmsCharacteristicMutation = (revisionId: number, decision:
       onSuccess?.();
     }
   });
+};
+
+export const useCreateQmsCharacteristicMutation = (revisionId: number, onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: (request: QmsQualityCharacteristicCreateRequest) => qmsEngineeringApi.createCharacteristic(revisionId, request),
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.characteristics(revisionId) }); onSuccess?.(); } });
+};
+
+export const useBulkReviewQmsCharacteristicsMutation = (revisionId: number, onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: (request: QmsQualityCharacteristicBulkReviewRequest) => qmsEngineeringApi.bulkReviewCharacteristics(revisionId, request),
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.characteristics(revisionId) }); onSuccess?.(); } });
 };
 
 export const useCreateQmsPartMutation = (onSuccess?: () => void) => {

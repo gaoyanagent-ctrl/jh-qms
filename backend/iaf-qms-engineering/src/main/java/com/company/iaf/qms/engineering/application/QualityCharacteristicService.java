@@ -15,9 +15,33 @@ import java.util.List;
  @RequiresPermission("qms:quality-characteristic:review") @Transactional
  public QualityCharacteristicResponse review(long tenant,long org,long revision,long id,String decision,QualityCharacteristicReviewRequest request){
   requireRevision(tenant,org,revision); if(!decision.equals("CONFIRMED")&&!decision.equals("REJECTED"))throw new BusinessException(QmsEngineeringErrorCode.CHARACTERISTIC_REVIEW_INVALID);
-  long actor=SecurityContext.getUserId().orElse(0L); boolean changed=repository.review(actor,tenant,org,revision,id,request.version(),decision,request.name(),request.nominalValue(),request.upperTolerance(),request.lowerTolerance(),request.unit(),request.comment());
+  var current=repository.findById(tenant,org,revision,id).orElseThrow(()->new BusinessException(QmsEngineeringErrorCode.CHARACTERISTIC_REVIEW_CONFLICT));
+  validate(request.referenceDimension()!=null?request.referenceDimension():current.referenceDimension(),
+      request.idealDimension()!=null?request.idealDimension():current.idealDimension(),
+      request.inspectionDimension()!=null?request.inspectionDimension():current.inspectionDimension(),
+      request.mandatoryInspection()!=null?request.mandatoryInspection():current.mandatoryInspection());
+  long actor=SecurityContext.getUserId().orElse(0L); boolean changed=repository.review(actor,tenant,org,revision,id,request.version(),decision,request.name(),request.nominalValue(),request.upperTolerance(),request.lowerTolerance(),request.unit(),request.characteristicType(),request.specialCharacteristicCode(),request.inspectionDimension(),request.referenceDimension(),request.idealDimension(),request.fitDimension(),request.locationDimension(),request.regulatoryFlag(),request.mandatoryInspection(),request.comment());
   if(!changed)throw new BusinessException(QmsEngineeringErrorCode.CHARACTERISTIC_REVIEW_CONFLICT);
   var result=repository.findById(tenant,org,revision,id).orElseThrow(); audit.record(tenant,actor,"QUALITY_CHARACTERISTIC_"+decision,"QualityCharacteristic",id,QualityCharacteristicResponse.from(result)); return QualityCharacteristicResponse.from(result);
  }
+ @RequiresPermission("qms:quality-characteristic:review") @Transactional
+ public QualityCharacteristicResponse create(long tenant,long org,long revision,QualityCharacteristicCreateRequest request){
+  requireRevision(tenant,org,revision); validate(request.referenceDimension(),request.idealDimension(),request.inspectionDimension(),request.mandatoryInspection());
+  long actor=SecurityContext.getUserId().orElse(0L);
+  var result=repository.createManual(actor,tenant,org,revision,request.characteristicType(),request.name(),request.nominalValue(),request.upperTolerance(),request.lowerTolerance(),request.unit(),request.specialCharacteristicCode(),request.inspectionDimension(),request.referenceDimension(),request.idealDimension(),request.fitDimension(),request.locationDimension(),request.regulatoryFlag(),request.mandatoryInspection(),request.comment());
+  var response=QualityCharacteristicResponse.from(result); audit.record(tenant,actor,"QUALITY_CHARACTERISTIC_CREATED","QualityCharacteristic",result.id(),response); return response;
+ }
+ @RequiresPermission("qms:quality-characteristic:review") @Transactional
+ public List<QualityCharacteristicResponse> bulkReview(long tenant,long org,long revision,QualityCharacteristicBulkReviewRequest request){
+  requireRevision(tenant,org,revision); long actor=SecurityContext.getUserId().orElse(0L);
+  for(var target:request.targets()){
+   var current=repository.findById(tenant,org,revision,target.id()).orElseThrow(()->new BusinessException(QmsEngineeringErrorCode.CHARACTERISTIC_REVIEW_CONFLICT));
+   boolean changed=repository.review(actor,tenant,org,revision,target.id(),target.version(),request.decision().name(),null,null,null,null,null,current.characteristicType(),current.specialCharacteristicCode(),null,null,null,null,null,null,null,request.comment());
+   if(!changed)throw new BusinessException(QmsEngineeringErrorCode.CHARACTERISTIC_REVIEW_CONFLICT);
+  }
+  var results=request.targets().stream().map(target->repository.findById(tenant,org,revision,target.id()).orElseThrow()).map(QualityCharacteristicResponse::from).toList();
+  results.forEach(result->audit.record(tenant,actor,"QUALITY_CHARACTERISTIC_"+request.decision(),"QualityCharacteristic",result.id(),result)); return results;
+ }
+ private void validate(boolean reference,boolean ideal,boolean inspection,boolean mandatory){if((reference&&ideal)||((reference||ideal)&&(inspection||mandatory)))throw new BusinessException(QmsEngineeringErrorCode.CHARACTERISTIC_CLASSIFICATION_INVALID);}
  private void requireRevision(long tenant,long org,long revision){if(revisions.findById(tenant,org,revision).isEmpty())throw new BusinessException(QmsEngineeringErrorCode.REVISION_NOT_FOUND);}
 }

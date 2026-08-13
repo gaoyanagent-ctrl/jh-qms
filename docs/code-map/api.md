@@ -608,7 +608,9 @@ The parser lifecycle is an internal application port, not an unauthenticated HTT
 
 - `GET /api/qms/drawing-revisions/{revisionId}/characteristics` — revision-scoped candidates;
   `qms:drawing-revision:view` permission.
-- `POST /api/qms/drawing-revisions/{revisionId}/characteristics/{id}/confirm` — edit and
-  confirm one pending candidate; `qms:quality-characteristic:review` permission.
-- `POST /api/qms/drawing-revisions/{revisionId}/characteristics/{id}/reject` — reject one
-  pending candidate with optimistic-lock version; same review permission.
+- `POST /api/qms/drawing-revisions/{revisionId}/characteristics` — manually create a
+  revision-linked characteristic; `qms:quality-characteristic:review` permission.
+- `POST /api/qms/drawing-revisions/{revisionId}/characteristics/{id}/confirm|reject` — edit
+  classification and decide one pending candidate with optimistic locking.
+- `POST /api/qms/drawing-revisions/{revisionId}/characteristics/bulk-review` — atomically
+  confirm or reject selected pending candidates using an id/version pair for every row.

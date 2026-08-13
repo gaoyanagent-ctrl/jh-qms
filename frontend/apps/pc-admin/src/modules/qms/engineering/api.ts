@@ -9,6 +9,8 @@ import type {
   QmsSourceEvidence,
   QmsQualityCharacteristic,
   QmsQualityCharacteristicReviewRequest,
+  QmsQualityCharacteristicCreateRequest,
+  QmsQualityCharacteristicBulkReviewRequest,
   QmsPart,
   QmsPartCreateRequest,
   QmsDrawingRevisionFile,
@@ -41,6 +43,10 @@ export const qmsEngineeringApi = {
     apiClient.get<QmsSourceEvidence[]>(`/api/qms/drawing-revisions/${revisionId}/evidence`),
   listCharacteristics: (revisionId: number) =>
     apiClient.get<QmsQualityCharacteristic[]>(`/api/qms/drawing-revisions/${revisionId}/characteristics`),
+  createCharacteristic: (revisionId: number, request: QmsQualityCharacteristicCreateRequest) =>
+    apiClient.post<QmsQualityCharacteristic>(`/api/qms/drawing-revisions/${revisionId}/characteristics`, request),
+  bulkReviewCharacteristics: (revisionId: number, request: QmsQualityCharacteristicBulkReviewRequest) =>
+    apiClient.post<QmsQualityCharacteristic[]>(`/api/qms/drawing-revisions/${revisionId}/characteristics/bulk-review`, request),
   confirmCharacteristic: (revisionId: number, id: number, request: QmsQualityCharacteristicReviewRequest) =>
     apiClient.post<QmsQualityCharacteristic>(`/api/qms/drawing-revisions/${revisionId}/characteristics/${id}/confirm`, request),
   rejectCharacteristic: (revisionId: number, id: number, request: QmsQualityCharacteristicReviewRequest) =>

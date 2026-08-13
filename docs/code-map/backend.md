@@ -820,6 +820,10 @@ TASK-0405 parse-result contract:
 - `DrawingParseResultQueryService`: permission-protected model/entity/evidence projections.
 - `DrawingIntermediateModel`, `DrawingEntity`, and `SourceEvidence`: immutable domain records;
   parser adapters populate drafts while persistence supplies ownership and source identifiers.
+- TASK-0413 extends `QualityCharacteristicService` and
+  `JdbcQualityCharacteristicRepository` with validated inspection/reference/ideal/fit/location,
+  regulatory and mandatory classifications, manual creation, and transactional bulk review.
+  Every command remains tenant/org/revision scoped, permission checked, audited, and versioned.
 
 ### Manufacturing Modules
 

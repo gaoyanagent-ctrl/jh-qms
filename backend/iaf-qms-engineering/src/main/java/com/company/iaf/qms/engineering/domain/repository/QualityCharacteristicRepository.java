@@ -9,7 +9,16 @@ public interface QualityCharacteristicRepository {
     void generateDimensionCandidates(long actorId, long tenantId, long orgId, long revisionId);
     List<QualityCharacteristic> findByRevision(long tenantId, long orgId, long revisionId);
     Optional<QualityCharacteristic> findById(long tenantId, long orgId, long revisionId, long id);
+    QualityCharacteristic createManual(long actorId, long tenantId, long orgId, long revisionId,
+                   String characteristicType, String name, BigDecimal nominalValue, BigDecimal upperTolerance,
+                   BigDecimal lowerTolerance, String unit, String specialCharacteristicCode,
+                   boolean inspectionDimension, boolean referenceDimension, boolean idealDimension,
+                   boolean fitDimension, boolean locationDimension, boolean regulatoryFlag,
+                   boolean mandatoryInspection, String comment);
     boolean review(long actorId, long tenantId, long orgId, long revisionId, long id, int version,
                    String reviewStatus, String name, BigDecimal nominalValue, BigDecimal upperTolerance,
-                   BigDecimal lowerTolerance, String unit, String comment);
+                   BigDecimal lowerTolerance, String unit, String characteristicType,
+                   String specialCharacteristicCode, Boolean inspectionDimension, Boolean referenceDimension,
+                   Boolean idealDimension, Boolean fitDimension, Boolean locationDimension,
+                   Boolean regulatoryFlag, Boolean mandatoryInspection, String comment);
 }
