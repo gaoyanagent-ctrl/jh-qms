@@ -115,13 +115,20 @@ export const QmsDrawingReviewWorkbenchPage = () => {
       <Card title={t('qmsReview.characteristics')}>
         <List loading={characteristicsQuery.isLoading} dataSource={characteristicsQuery.data ?? []}
           locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('qmsReview.noCharacteristics')} /> }}
-          renderItem={(item) => <List.Item onClick={() => locateCharacteristic(item)} style={{ cursor: 'pointer', paddingInline: token.paddingSM }}
-            actions={item.reviewStatus === 'PENDING' && canReview ? [
-              <Button key="edit" size="small" type="link" onClick={(event) => { event.stopPropagation(); openReview(item); }}>{t('qmsReview.editConfirm')}</Button>,
-              <Button key="reject" size="small" type="link" danger loading={rejectMutation.isPending} onClick={(event) => { event.stopPropagation(); rejectMutation.mutate({ id: item.id, request: { version: item.version } }); }}>{t('qmsReview.reject')}</Button>
-            ] : undefined}>
-            <List.Item.Meta title={<Space><Typography.Text strong>{item.characteristicCode}</Typography.Text><Tag>{item.reviewStatus}</Tag></Space>}
-              description={`${item.name} · ${item.nominalValue ?? '-'} ${item.unit ?? ''} (${item.upperTolerance ?? '-'} / ${item.lowerTolerance ?? '-'})`} />
+          renderItem={(item) => <List.Item onClick={() => locateCharacteristic(item)} style={{ cursor: 'pointer', paddingInline: token.paddingSM }}>
+            <div data-testid="characteristic-list-content" style={{ width: '100%', minWidth: 0 }}>
+              <Space wrap size={[token.marginXS, token.marginXXS]} style={{ marginBottom: token.marginXXS }}>
+                <Typography.Text strong style={{ overflowWrap: 'anywhere' }}>{item.characteristicCode}</Typography.Text>
+                <Tag style={{ marginInlineEnd: 0 }}>{item.reviewStatus}</Tag>
+              </Space>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 0, overflowWrap: 'break-word' }}>
+                {`${item.name} · ${item.nominalValue ?? '-'} ${item.unit ?? ''} (${item.upperTolerance ?? '-'} / ${item.lowerTolerance ?? '-'})`}
+              </Typography.Paragraph>
+              {item.reviewStatus === 'PENDING' && canReview && <Space wrap size="small" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: token.marginXS }}>
+                <Button size="small" type="link" onClick={(event) => { event.stopPropagation(); openReview(item); }}>{t('qmsReview.editConfirm')}</Button>
+                <Button size="small" type="link" danger loading={rejectMutation.isPending} onClick={(event) => { event.stopPropagation(); rejectMutation.mutate({ id: item.id, request: { version: item.version } }); }}>{t('qmsReview.reject')}</Button>
+              </Space>}
+            </div>
           </List.Item>} />
       </Card>
       <Card title={t('qmsReview.evidence')} extra={<Segmented size="small" value={filter} onChange={(value) => setFilter(String(value))}
