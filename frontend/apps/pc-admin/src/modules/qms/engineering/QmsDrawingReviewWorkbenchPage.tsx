@@ -198,12 +198,22 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     height: Math.max(selected.bbox.height / preview.viewBox.height * viewportSize.height, 8),
     rotation: -selectedRotation
   } : undefined;
-  const pdfOverlay = selected && viewportSize.width > 0 ? matchedPdfBox ?? approximatePdfBox : undefined;
+  const rawPdfOverlay = selected && viewportSize.width > 0 ? matchedPdfBox ?? approximatePdfBox : undefined;
+  const pdfMarkerPadding = rawPdfOverlay ? Math.max(rawPdfOverlay.height * 0.45, 6) : 0;
+  const pdfOverlay = rawPdfOverlay ? {
+    ...rawPdfOverlay,
+    left: rawPdfOverlay.left - pdfMarkerPadding,
+    top: rawPdfOverlay.top - pdfMarkerPadding,
+    width: rawPdfOverlay.width + pdfMarkerPadding * 2,
+    height: rawPdfOverlay.height + pdfMarkerPadding * 2
+  } : undefined;
+  const dwgMarkerPadding = selected && preview
+    ? Math.max(selected.bbox.height * 0.45, preview.viewBox.height * 0.001) : 0;
   const dwgOverlay = selected && preview ? {
-    left: `${(selected.bbox.x - preview.viewBox.x) / preview.viewBox.width * 100}%`,
-    top: `${(selected.bbox.y - preview.viewBox.y) / preview.viewBox.height * 100}%`,
-    width: `${Math.max(selected.bbox.width / preview.viewBox.width * 100, 0.25)}%`,
-    height: `${Math.max(selected.bbox.height / preview.viewBox.height * 100, 0.5)}%`,
+    left: `${(selected.bbox.x - dwgMarkerPadding - preview.viewBox.x) / preview.viewBox.width * 100}%`,
+    top: `${(selected.bbox.y - dwgMarkerPadding - preview.viewBox.y) / preview.viewBox.height * 100}%`,
+    width: `${Math.max((selected.bbox.width + dwgMarkerPadding * 2) / preview.viewBox.width * 100, 0.25)}%`,
+    height: `${Math.max((selected.bbox.height + dwgMarkerPadding * 2) / preview.viewBox.height * 100, 0.5)}%`,
     transform: `rotate(${-selectedRotation}rad)`
   } : undefined;
   const centerPdfOnEvidence = () => {
