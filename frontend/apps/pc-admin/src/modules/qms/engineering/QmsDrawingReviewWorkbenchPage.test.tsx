@@ -153,9 +153,15 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     expect(pdfOverlay).toBeInTheDocument();
     expect(pdfOverlay.style.border).toBe('');
     expect(pdfOverlay.getAttribute('style')).not.toContain('dashed');
+    expect(pdfOverlay.style.left).toBe('302px');
+    expect(pdfOverlay.style.top).toBe('142px');
+    expect(pdfOverlay.style.width).toBe('116px');
+    expect(pdfOverlay.style.height).toBe('76px');
     fireEvent.click(screen.getByText('DWG 矢量图'));
     expect(await screen.findByTestId('dwg-viewer')).toBeInTheDocument();
     expect(screen.getByTestId('evidence-overlay').getAttribute('style')).toContain('rotate(-1.5707963267949rad)');
+    expect(screen.getByTestId('evidence-overlay').style.left).toBe('37.75%');
+    expect(screen.getByTestId('evidence-overlay').style.top).toBe('35.5%');
     expect(document.querySelector('.qms-review-workbench')).toBeInTheDocument();
     expect(document.querySelector('.qms-review-list-pane')).toBeInTheDocument();
     expect(document.querySelector('.qms-review-viewer-card')).toBeInTheDocument();
