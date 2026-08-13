@@ -13,6 +13,9 @@ RUN pnpm install --frozen-lockfile \
 
 FROM nginx:1.27-alpine
 
+ARG SOURCE_REVISION=unknown
+LABEL org.opencontainers.image.revision=$SOURCE_REVISION
+
 COPY deploy/production/frontend-nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /workspace/frontend/apps/pc-admin/dist /usr/share/nginx/html
 

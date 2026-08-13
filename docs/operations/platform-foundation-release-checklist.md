@@ -119,6 +119,14 @@ The detailed procedure is in:
 docs/operations/platform-foundation-smoke-test.md
 ```
 
+## Production Frontend Deployment
+
+Use only `./scripts/deploy-production-frontend.sh`. Do not run production
+`docker compose build/up` directly from a task worktree. The script serializes
+deployments across worktrees, requires a clean revision already contained in
+`origin/main` by default, runs navigation regression tests, builds an immutable
+SHA-tagged image, and verifies the running revision label after replacement.
+
 ## Post-RC Backlog Categories
 
 | Category | Example items | Blocks business modules |
