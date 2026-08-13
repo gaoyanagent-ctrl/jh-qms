@@ -1,7 +1,7 @@
 import { IafThemeProvider } from '@iaf/theme';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App as AntApp } from 'antd';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { qmsEngineeringApi } from './api';
@@ -110,11 +110,28 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
           viewBox: { x: 0, y: 0, width: 200, height: 100 }, coordinateSystem: 'SVG_NATIVE', generatedBy: 'test' } }] },
       createdAt: '2026-08-12T00:00:00Z'
     });
+    vi.mocked(qmsEngineeringApi.listEvidence).mockResolvedValue([{
+      id: 9, sourceFileId: 3, drawingRevisionId: 3, parseJobId: 1, evidenceKey: 'ev-dwg-1',
+      entityId: 'dwg-1', entityHandle: '20', sheetNo: 'MODEL', pageNo: null,
+      bbox: { x: 80, y: 40, width: 20, height: 10 }, rawText: '6.5±0.3', normalizedText: '6.5±0.3',
+      extractorType: 'DWG_ENTITY', extractorVersion: 'test', modelName: null, modelVersion: null,
+      confidence: 0.9, createdAt: '2026-08-12T00:00:00Z'
+    }]);
+    vi.mocked(qmsEngineeringApi.listCharacteristics).mockResolvedValue([{
+      id: 9, partId: 2, drawingRevisionId: 3, sourceEntityId: 'dwg-1', evidenceId: 9,
+      characteristicCode: 'DIM-EV-9', characteristicType: 'DIMENSION', name: '6.5±0.3', nominalValue: 6.5,
+      upperTolerance: 0.3, lowerTolerance: -0.3, upperLimit: 6.8, lowerLimit: 6.2, unit: 'mm',
+      specialCharacteristicCode: null, confidence: 0.9, status: 'DRAFT', reviewStatus: 'PENDING',
+      reviewedBy: null, reviewedAt: null, reviewComment: null, version: 0
+    }]);
 
     renderPage();
 
     expect(await screen.findByText('PDF 校对底图')).toBeInTheDocument();
     expect(screen.getByText('DWG 矢量图')).toBeInTheDocument();
     await waitFor(() => expect(qmsEngineeringApi.getRevisionRoleFileContent).toHaveBeenCalledWith(3, 'PDF_REFERENCE'));
+    fireEvent.click(await screen.findByText('DIM-EV-9'));
+    expect(await screen.findByTestId('dwg-viewer')).toBeInTheDocument();
+    expect(screen.getByTestId('evidence-overlay')).toBeInTheDocument();
   });
 });

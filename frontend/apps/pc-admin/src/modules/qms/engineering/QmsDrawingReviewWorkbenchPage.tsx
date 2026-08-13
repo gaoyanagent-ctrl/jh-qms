@@ -56,7 +56,12 @@ export const QmsDrawingReviewWorkbenchPage = () => {
 
   const locateCharacteristic = (item: QmsQualityCharacteristic) => {
     const source = evidenceQuery.data?.find((evidenceItem) => evidenceItem.id === item.evidenceId);
-    if (source) setSelected(source);
+    if (source) {
+      setSelected(source);
+      // DWG evidence has no valid PDF coordinate until a registration transform exists.
+      // Locate it only on the coordinate system that produced the evidence.
+      if (revision?.fileType === 'DWG') setDwgViewMode('DWG');
+    }
   };
   const openReview = (item: QmsQualityCharacteristic) => {
     setEditing(item);
@@ -131,12 +136,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     // Re-center only when the selected evidence changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id, preview]);
-  const pdfOverlay = selected && currentSheet && viewportSize.width > 0 ? revision?.fileType === 'DWG' && preview ? {
-    left: (selected.bbox.x - preview.viewBox.x) / preview.viewBox.width * viewportSize.width,
-    top: (selected.bbox.y - preview.viewBox.y) / preview.viewBox.height * viewportSize.height,
-    width: Math.max(selected.bbox.width / preview.viewBox.width * viewportSize.width, 3),
-    height: Math.max(selected.bbox.height / preview.viewBox.height * viewportSize.height, 3)
-  } : {
+  const pdfOverlay = selected && currentSheet && viewportSize.width > 0 && revision?.fileType !== 'DWG' ? {
     left: selected.bbox.x / currentSheet.width * viewportSize.width,
     top: selected.bbox.y / currentSheet.height * viewportSize.height,
     width: selected.bbox.width / currentSheet.width * viewportSize.width,
@@ -205,7 +205,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
         <Button aria-label={t('qmsReview.locateEvidence')} icon={<AimOutlined />} disabled={!selected} onClick={() => selected && centerDwgOnEvidence(selected)} />
         </>}
       </Space> : pageCount > 0 && <Space><Button size="small" disabled={pageNo <= 1} onClick={() => setPageNo((value) => value - 1)}>{t('qmsReview.previousPage')}</Button><Typography.Text>{pageNo}/{pageCount}</Typography.Text><Button size="small" disabled={pageNo >= pageCount} onClick={() => setPageNo((value) => value + 1)}>{t('qmsReview.nextPage')}</Button></Space>}>
-        {fileQuery.isLoading || companionFileQuery.isLoading || dimQuery.isLoading ? <Spin /> : revision?.fileType === 'DWG' && (dwgViewMode === 'DWG' || !companionPdf) ? !dwgUrl || !preview ? <Alert type="info" showIcon message={t('qmsReview.cadPreviewMissing')} /> :
+        {fileQuery.isLoading || companionFileQuery.isLoading || ((dwgViewMode === 'DWG' || !companionPdf) && dimQuery.isLoading) ? <Spin /> : revision?.fileType === 'DWG' && (dwgViewMode === 'DWG' || !companionPdf) ? !dwgUrl || !preview ? <Alert type="info" showIcon message={t('qmsReview.cadPreviewMissing')} /> :
           <div ref={dwgViewerRef} data-testid="dwg-viewer" role="img" aria-label={t('qmsReview.dwgCanvas')} tabIndex={0}
             onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { x: event.clientX, y: event.clientY, left: dwgPan.x, top: dwgPan.y }; }}
             onPointerMove={(event) => { if (dragRef.current) setDwgPan({ x: dragRef.current.left + event.clientX - dragRef.current.x, y: dragRef.current.top + event.clientY - dragRef.current.y }); }}
