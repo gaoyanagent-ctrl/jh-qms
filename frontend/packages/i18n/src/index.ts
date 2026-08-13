@@ -253,7 +253,7 @@ export const resources = {
         fields: { drawingNo: '图号', drawingName: '图纸名称', drawingType: '图纸类型', sourceSystem: '来源系统' }
       },
       qmsRevisions: {
-        title: '版本历史', empty: '当前图纸暂无版本', selectDrawing: '选择一张图纸以查看版本历史。', actions: { create: '新增版本', upload: '上传文件', retryParse: '重试解析', review: '查看图纸' },
+        title: '版本历史', empty: '当前图纸暂无版本', selectDrawing: '选择一张图纸以查看版本历史。', actions: { create: '新增版本', upload: '上传文件', uploadRole: '上传{{role}}', retryParse: '重试解析', review: '查看图纸' },
         feedback: { uploadSucceeded: '图纸文件上传成功', retrySucceeded: '已重新提交解析任务', uploadPermissionRequired: '当前登录身份缺少上传权限，请重新登录或联系管理员。' },
         fields: {
           revisionCode: '版本号', revisionSeq: '版本序号', effectiveDate: '生效日期', parseStatus: '解析状态',
@@ -902,7 +902,7 @@ export const resources = {
         fields: { drawingNo: 'Drawing no.', drawingName: 'Drawing name', drawingType: 'Drawing type', sourceSystem: 'Source system' }
       },
       qmsRevisions: {
-        title: 'Revision History', empty: 'No revisions for this drawing', selectDrawing: 'Select a drawing to view its revision history.', actions: { create: 'Create Revision', upload: 'Upload File', retryParse: 'Retry parse', review: 'View drawing' },
+        title: 'Revision History', empty: 'No revisions for this drawing', selectDrawing: 'Select a drawing to view its revision history.', actions: { create: 'Create Revision', upload: 'Upload File', uploadRole: 'Upload {{role}}', retryParse: 'Retry parse', review: 'View drawing' },
         feedback: { uploadSucceeded: 'Drawing file uploaded', retrySucceeded: 'Parse job resubmitted', uploadPermissionRequired: 'The current session lacks upload permission. Sign in again or contact an administrator.' },
         fields: {
           revisionCode: 'Revision', revisionSeq: 'Sequence', effectiveDate: 'Effective date', parseStatus: 'Parse status',

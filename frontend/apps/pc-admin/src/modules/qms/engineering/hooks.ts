@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { QmsDrawingCreateRequest, QmsDrawingRevisionCreateRequest, QmsQualityCharacteristicReviewRequest } from '@iaf/domain-types';
+import type { QmsDrawingCreateRequest, QmsDrawingRevisionCreateRequest, QmsDrawingRevisionFileRole, QmsQualityCharacteristicReviewRequest } from '@iaf/domain-types';
 import { qmsEngineeringApi } from './api';
 
 export const qmsEngineeringKeys = {
@@ -10,6 +10,8 @@ export const qmsEngineeringKeys = {
   revision: (revisionId: number) => ['qms-engineering-drawing-revision', revisionId] as const,
   parseJobs: (drawingId: number) => ['qms-engineering-drawing-parse-jobs', drawingId] as const,
   revisionFile: (revisionId: number) => ['qms-engineering-revision-file', revisionId] as const,
+  revisionFiles: (revisionId: number) => ['qms-engineering-revision-files', revisionId] as const,
+  revisionRoleFile: (revisionId: number, role: QmsDrawingRevisionFileRole) => ['qms-engineering-revision-role-file', revisionId, role] as const,
   intermediateModel: (revisionId: number) => ['qms-engineering-intermediate-model', revisionId] as const,
   evidence: (revisionId: number) => ['qms-engineering-evidence', revisionId] as const,
   characteristics: (revisionId: number) => ['qms-engineering-characteristics', revisionId] as const
@@ -52,6 +54,14 @@ export const useQmsParseJobsQuery = (drawingId?: number, enabled = true) =>
 export const useQmsRevisionFileQuery = (revisionId?: number, enabled = true) =>
   useQuery({ queryKey: qmsEngineeringKeys.revisionFile(revisionId ?? 0),
     queryFn: () => qmsEngineeringApi.getRevisionFileContent(revisionId!), enabled: Boolean(revisionId) && enabled });
+
+export const useQmsRevisionFilesQuery = (revisionId?: number, enabled = true) =>
+  useQuery({ queryKey: qmsEngineeringKeys.revisionFiles(revisionId ?? 0),
+    queryFn: () => qmsEngineeringApi.listRevisionFiles(revisionId!), enabled: Boolean(revisionId) && enabled });
+
+export const useQmsRevisionRoleFileQuery = (revisionId: number | undefined, role: QmsDrawingRevisionFileRole, enabled = true) =>
+  useQuery({ queryKey: qmsEngineeringKeys.revisionRoleFile(revisionId ?? 0, role),
+    queryFn: () => qmsEngineeringApi.getRevisionRoleFileContent(revisionId!, role), enabled: Boolean(revisionId) && enabled });
 
 export const useQmsIntermediateModelQuery = (revisionId?: number, enabled = true) =>
   useQuery({ queryKey: qmsEngineeringKeys.intermediateModel(revisionId ?? 0),
@@ -135,6 +145,22 @@ export const useUploadQmsRevisionFileMutation = (drawingId?: number, onSuccess?:
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0) }),
+        queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.parseJobs(drawingId ?? 0) })
+      ]);
+      onSuccess?.();
+    }
+  });
+};
+
+export const useUploadQmsRevisionRoleFileMutation = (drawingId?: number, onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ revisionId, role, file }: { revisionId: number; role: QmsDrawingRevisionFileRole; file: File }) =>
+      qmsEngineeringApi.uploadRevisionRoleFile(revisionId, role, file),
+    onSuccess: async (_, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.revisions(drawingId ?? 0) }),
+        queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.revisionFiles(variables.revisionId) }),
         queryClient.invalidateQueries({ queryKey: qmsEngineeringKeys.parseJobs(drawingId ?? 0) })
       ]);
       onSuccess?.();

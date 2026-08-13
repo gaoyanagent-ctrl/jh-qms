@@ -10,7 +10,9 @@ import type {
   QmsQualityCharacteristic,
   QmsQualityCharacteristicReviewRequest,
   QmsPart,
-  QmsPartCreateRequest
+  QmsPartCreateRequest,
+  QmsDrawingRevisionFile,
+  QmsDrawingRevisionFileRole
 } from '@iaf/domain-types';
 import type { QmsFileObject } from '@iaf/domain-types';
 import { apiClient } from '../../../api/client';
@@ -45,6 +47,14 @@ export const qmsEngineeringApi = {
     apiClient.post<QmsQualityCharacteristic>(`/api/qms/drawing-revisions/${revisionId}/characteristics/${id}/reject`, request),
   getRevisionFileContent: (revisionId: number) =>
     apiClient.getBlob(`/api/qms/drawing-revisions/${revisionId}/file/content`),
+  listRevisionFiles: (revisionId: number) =>
+    apiClient.get<QmsDrawingRevisionFile[]>(`/api/qms/drawing-revisions/${revisionId}/files`),
+  getRevisionRoleFileContent: (revisionId: number, role: QmsDrawingRevisionFileRole) =>
+    apiClient.getBlob(`/api/qms/drawing-revisions/${revisionId}/files/${role}/content`),
+  uploadRevisionRoleFile: (revisionId: number, role: QmsDrawingRevisionFileRole, file: File) => {
+    const body = new FormData(); body.append('file', file);
+    return apiClient.post<QmsFileObject>(`/api/qms/drawing-revisions/${revisionId}/files/${role}`, body);
+  },
   uploadRevisionFile: (revisionId: number, file: File) => {
     const body = new FormData();
     body.append('file', file);

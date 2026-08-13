@@ -3,12 +3,13 @@ import type {
   QmsDrawingCreateRequest,
   QmsDrawingRevision,
   QmsDrawingRevisionCreateRequest,
-  QmsDrawingParseJob
+  QmsDrawingParseJob,
+  QmsDrawingRevisionFileRole
 } from '@iaf/domain-types';
 import { PermissionButton, QMS_PERMISSIONS, hasPermission, useUserPermissions } from '@iaf/permissions';
 import { useIafTheme, iafSurfaceWidths } from '@iaf/theme';
 import { AppPageContainer, FormInteractionSurface, StatusTag } from '@iaf/ui-core';
-import { Alert, App, Button, Card, Descriptions, Form, Input, Select, Space, Table, Typography, Upload, theme } from 'antd';
+import { Alert, App, Button, Card, Descriptions, Form, Input, Select, Space, Table, Tag, Typography, Upload, theme } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,14 +21,36 @@ import {
   useQmsDrawingsQuery,
   useQmsPartQuery,
   useQmsParseJobsQuery,
+  useQmsRevisionFilesQuery,
   useQmsRevisionsQuery,
   useRetryQmsParseJobMutation,
-  useUploadQmsRevisionFileMutation
+  useUploadQmsRevisionRoleFileMutation
 } from './hooks';
 import { buildPageAIContext, QmsPageContextProvider } from './pageContext';
 
 const drawingTypes: QmsDrawing['drawingType'][] = ['PRODUCT', 'PART', 'ASSEMBLY', 'OTHER'];
 const sourceSystems: QmsDrawing['sourceSystem'][] = ['MANUAL', 'PLM', 'MIGRATION'];
+
+const RevisionFilesCell = ({ drawingId, revision, canUpload, onReview }: {
+  drawingId?: number; revision: QmsDrawingRevision; canUpload: boolean; onReview: () => void;
+}) => {
+  const { t } = useTranslation();
+  const { message } = App.useApp();
+  const files = useQmsRevisionFilesQuery(revision.id);
+  const upload = useUploadQmsRevisionRoleFileMutation(drawingId, () => message.success(t('qmsRevisions.feedback.uploadSucceeded')));
+  const roles = new Set((files.data ?? []).map((item) => item.role));
+  const picker = (role: QmsDrawingRevisionFileRole, accept: string, label: string) => roles.has(role)
+    ? <Tag color="success">{label} ✓</Tag>
+    : <Upload disabled={!canUpload} accept={accept} maxCount={1} showUploadList={false}
+        beforeUpload={(file) => { upload.mutate({ revisionId: revision.id, role, file }); return false; }}>
+        <Button disabled={!canUpload} size="small" loading={upload.isPending}>{t('qmsRevisions.actions.uploadRole', { role: label })}</Button>
+      </Upload>;
+  return <Space size="small" wrap>
+    {picker('DWG_SOURCE', '.dwg', 'DWG')}
+    {picker('PDF_REFERENCE', '.pdf', 'PDF')}
+    {roles.has('DWG_SOURCE') && roles.has('PDF_REFERENCE') && <Button size="small" onClick={onReview}>{t('qmsRevisions.actions.review')}</Button>}
+  </Space>;
+};
 
 export const QmsPartDetailPage = () => {
   const { t, i18n } = useTranslation();
@@ -55,7 +78,6 @@ export const QmsPartDetailPage = () => {
   const drawingsQuery = useQmsDrawingsQuery(validPartId ? partId : undefined, canViewDrawings);
   const revisionsQuery = useQmsRevisionsQuery(selectedDrawingId, canViewRevisions);
   const parseJobsQuery = useQmsParseJobsQuery(selectedDrawingId, canViewRevisions);
-  const uploadFile = useUploadQmsRevisionFileMutation(selectedDrawingId, () => message.success(t('qmsRevisions.feedback.uploadSucceeded')));
   const retryParse = useRetryQmsParseJobMutation(selectedDrawingId, () => message.success(t('qmsRevisions.feedback.retrySucceeded')));
   const parseJobsByRevision = useMemo(() => new Map((parseJobsQuery.data ?? []).map((job) => [job.revisionId, job])), [parseJobsQuery.data]);
   const selectedDrawing = drawingsQuery.data?.find((drawing) => drawing.id === selectedDrawingId);
@@ -116,16 +138,11 @@ export const QmsPartDetailPage = () => {
     } },
     { title: t('qmsRevisions.fields.reviewStatus'), dataIndex: 'reviewStatus', width: 135, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
     { title: t('common.fields.status'), dataIndex: 'status', width: 120, render: (value) => <StatusTag status={value} label={t(`qms.status.${value}`)} /> },
-    { title: t('qmsRevisions.fields.file'), width: 190, fixed: 'right', render: (_, revision) => revision.fileId
-      ? <Space><Typography.Text>{revision.fileType} · {revision.checksum?.slice(0, 8)}</Typography.Text><Button size="small" onClick={(event) => {
-          event.currentTarget.blur();
-          navigate(`/qms/engineering/drawing-revisions/${revision.id}/review`);
-        }}>{t('qmsRevisions.actions.review')}</Button></Space>
-      : <Upload disabled={!canUploadRevisionFile} accept=".pdf,.dwg" maxCount={1} showUploadList={false} beforeUpload={(file) => { uploadFile.mutate({ revisionId: revision.id, file }); return false; }}>
-          <Button disabled={!canUploadRevisionFile} title={!canUploadRevisionFile ? t('qmsRevisions.feedback.uploadPermissionRequired') : undefined} size="small" loading={uploadFile.isPending}>{t('qmsRevisions.actions.upload')}</Button>
-        </Upload> },
+    { title: t('qmsRevisions.fields.file'), width: 310, fixed: 'right', render: (_, revision) =>
+      <RevisionFilesCell drawingId={selectedDrawingId} revision={revision} canUpload={canUploadRevisionFile}
+        onReview={() => navigate(`/qms/engineering/drawing-revisions/${revision.id}/review`)} /> },
     ...(workspaceMode === 'expert' ? [{ title: t('common.fields.createdAt'), dataIndex: 'createdAt', width: 190, render: (value: string) => formatDateTime(value) }] : [])
-  ], [canRetryParse, canUploadRevisionFile, i18n.language, navigate, parseJobsByRevision, retryParse, t, workspaceMode, uploadFile]);
+  ], [canRetryParse, canUploadRevisionFile, i18n.language, navigate, parseJobsByRevision, retryParse, selectedDrawingId, t, workspaceMode]);
 
   const submitDrawing = async (values: QmsDrawingCreateRequest) => {
     try {

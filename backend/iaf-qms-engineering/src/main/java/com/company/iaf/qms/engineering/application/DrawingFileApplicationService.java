@@ -5,6 +5,9 @@ import com.company.iaf.platform.statemachine.application.StateMachineService;
 import com.company.iaf.platform.statemachine.application.StateTransition;
 import com.company.iaf.qms.engineering.domain.model.DrawingRevision;
 import com.company.iaf.qms.engineering.domain.model.QmsFileObject;
+import com.company.iaf.qms.engineering.domain.model.DrawingRevisionFile;
+import com.company.iaf.qms.engineering.domain.model.DrawingRevisionFileRole;
+import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionFileRepository;
 import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionRepository;
 import com.company.iaf.qms.engineering.domain.repository.DrawingParseJobRepository;
 import com.company.iaf.qms.engineering.domain.repository.QmsAuditTrail;
@@ -36,20 +39,27 @@ public class DrawingFileApplicationService {
     private final QmsObjectStorage storage;
     private final QmsAuditTrail audit;
     private final DrawingParseJobRepository parseJobs;
+    private final DrawingRevisionFileRepository revisionFiles;
     private final StateMachineService stateMachine;
     private static final List<StateTransition<DrawingRevisionStatus>> TRANSITIONS = List.of(
             new StateTransition<>(DrawingRevisionStatus.DRAFT, "upload", DrawingRevisionStatus.UPLOADED));
 
     public DrawingFileApplicationService(DrawingRevisionRepository revisions, QmsFileObjectRepository files,
             QmsObjectStorage storage, QmsAuditTrail audit, DrawingParseJobRepository parseJobs,
-            StateMachineService stateMachine) {
+            DrawingRevisionFileRepository revisionFiles, StateMachineService stateMachine) {
         this.revisions = revisions; this.files = files; this.storage = storage; this.audit = audit;
-        this.parseJobs = parseJobs; this.stateMachine = stateMachine;
+        this.parseJobs = parseJobs; this.revisionFiles = revisionFiles; this.stateMachine = stateMachine;
     }
 
     @RequiresPermission("qms:drawing-revision:upload")
     @Transactional
     public QmsFileResponse upload(long tenantId, long orgId, long revisionId, MultipartFile upload) {
+        return upload(tenantId, orgId, revisionId, null, upload);
+    }
+
+    @RequiresPermission("qms:drawing-revision:upload")
+    @Transactional
+    public QmsFileResponse upload(long tenantId, long orgId, long revisionId, DrawingRevisionFileRole role, MultipartFile upload) {
         DrawingRevision revision = revision(tenantId, orgId, revisionId);
         if (upload == null || upload.isEmpty()) throw new BusinessException(QmsEngineeringErrorCode.FILE_REQUIRED);
         if (upload.getSize() > MAX_SIZE) throw new BusinessException(QmsEngineeringErrorCode.FILE_TOO_LARGE);
@@ -57,6 +67,13 @@ public class DrawingFileApplicationService {
         String extension = extension(original);
         if (!extension.equals("pdf") && !extension.equals("dwg"))
             throw new BusinessException(QmsEngineeringErrorCode.FILE_TYPE_UNSUPPORTED);
+        if (role == DrawingRevisionFileRole.DWG_SOURCE && !extension.equals("dwg")
+                || role == DrawingRevisionFileRole.PDF_REFERENCE && !extension.equals("pdf"))
+            throw new BusinessException(QmsEngineeringErrorCode.FILE_TYPE_UNSUPPORTED);
+        DrawingRevisionFileRole effectiveRole = role != null ? role
+                : extension.equals("dwg") ? DrawingRevisionFileRole.DWG_SOURCE : DrawingRevisionFileRole.PDF_REFERENCE;
+        if (revisionFiles.find(tenantId, orgId, revisionId, effectiveRole).isPresent())
+            throw new BusinessException(QmsEngineeringErrorCode.FILE_ALREADY_ATTACHED);
         Path temp = null;
         String key = null;
         try {
@@ -68,7 +85,8 @@ public class DrawingFileApplicationService {
                 input.transferTo(OutputStream.nullOutputStream());
             }
             String checksum = HexFormat.of().formatHex(digest.digest());
-            if (revision.fileId() != null) {
+            boolean referenceOnly = role == DrawingRevisionFileRole.PDF_REFERENCE;
+            if (!referenceOnly && revision.fileId() != null) {
                 if (checksum.equals(revision.checksum())) throw new BusinessException(QmsEngineeringErrorCode.FILE_DUPLICATE);
                 throw new BusinessException(QmsEngineeringErrorCode.FILE_ALREADY_ATTACHED);
             }
@@ -79,14 +97,20 @@ public class DrawingFileApplicationService {
             QmsFileObject draft = new QmsFileObject(null, tenantId, orgId, original, mediaType, extension,
                     upload.getSize(), checksum, storage.bucket(), key, 0, null);
             long fileId = files.insert(actor, draft);
+            revisionFiles.attach(actor, tenantId, orgId, revisionId, fileId, effectiveRole);
+            QmsFileObject stored = files.findById(tenantId, orgId, fileId)
+                    .orElseThrow(() -> new BusinessException(QmsEngineeringErrorCode.FILE_UPLOAD_FAILED));
+            if (referenceOnly) {
+                audit.record(tenantId, actor, "DRAWING_REVISION_REFERENCE_FILE_UPLOADED", "DrawingRevision", revisionId,
+                        QmsFileResponse.from(stored));
+                return QmsFileResponse.from(stored);
+            }
             DrawingRevisionStatus target;
             try { target = stateMachine.requireTransition(revision.status(), "upload", TRANSITIONS).to(); }
             catch (IllegalStateException e) { throw new BusinessException(QmsEngineeringErrorCode.REVISION_INVALID_STATE); }
             if (!revisions.attachFile(actor, tenantId, orgId, revisionId, fileId, extension.toUpperCase(Locale.ROOT), checksum, target.name(), revision.version()))
                 throw new BusinessException(QmsEngineeringErrorCode.FILE_ALREADY_ATTACHED);
             parseJobs.enqueue(actor, tenantId, orgId, revisionId, fileId, extension.toUpperCase(Locale.ROOT), 1);
-            QmsFileObject stored = files.findById(tenantId, orgId, fileId)
-                    .orElseThrow(() -> new BusinessException(QmsEngineeringErrorCode.FILE_UPLOAD_FAILED));
             audit.record(tenantId, actor, "DRAWING_REVISION_FILE_UPLOADED", "DrawingRevision", revisionId, QmsFileResponse.from(stored));
             audit.record(tenantId, actor, "DRAWING_REVISION_STATE_TRANSITIONED", "DrawingRevision", revisionId,
                     new StateChange(revision.status().name(), "upload", target.name()));
@@ -109,6 +133,23 @@ public class DrawingFileApplicationService {
     @RequiresPermission("qms:drawing-revision:view")
     public InputStream content(long tenantId, long orgId, long revisionId) {
         return storage.get(metadata(tenantId, orgId, revisionId).storageObjectKey());
+    }
+    @RequiresPermission("qms:drawing-revision:view")
+    @Transactional(readOnly = true)
+    public List<DrawingRevisionFile> attachments(long tenantId, long orgId, long revisionId) {
+        revision(tenantId, orgId, revisionId);
+        return revisionFiles.findAll(tenantId, orgId, revisionId);
+    }
+    @RequiresPermission("qms:drawing-revision:view")
+    @Transactional(readOnly = true)
+    public QmsFileObject metadata(long tenantId, long orgId, long revisionId, DrawingRevisionFileRole role) {
+        revision(tenantId, orgId, revisionId);
+        return revisionFiles.find(tenantId, orgId, revisionId, role).map(DrawingRevisionFile::file)
+                .orElseThrow(() -> new BusinessException(QmsEngineeringErrorCode.FILE_NOT_FOUND));
+    }
+    @RequiresPermission("qms:drawing-revision:view")
+    public InputStream content(long tenantId, long orgId, long revisionId, DrawingRevisionFileRole role) {
+        return storage.get(metadata(tenantId, orgId, revisionId, role).storageObjectKey());
     }
     private DrawingRevision revision(long tenantId, long orgId, long id) { return revisions.findById(tenantId, orgId, id)
             .orElseThrow(() -> new BusinessException(QmsEngineeringErrorCode.REVISION_NOT_FOUND)); }

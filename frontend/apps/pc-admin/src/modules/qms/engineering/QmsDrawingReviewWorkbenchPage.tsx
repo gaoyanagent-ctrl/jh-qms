@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { useQmsCharacteristicsQuery, useQmsEvidenceQuery, useQmsIntermediateModelQuery, useQmsRevisionFileQuery, useQmsRevisionQuery, useQmsRevisionsQuery, useReviewQmsCharacteristicMutation } from './hooks';
+import { useQmsCharacteristicsQuery, useQmsEvidenceQuery, useQmsIntermediateModelQuery, useQmsRevisionFileQuery, useQmsRevisionFilesQuery, useQmsRevisionQuery, useQmsRevisionRoleFileQuery, useReviewQmsCharacteristicMutation } from './hooks';
 
 // Keep the URL versioned independently from the application bundle. This prevents a
 // previously cached response with an invalid module MIME type from breaking PDF.js.
@@ -42,12 +42,11 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const [dwgUrl, setDwgUrl] = useState<string>();
   const revisionQuery = useQmsRevisionQuery(validId ? revisionId : undefined, validId);
   const revision = revisionQuery.data;
-  const revisionsQuery = useQmsRevisionsQuery(revision?.drawingId, revision?.fileType === 'DWG');
-  const companionPdf = useMemo(() => revisionsQuery.data?.filter((item) => item.id !== revisionId && item.fileType === 'PDF'
-    && item.fileId && item.parseStatus === 'SUCCESS').sort((a, b) => b.revisionSeq - a.revisionSeq)[0], [revisionId, revisionsQuery.data]);
+  const revisionFilesQuery = useQmsRevisionFilesQuery(validId ? revisionId : undefined, revision?.fileType === 'DWG');
+  const companionPdf = revisionFilesQuery.data?.find((item) => item.role === 'PDF_REFERENCE');
   const [dwgViewMode, setDwgViewMode] = useState<'PDF' | 'DWG'>('PDF');
   const fileQuery = useQmsRevisionFileQuery(validId ? revisionId : undefined, validId && revision?.fileType === 'PDF');
-  const companionFileQuery = useQmsRevisionFileQuery(companionPdf?.id, revision?.fileType === 'DWG' && Boolean(companionPdf));
+  const companionFileQuery = useQmsRevisionRoleFileQuery(validId ? revisionId : undefined, 'PDF_REFERENCE', revision?.fileType === 'DWG' && Boolean(companionPdf));
   const parseResultAvailable = revision?.parseStatus === 'SUCCESS' || revision?.parseStatus === 'PARTIAL_SUCCESS';
   const dimQuery = useQmsIntermediateModelQuery(validId ? revisionId : undefined, validId && parseResultAvailable);
   const evidenceQuery = useQmsEvidenceQuery(validId ? revisionId : undefined, validId && parseResultAvailable);
@@ -220,7 +219,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
           </div> : renderError ? <Alert type="error" showIcon message={t('qmsReview.renderFailed')} /> :
           <div style={{ overflow: 'auto', maxHeight: '72vh', textAlign: 'center', background: token.colorFillTertiary, padding: token.paddingSM }}>
             {revision?.fileType === 'DWG' && companionPdf && <Alert style={{ marginBottom: token.marginSM, textAlign: 'left' }} type="info" showIcon
-              message={t('qmsReview.pdfReferenceRevision', { revision: companionPdf.revisionCode })} />}
+              message={t('qmsReview.pdfReferenceRevision', { revision: revision.revisionCode })} />}
             <div style={{ display: 'inline-block', position: 'relative', lineHeight: 0 }}>
               <canvas ref={canvasRef} aria-label={t('qmsReview.pdfCanvas')} />
               {pdfOverlay && <div data-testid="evidence-overlay" style={{ position: 'absolute', pointerEvents: 'none', border: `3px solid ${token.colorError}`, background: token.colorErrorBg, opacity: 0.72, ...pdfOverlay }} />}

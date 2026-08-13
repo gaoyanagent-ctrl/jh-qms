@@ -584,8 +584,9 @@ Planned stack:
 - Unified request client via `packages/api-client`
 # QMS revision upload
 
-- The Part detail revision table uploads PDF/DWG source files with the dedicated
-  `qms:drawing-revision:upload` permission and displays file type/checksum after attachment.
+- The Part detail revision table uploads a DWG source and PDF reference into the same
+  revision with the dedicated `qms:drawing-revision:upload` permission. It displays each
+  role independently and opens review only after both files are attached.
 - The same table loads the latest parse attempt per revision in one drawing-scoped query,
   displays its queue status/attempt number, and exposes retry only for failed jobs to users
   with `qms:drawing-revision:retry-parse`.
@@ -597,7 +598,8 @@ Planned stack:
 - `QmsDrawingReviewWorkbenchPage.tsx` renders authenticated PDF Blobs with PDF.js, supports
   page navigation and confidence filtering, and maps selected evidence BBoxes from DIM sheet
   coordinates onto the Canvas overlay.
-- DWG preview remains behind a future CAD adapter and is represented by an explicit UI state.
+- For a DWG revision the workbench can switch between the parsed DWG vector view and the
+  PDF reference attached to that exact revision.
 - `packages/api-client#getBlob` is the shared authenticated binary-download entry point.
 - TASK-0409 adds the candidate list to the same workbench. Selecting a candidate locates its
   retained evidence; permitted reviewers can edit dimension values and confirm or reject it.
