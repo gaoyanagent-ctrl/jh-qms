@@ -143,7 +143,8 @@ export interface QmsDrawingIntermediateModel {
   documentId: string; revisionCode: string;
   model: { schemaVersion: string; documentId: string; revision: string; sheets: Array<{
     sheetNo: string; width: number; height: number; titleBlock: Record<string, unknown>;
-    views: unknown[]; entities: unknown[]; notes: unknown[]; characteristicCandidates: unknown[];
+    views: unknown[]; entities: Array<{ entityId: string; geometry?: Record<string, unknown> }>;
+    notes: unknown[]; characteristicCandidates: unknown[];
     preview?: { format: 'SVG'; content: string; viewBox: QmsBoundingBox;
       coordinateSystem: 'CAD_Y_UP' | 'SVG_NATIVE'; generatedBy: string };
   }> }; createdAt: string;

@@ -15,6 +15,7 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
             {
                 "object": "DIMSTYLE", "handle": [5, 48], "name": "横向",
                 "DIMDEC": 2, "DIMTOL": 0, "DIMTP": 0.0, "DIMTM": 0.0, "DIMTXT": 3.0,
+                "DIMTIH": 0, "DIMTOH": 0,
             },
             {
                 "entity": "DIMENSION_LINEAR",
@@ -25,6 +26,7 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
                 "xline1_pt": [0.0, 0.0, 0.0],
                 "xline2_pt": [34.0, 0.0, 0.0],
                 "text_midpt": [17.0, -2.0, 0.0],
+                "dim_rotation": 1.5707963267949,
                 "dimstyle": [5, 48],
                 "eed": [
                     {"code": 0, "value": "DSTYLE"},
@@ -69,6 +71,7 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
     assert entity["geometry"]["upperTolerance"] == 0.3
     assert entity["geometry"]["lowerTolerance"] == -0.3
     assert entity["geometry"]["displayPrecision"] == 1
+    assert entity["geometry"]["textRotation"] == pytest.approx(1.5707963267949)
     assert result["evidence"][0]["extractorType"] == "DWG_ENTITY"
     preview = result["modelJson"]["sheets"][0]["preview"]
     assert preview["viewBox"]["x"] == 0.0

@@ -106,7 +106,7 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     vi.mocked(qmsEngineeringApi.getIntermediateModel).mockResolvedValue({
       id: 1, revisionId: 3, parseJobId: 1, schemaVersion: '1.0.0', documentId: '3', revisionCode: 'B',
       model: { schemaVersion: '1.0.0', documentId: '3', revision: 'B', sheets: [{ sheetNo: 'MODEL', width: 200, height: 100,
-        titleBlock: {}, views: [], entities: [], notes: [], characteristicCandidates: [], preview: { format: 'SVG', content: '<svg viewBox="0 0 200 100"></svg>',
+        titleBlock: {}, views: [], entities: [{ entityId: 'dwg-1', geometry: { textRotation: 1.5707963267949 } }], notes: [], characteristicCandidates: [], preview: { format: 'SVG', content: '<svg viewBox="0 0 200 100"></svg>',
           viewBox: { x: 0, y: 0, width: 200, height: 100 }, coordinateSystem: 'SVG_NATIVE', generatedBy: 'test' } }] },
       createdAt: '2026-08-12T00:00:00Z'
     });
@@ -133,5 +133,9 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     fireEvent.click(await screen.findByText('DIM-EV-9'));
     expect(await screen.findByTestId('dwg-viewer')).toBeInTheDocument();
     expect(screen.getByTestId('evidence-overlay')).toBeInTheDocument();
+    expect(screen.getByTestId('evidence-overlay').getAttribute('style')).toContain('rotate(-1.5707963267949rad)');
+    expect(document.querySelector('.qms-review-workbench')).toBeInTheDocument();
+    expect(document.querySelector('.qms-review-list-pane')).toBeInTheDocument();
+    expect(document.querySelector('.qms-review-viewer-card')).toBeInTheDocument();
   });
 });

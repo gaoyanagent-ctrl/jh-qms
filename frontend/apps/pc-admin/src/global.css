@@ -6,6 +6,41 @@ body {
   margin: 0;
 }
 
+.qms-review-workbench {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 16px;
+  height: max(520px, calc(100dvh - 250px));
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.qms-review-list-pane {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-inline-end: 4px;
+}
+
+.qms-review-viewer-card {
+  height: 100%;
+  min-height: 0;
+}
+
+.qms-review-viewer-card > .ant-card-body {
+  height: calc(100% - 56px);
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.qms-evidence-marker {
+  background: transparent;
+  outline-offset: 3px;
+  border-radius: 2px;
+  opacity: 1;
+}
+
 .iaf-shell-root,
 .iaf-shell-root * {
   box-sizing: border-box;
@@ -138,6 +173,22 @@ body {
 }
 
 @media (max-width: 900px) {
+  .qms-review-workbench {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .qms-review-list-pane,
+  .qms-review-viewer-card > .ant-card-body {
+    overflow: visible;
+  }
+
+  .qms-review-viewer-card {
+    height: auto;
+  }
+
   .iaf-login-page {
     min-height: 100dvh !important;
     overflow: auto !important;
