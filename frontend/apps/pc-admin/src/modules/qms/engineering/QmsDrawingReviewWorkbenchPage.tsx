@@ -260,7 +260,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   if (!validId) return <AppPageContainer title={t('qmsReview.title')}><Alert type="error" showIcon message={t('qmsReview.invalidRevision')} /></AppPageContainer>;
 
   return <AppPageContainer title={`${t('qmsReview.title')} · ${revision?.revisionCode ?? revisionId}`}
-    extra={<Button onClick={() => navigate(-1)}>{t('common.actions.back')}</Button>}>
+    extra={<Space><Button onClick={() => navigate(`/qms/engineering/drawing-revisions/${revisionId}/inspection-standard`)}>检验标准</Button><Button onClick={() => navigate(-1)}>{t('common.actions.back')}</Button></Space>}>
     <Card size="small" style={{ marginBottom: token.marginMD }}>
       <Space wrap>
         <Typography.Text strong>{revision?.fileType ?? t('common.notAvailable')}</Typography.Text>

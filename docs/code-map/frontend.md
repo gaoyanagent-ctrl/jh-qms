@@ -609,3 +609,7 @@ Planned stack:
 
 - `/qms/engineering/drawing-legend` provides an accessible editable rule table with marker,
   meaning, target classification, match mode, priority, enabled state, and recognition example.
+# QMS inspection standard draft
+
+- The Drawing Review Workbench links to an editable inspection document with rule generation,
+  reaction plan, requirement, sampling, method and remark fields.

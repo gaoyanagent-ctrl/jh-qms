@@ -19,6 +19,7 @@ const getTabLabelKey = (pathname: string): string => {
   if (pathname === '/qms/engineering/drawing-legend') return 'menu.qmsDrawingLegend';
   if (/^\/qms\/engineering\/parts\/\d+$/.test(pathname)) return 'menu.qmsPartDetail';
   if (/^\/qms\/engineering\/drawing-revisions\/\d+\/review$/.test(pathname)) return 'menu.qmsDrawingReview';
+  if (/^\/qms\/engineering\/drawing-revisions\/\d+\/inspection-standard$/.test(pathname)) return 'menu.qmsInspectionStandard';
   return 'menu.unknown';
 };
 

@@ -17,6 +17,7 @@ import type {
   QmsDrawingRevisionFileRole
 } from '@iaf/domain-types';
 import type { QmsDrawingLegendRule, QmsDrawingLegendRuleUpdateRequest } from '@iaf/domain-types';
+import type { QmsInspectionStandard } from '@iaf/domain-types';
 import type { QmsFileObject } from '@iaf/domain-types';
 import { apiClient } from '../../../api/client';
 
@@ -24,6 +25,9 @@ export const qmsEngineeringApi = {
   listDrawingLegendRules: () => apiClient.get<QmsDrawingLegendRule[]>('/api/qms/drawing-legend-rules'),
   updateDrawingLegendRules: (request: QmsDrawingLegendRuleUpdateRequest) =>
     apiClient.put<QmsDrawingLegendRule[]>('/api/qms/drawing-legend-rules', request),
+  getInspectionStandard:(revisionId:number)=>apiClient.get<QmsInspectionStandard|null>(`/api/qms/drawing-revisions/${revisionId}/inspection-standard`),
+  generateInspectionStandard:(revisionId:number)=>apiClient.post<QmsInspectionStandard>(`/api/qms/drawing-revisions/${revisionId}/inspection-standard/generate`),
+  updateInspectionStandard:(revisionId:number,id:number,request:unknown)=>apiClient.put<QmsInspectionStandard>(`/api/qms/drawing-revisions/${revisionId}/inspection-standard/${id}`,request),
   listParts: (params: { keyword?: string; pageNo: number; pageSize: number }) =>
     apiClient.get<PageResult<QmsPart>>('/api/qms/parts', { query: params }),
   getPart: (id: number) => apiClient.get<QmsPart>(`/api/qms/parts/${id}`),

@@ -29,6 +29,9 @@ public enum QmsEngineeringErrorCode implements ErrorCode {
     CHARACTERISTIC_REVIEW_INVALID("QMS_CHARACTERISTIC_REVIEW_INVALID", "Characteristic review decision is invalid"),
     CHARACTERISTIC_REVIEW_CONFLICT("QMS_CHARACTERISTIC_REVIEW_CONFLICT", "Characteristic was already reviewed or changed"),
     CHARACTERISTIC_CLASSIFICATION_INVALID("QMS_CHARACTERISTIC_CLASSIFICATION_INVALID", "Characteristic classification is invalid"),
+    INSPECTION_STANDARD_NOT_FOUND("QMS_INSPECTION_STANDARD_NOT_FOUND", "Inspection standard draft not found"),
+    INSPECTION_STANDARD_NO_ELIGIBLE_SOURCE("QMS_INSPECTION_STANDARD_NO_ELIGIBLE_SOURCE", "No eligible confirmed quality characteristic"),
+    INSPECTION_STANDARD_CONFLICT("QMS_INSPECTION_STANDARD_CONFLICT", "Inspection standard was changed by another user"),
     AUDIT_WRITE_FAILED("QMS_AUDIT_WRITE_FAILED", "QMS audit record could not be written");
 
     private final String code;
