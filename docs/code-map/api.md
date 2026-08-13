@@ -614,3 +614,8 @@ The parser lifecycle is an internal application port, not an unauthenticated HTT
   classification and decide one pending candidate with optimistic locking.
 - `POST /api/qms/drawing-revisions/{revisionId}/characteristics/bulk-review` — atomically
   confirm or reject selected pending candidates using an id/version pair for every row.
+# QMS drawing legend configuration
+
+- `GET /api/qms/drawing-legend-rules` lists tenant legend mappings.
+- `PUT /api/qms/drawing-legend-rules` applies versioned bulk edits and reclassifies
+  evidence-backed pending candidates; both require `qms:drawing-legend:manage`.

@@ -113,7 +113,7 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(revision.revisionSeq()).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from qms_audit_log", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
-                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(9);
+                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(10);
         assertThat(jdbc.queryForObject("select count(*) from qms_drawing_parse_job", Integer.class)).isEqualTo(1);
         assertThat(parseResults.findModel(1, 10, revisionId)).isPresent();
         assertThat(parseResults.findEntities(1, 10, revisionId)).extracting(DrawingEntity::entityId)
@@ -146,7 +146,12 @@ class QmsEngineeringPostgresIntegrationTest {
         var parsed = characteristics.findByRevision(1, 10, revisionId).stream()
                 .filter(item -> item.characteristicCode().startsWith("DIM-EV-"))
                 .findFirst().orElseThrow();
+        jdbc.update("update qms_quality_characteristic set name='[B]6.5±0.3◆▲' where id=?", parsed.id());
+        new JdbcDrawingLegendRuleRepository(jdbc).reclassifyPending(1, 1, 10);
+        parsed = characteristics.findById(1, 10, revisionId, parsed.id()).orElseThrow();
         assertThat(parsed.inspectionDimension()).isTrue();
+        assertThat(parsed.locationDimension()).isTrue();
+        assertThat(parsed.specialCharacteristicCode()).isEqualTo("B");
         assertThat(characteristics.review(1, 1, 10, revisionId, parsed.id(), parsed.version(),
                 "CONFIRMED", parsed.name(), parsed.nominalValue(), parsed.upperTolerance(),
                 parsed.lowerTolerance(), parsed.unit(), parsed.characteristicType(), "B",
@@ -167,8 +172,8 @@ class QmsEngineeringPostgresIntegrationTest {
                    and rp.deleted = false
                 """, Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
-                "select count(*) from sys_menu where menu_code in ('qms', 'qms.engineering.parts')", Integer.class))
-                .isEqualTo(2);
+                "select count(*) from sys_menu where menu_code in ('qms', 'qms.engineering.parts', 'qms.engineering.legend')", Integer.class))
+                .isEqualTo(3);
         assertThat(jdbc.queryForObject("""
                 select count(*)
                   from sys_role_menu rm

@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { QmsDrawingCreateRequest, QmsDrawingRevisionCreateRequest, QmsDrawingRevisionFileRole, QmsQualityCharacteristicBulkReviewRequest, QmsQualityCharacteristicCreateRequest, QmsQualityCharacteristicReviewRequest } from '@iaf/domain-types';
+import type { QmsDrawingCreateRequest, QmsDrawingLegendRuleUpdateRequest, QmsDrawingRevisionCreateRequest, QmsDrawingRevisionFileRole, QmsQualityCharacteristicBulkReviewRequest, QmsQualityCharacteristicCreateRequest, QmsQualityCharacteristicReviewRequest } from '@iaf/domain-types';
 import { qmsEngineeringApi } from './api';
 
 export const qmsEngineeringKeys = {
   parts: ['qms-engineering-parts'] as const,
+  drawingLegend: ['qms-drawing-legend'] as const,
   part: (id: number) => ['qms-engineering-part', id] as const,
   drawings: (partId: number) => ['qms-engineering-drawings', partId] as const,
   revisions: (drawingId: number) => ['qms-engineering-drawing-revisions', drawingId] as const,
@@ -15,6 +16,11 @@ export const qmsEngineeringKeys = {
   intermediateModel: (revisionId: number) => ['qms-engineering-intermediate-model', revisionId] as const,
   evidence: (revisionId: number) => ['qms-engineering-evidence', revisionId] as const,
   characteristics: (revisionId: number) => ['qms-engineering-characteristics', revisionId] as const
+};
+export const useQmsDrawingLegendQuery = () => useQuery({ queryKey: qmsEngineeringKeys.drawingLegend, queryFn: qmsEngineeringApi.listDrawingLegendRules });
+export const useUpdateQmsDrawingLegendMutation = (onSuccess?: () => void) => {
+ const queryClient=useQueryClient();return useMutation({mutationFn:(request:QmsDrawingLegendRuleUpdateRequest)=>qmsEngineeringApi.updateDrawingLegendRules(request),
+  onSuccess:async()=>{await queryClient.invalidateQueries({queryKey:qmsEngineeringKeys.drawingLegend});onSuccess?.();}});
 };
 
 export const useQmsPartsQuery = (params: { keyword?: string; pageNo: number; pageSize: number }) =>

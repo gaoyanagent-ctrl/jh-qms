@@ -157,6 +157,15 @@ export interface QmsQualityCharacteristicBulkReviewRequest {
   decision: 'CONFIRMED' | 'REJECTED'; targets: Array<{ id: number; version: number }>;
   comment?: string | null;
 }
+export interface QmsDrawingLegendRule {
+  id: number; ruleCode: string; marker: string; description: string;
+  targetField: 'INSPECTION_DIMENSION' | 'LOCATION_DIMENSION' | 'FIT_DIMENSION' | 'REFERENCE_DIMENSION' | 'SPECIAL_CODE' | 'REGULATORY_FLAG';
+  targetValue: string | null; matchMode: 'CONTAINS' | 'WRAPS_VALUE';
+  priority: number; enabled: boolean; version: number;
+}
+export interface QmsDrawingLegendRuleUpdateRequest {
+  rules: Array<Pick<QmsDrawingLegendRule, 'id' | 'version' | 'marker' | 'description' | 'enabled' | 'priority'>>;
+}
 export interface QmsDrawingIntermediateModel {
   id: number; revisionId: number; parseJobId: number; schemaVersion: string;
   documentId: string; revisionCode: string;
