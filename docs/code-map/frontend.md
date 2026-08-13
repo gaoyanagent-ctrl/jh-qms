@@ -608,6 +608,8 @@ Planned stack:
   retained evidence; permitted reviewers can edit dimension values and confirm or reject it.
 - TASK-0413 adds review/type filters, accessible row selection, manual characteristic creation,
   classification editing, and optimistic bulk confirm/reject while keeping the drawing pane fixed.
+- TASK-0421 keeps a visible `修改已确认项` action on confirmed characteristics. The same labeled
+  review form supports correction and reconfirmation without making the confirmed state irreversible.
 # QMS drawing legend configuration
 
 - `/qms/engineering/drawing-legend` provides an accessible editable rule table with marker,

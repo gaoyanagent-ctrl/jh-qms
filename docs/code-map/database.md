@@ -303,3 +303,9 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
 - `platform_approval_action`: immutable ordered submit/approve/reject history.
 - `qms_inspection_standard`: adds separate approval state and submit/approve/release actors/timestamps.
 - Adds `qms:inspection-standard:submit`, `approve`, and `release` permissions for platform admins.
+
+## V0412 Confirm Inspection Dimensions
+
+- Promotes existing pending inspection dimensions to `CONFIRMED` only when they are not
+  reference or ideal dimensions, recording automatic reviewer metadata and a version increment.
+- Adds no table, API, or permission; later parser runs apply the same rule after legend classification.

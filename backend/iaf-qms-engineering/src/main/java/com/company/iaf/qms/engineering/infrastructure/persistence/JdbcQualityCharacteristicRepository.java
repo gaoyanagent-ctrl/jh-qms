@@ -61,12 +61,24 @@ public class JdbcQualityCharacteristicRepository implements QualityCharacteristi
                     row.get("confidence"),actorId,actorId);
         }
         applyLegendRules(actorId,tenantId,orgId,revisionId);
+        confirmInspectionDimensions(actorId, tenantId, orgId, revisionId);
     }
     private void applyLegendRules(long actorId,long tenantId,long orgId,long revisionId) {
         var legend = new JdbcDrawingLegendRuleRepository(jdbc);
         // Reclassification is deliberately restricted to pending characteristics; reviewed
         // human decisions remain authoritative when a legend is later changed.
         legend.reclassifyPending(actorId,tenantId,orgId);
+    }
+    private void confirmInspectionDimensions(long actorId,long tenantId,long orgId,long revisionId) {
+        jdbc.update("""
+            update qms_quality_characteristic
+               set review_status='CONFIRMED', reviewed_by=?, reviewed_at=current_timestamp,
+                   review_comment='AUTO_CONFIRMED_INSPECTION_DIMENSION',
+                   updated_by=?, updated_at=current_timestamp, version=version+1
+             where tenant_id=? and org_id=? and drawing_revision_id=? and review_status='PENDING'
+               and inspection_dimension=true
+               and reference_dimension=false and ideal_dimension=false and deleted=false
+            """, actorId, actorId, tenantId, orgId, revisionId);
     }
     private static JsonNode geometry(Object value) {
         try { return JSON.readTree(String.valueOf(value)); }
@@ -114,11 +126,11 @@ public class JdbcQualityCharacteristicRepository implements QualityCharacteristi
                 review_comment=?, reviewed_by=?, reviewed_at=current_timestamp,
                 updated_by=?, updated_at=current_timestamp, version=version+1
             where tenant_id=? and org_id=? and drawing_revision_id=? and id=? and version=?
-              and review_status='PENDING' and deleted=false
+              and (review_status='PENDING' or (review_status='CONFIRMED' and ?='CONFIRMED')) and deleted=false
             """,
             reviewStatus,name,nominal,upper,lower,nominal,upper,nominal,lower,unit,characteristicType,
             specialCode,inspection,reference,ideal,fit,location,regulatory,mandatory,comment,actorId,actorId,
-            tenantId,orgId,revisionId,id,version)==1;
+            tenantId,orgId,revisionId,id,version,reviewStatus)==1;
     }
     private String sql(String suffix) {
         return """

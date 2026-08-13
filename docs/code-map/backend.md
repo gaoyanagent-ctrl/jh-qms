@@ -830,6 +830,9 @@ TASK-0405 parse-result contract:
   `JdbcQualityCharacteristicRepository` with validated inspection/reference/ideal/fit/location,
   regulatory and mandatory classifications, manual creation, and transactional bulk review.
   Every command remains tenant/org/revision scoped, permission checked, audited, and versioned.
+- TASK-0421 automatically confirms parser-created inspection dimensions after legend
+  classification. `JdbcQualityCharacteristicRepository.review` also permits a confirmed
+  item to be corrected and reconfirmed while retaining optimistic locking and reviewer audit.
 
 ### Manufacturing Modules
 

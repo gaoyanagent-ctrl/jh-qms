@@ -10,6 +10,10 @@ import { QmsDrawingReviewWorkbenchPage } from './QmsDrawingReviewWorkbenchPage';
 
 vi.mock('pdfjs-dist', () => ({ GlobalWorkerOptions: {}, getDocument: vi.fn() }));
 vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({ default: 'worker.js' }));
+vi.mock('@iaf/permissions', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@iaf/permissions')>(),
+  useHasPermission: () => true
+}));
 vi.mock('./api', () => ({ qmsEngineeringApi: {
   getRevision: vi.fn(), listRevisions: vi.fn(), getRevisionFileContent: vi.fn(), listRevisionFiles: vi.fn(),
   getRevisionRoleFileContent: vi.fn(), getIntermediateModel: vi.fn(), listEvidence: vi.fn(),
@@ -88,10 +92,10 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
       id: 1, partId: 2, drawingRevisionId: 3, sourceEntityId: 'dwg-1', evidenceId: 1,
       characteristicCode: 'DIM-EV-1410', characteristicType: 'DIMENSION', name: '34', nominalValue: 34,
       upperTolerance: null, lowerTolerance: null, upperLimit: null, lowerLimit: null, unit: 'mm',
-      specialCharacteristicCode: null, confidence: 1, status: 'ACTIVE', reviewStatus: 'PENDING',
+      specialCharacteristicCode: null, confidence: 1, status: 'ACTIVE', reviewStatus: 'CONFIRMED',
       inspectionDimension: true, referenceDimension: false, idealDimension: false, fitDimension: false,
       locationDimension: false, regulatoryFlag: false, mandatoryInspection: false,
-      reviewedBy: null, reviewedAt: null, reviewComment: null, version: 0
+      reviewedBy: 1, reviewedAt: '2026-08-13T00:00:00Z', reviewComment: 'AUTO_CONFIRMED_INSPECTION_DIMENSION', version: 1
     }]);
 
     renderPage();
@@ -101,6 +105,7 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     expect(content.style.width).toBe('100%');
     expect(content.style.minWidth).toBe('0');
     expect(content).toHaveTextContent('34 · 34 mm (- / -)');
+    expect(screen.getByRole('button', { name: '修改已确认项' })).toBeEnabled();
     expect(screen.getByTestId('dwg-viewer')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '放大' })).toBeEnabled();
     const wheel = new WheelEvent('wheel', { deltaY: -1, cancelable: true });
