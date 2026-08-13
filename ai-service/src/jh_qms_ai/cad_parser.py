@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import html
 import json
 import math
 import re
@@ -12,6 +13,7 @@ from typing import Any
 from .parser import SCHEMA_VERSION
 
 PARSER_VERSION = "libredwg-0.14"
+LIBREDWG_BIN = Path("/opt/libredwg/bin")
 SUPPORTED_ENTITIES = {"TEXT", "MTEXT", "TOLERANCE", "LEADER", "MLEADER"}
 
 
@@ -59,6 +61,42 @@ def _dimension_text(item: dict[str, Any]) -> str:
     return user_text.replace("<>", rendered) if user_text else rendered
 
 
+def _svg_preview(source: Path, dimensions: list[dict[str, Any]]) -> dict[str, Any]:
+    try:
+        process = subprocess.run(
+            [str(LIBREDWG_BIN / "dwg2SVG"), "--mspace", str(source)], capture_output=True,
+            check=False, timeout=120, text=True, encoding="utf-8", errors="replace",
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise CadParseError("DWG SVG renderer execution failed") from exc
+    if process.returncode != 0 or "<svg" not in process.stdout:
+        raise CadParseError(f"DWG SVG renderer rejected the file (exit {process.returncode})")
+    svg = process.stdout
+    svg = re.sub(r"<(?:script|foreignObject)\b.*?</(?:script|foreignObject)\s*>", "", svg,
+                 flags=re.IGNORECASE | re.DOTALL)
+    svg = re.sub(r"\son[a-z]+\s*=\s*(?:\"[^\"]*\"|'[^']*')", "", svg, flags=re.IGNORECASE)
+    svg = re.sub(r"\s(?:href|xlink:href)=\"(?!#)[^\"]*\"", "", svg, flags=re.IGNORECASE)
+    match = re.search(r'viewBox="([\-\d.eE+]+)\s+([\-\d.eE+]+)\s+([\d.eE+]+)\s+([\d.eE+]+)"', svg)
+    if not match:
+        raise CadParseError("DWG SVG renderer returned an invalid viewBox")
+    x, y, width, height = (float(value) for value in match.groups())
+    overlays = ['<g id="jh-qms-native-dimensions" fill="#1677ff" stroke="#1677ff" stroke-width="0.8">']
+    font_size = max(min(width, height) / 180, 2.5)
+    for item in dimensions:
+        points = _points(item)
+        if len(points) >= 2:
+            first, second = points[0], points[1]
+            overlays.append(f'<line x1="{first[0]}" y1="{-first[1]}" x2="{second[0]}" y2="{-second[1]}" opacity="0.7"/>')
+        midpoint = item.get("text_midpt") or item.get("def_pt")
+        if isinstance(midpoint, list) and len(midpoint) >= 2:
+            label = html.escape(_dimension_text(item))
+            overlays.append(f'<text x="{midpoint[0]}" y="{-midpoint[1]}" font-size="{font_size}" stroke="none">{label}</text>')
+    overlays.append("</g>")
+    svg = svg.replace("</svg>", "".join(overlays) + "</svg>")
+    return {"format": "SVG", "content": svg, "viewBox": {"x": x, "y": y, "width": width, "height": height},
+            "coordinateSystem": "CAD_Y_UP", "generatedBy": PARSER_VERSION}
+
+
 def parse_dwg(content: bytes, document_id: str, revision: str) -> dict[str, Any]:
     if len(content) < 6 or not content.startswith(b"AC10"):
         raise CadParseError("The uploaded content is not a supported DWG")
@@ -67,17 +105,20 @@ def parse_dwg(content: bytes, document_id: str, revision: str) -> dict[str, Any]
         source.write_bytes(content)
         try:
             process = subprocess.run(
-                ["dwgread", "-O", "JSON", str(source)], capture_output=True, check=False,
+                [str(LIBREDWG_BIN / "dwgread"), "-O", "JSON", str(source)], capture_output=True, check=False,
                 timeout=120, text=True, encoding="utf-8", errors="replace",
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise CadParseError("DWG parser execution failed") from exc
-    if process.returncode != 0:
-        raise CadParseError(f"DWG parser rejected the file (exit {process.returncode})")
-    try:
-        source_model = json.loads(process.stdout)
-    except json.JSONDecodeError as exc:
-        raise CadParseError("DWG parser returned invalid JSON") from exc
+        if process.returncode != 0:
+            raise CadParseError(f"DWG parser rejected the file (exit {process.returncode})")
+        try:
+            source_model = json.loads(process.stdout)
+        except json.JSONDecodeError as exc:
+            raise CadParseError("DWG parser returned invalid JSON") from exc
+        native_dimensions = [item for item in source_model.get("OBJECTS", [])
+                             if str(item.get("entity", "")).startswith("DIMENSION_")]
+        preview = _svg_preview(source, native_dimensions)
 
     objects = source_model.get("OBJECTS", [])
     layer_names = {_handle(item.get("handle")): item.get("name") for item in objects if item.get("object") == "LAYER"}
@@ -117,7 +158,7 @@ def parse_dwg(content: bytes, document_id: str, revision: str) -> dict[str, Any]
     model = {"schemaVersion": SCHEMA_VERSION, "documentId": document_id, "revision": revision,
              "sheets": [{"sheetNo": "MODEL", "width": max(max_x - min_x, 1.0),
                          "height": max(max_y - min_y, 1.0), "origin": {"x": min_x, "y": min_y},
-                         "titleBlock": {}, "views": [], "entities": entities, "notes": [],
+                         "titleBlock": {}, "views": [], "entities": entities, "notes": [], "preview": preview,
                          "characteristicCandidates": []}]}
     return {"schemaVersion": SCHEMA_VERSION, "documentId": document_id, "revisionCode": revision,
             "modelJson": model, "entities": entities, "evidence": evidence,

@@ -144,6 +144,8 @@ export interface QmsDrawingIntermediateModel {
   model: { schemaVersion: string; documentId: string; revision: string; sheets: Array<{
     sheetNo: string; width: number; height: number; titleBlock: Record<string, unknown>;
     views: unknown[]; entities: unknown[]; notes: unknown[]; characteristicCandidates: unknown[];
+    preview?: { format: 'SVG'; content: string; viewBox: QmsBoundingBox;
+      coordinateSystem: 'CAD_Y_UP'; generatedBy: string };
   }> }; createdAt: string;
 }
 
