@@ -73,6 +73,47 @@ const flattenRouteMenus = (menus: PlatformMenu[]): PlatformMenu[] =>
     ...flattenRouteMenus(menu.children ?? [])
   ]).sort((a, b) => a.sortNo - b.sortNo || a.id - b.id);
 
+type SidebarMenuItem = NonNullable<Required<MenuProps>['items'][number]>;
+
+const menuGroupKey = (menu: PlatformMenu) => `group:${menu.menuCode}`;
+
+const collectMenuGroupKeys = (menus: PlatformMenu[]): string[] =>
+  menus.flatMap((menu) => [
+    ...(menu.children?.length ? [menuGroupKey(menu)] : []),
+    ...collectMenuGroupKeys(menu.children ?? [])
+  ]);
+
+const buildSidebarMenuItems = (
+  menus: PlatformMenu[],
+  translate: (key: string) => string,
+  keyword: string,
+  ancestorMatched = false
+): SidebarMenuItem[] => menus
+  .slice()
+  .sort((left, right) => left.sortNo - right.sortNo || left.id - right.id)
+  .flatMap((menu) => {
+    const label = translate(menu.titleKey);
+    const normalizedKeyword = keyword.trim().toLowerCase();
+    const ownMatched = !normalizedKeyword
+      || label.toLowerCase().includes(normalizedKeyword)
+      || menu.menuCode.toLowerCase().includes(normalizedKeyword)
+      || (menu.routePath ?? '').toLowerCase().includes(normalizedKeyword);
+    const children = buildSidebarMenuItems(
+      menu.children ?? [],
+      translate,
+      keyword,
+      ancestorMatched || ownMatched
+    );
+    if (!ancestorMatched && !ownMatched && children.length === 0) return [];
+    if (!menu.routePath && children.length === 0) return [];
+    return [{
+      key: children.length ? menuGroupKey(menu) : (menu.routePath ?? menu.menuCode),
+      label,
+      icon: menuIcon(menu.icon),
+      ...(children.length ? { children } : {})
+    }];
+  });
+
 const menuIcon = (icon?: string | null): ReactNode => {
   switch (icon) {
     case 'UserOutlined':
@@ -134,6 +175,7 @@ export const MainLayout = () => {
   } = useIafTheme();
   const [transientSidebarWidth, setTransientSidebarWidth] = useState(sidebarWidth);
   const [menuSearch, setMenuSearch] = useState('');
+  const [openMenuKeys, setOpenMenuKeys] = useState<string[]>([]);
   const [resizing, setResizing] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -153,47 +195,39 @@ export const MainLayout = () => {
   const shellColors = sidebarMode === 'light' ? iafLightShellTokens[themeName] : iafShellTokens[themeName];
   const contentPadding = density === 'compact' ? 16 : density === 'comfortable' ? 28 : token.paddingLG;
 
+  const sourceMenus = useMemo(() => {
+    const userPermissions = principal?.permissions ?? [];
+    return currentUserMenusQuery.data?.length
+      ? currentUserMenusQuery.data
+      : fallbackMenus.filter((menu) => menu.permissionCodes.length === 0 || hasAnyPermission(userPermissions, menu.permissionCodes));
+  }, [currentUserMenusQuery.data, principal?.permissions]);
+  const allMenuGroupKeys = useMemo(() => collectMenuGroupKeys(sourceMenus), [sourceMenus]);
   const menuItems = useMemo(
-    () => {
-      const userPermissions = principal?.permissions ?? [];
-      const sourceMenus = currentUserMenusQuery.data?.length
-        ? currentUserMenusQuery.data
-        : fallbackMenus.filter((menu) => menu.permissionCodes.length === 0 || hasAnyPermission(userPermissions, menu.permissionCodes));
-      const items = flattenRouteMenus(sourceMenus).map((menu) => ({
-        key: menu.routePath ?? menu.menuCode,
-        label: t(menu.titleKey),
-        icon: menuIcon(menu.icon)
-      })) as Required<MenuProps>['items'];
-
-      if (!menuSearch.trim()) {
-        return items;
-      }
-
-      const keyword = menuSearch.trim().toLowerCase();
-      return items.filter((item) => {
-        if (!item || !('label' in item)) return false;
-        return String(item.label).toLowerCase().includes(keyword) || String(item.key).toLowerCase().includes(keyword);
-      });
-    },
-    [currentUserMenusQuery.data, principal?.permissions, t]
+    () => buildSidebarMenuItems(sourceMenus, (key) => t(key), menuSearch),
+    [menuSearch, sourceMenus, t]
   );
+
+  useEffect(() => {
+    setOpenMenuKeys((current) => current.length > 0
+      ? current.filter((key) => allMenuGroupKeys.includes(key))
+      : allMenuGroupKeys);
+  }, [allMenuGroupKeys]);
 
   const commandItems = useMemo(() => {
     const keyword = commandKeyword.trim().toLowerCase();
-    return menuItems.flatMap((item) => {
-      if (!item || !('label' in item) || !('key' in item)) return [];
-      const label = String(item.label);
-      const key = String(item.key);
+    return flattenRouteMenus(sourceMenus).flatMap((item) => {
+      const label = t(item.titleKey);
+      const key = item.routePath ?? item.menuCode;
       if (keyword && !label.toLowerCase().includes(keyword) && !key.toLowerCase().includes(keyword)) {
         return [];
       }
       return [{
         key,
         label,
-        icon: 'icon' in item ? item.icon : undefined
+        icon: menuIcon(item.icon)
       }];
     });
-  }, [commandKeyword, menuItems]);
+  }, [commandKeyword, sourceMenus, t]);
 
   const persistExperiencePreferences = useCallback(async (patch: Partial<IafExperienceSettings>) => {
     const nextSettings = { ...settings, ...patch };
@@ -472,13 +506,34 @@ export const MainLayout = () => {
             paddingBottom: 12
           }}
         >
-          {!collapsed && (
-            <Typography.Text
-              type="secondary"
-              style={{ display: 'block', paddingInline: 18, paddingBottom: 8, fontSize: 12, fontWeight: 600, color: shellColors.sidebarMuted }}
-            >
-              {t('menu.platform')}
-            </Typography.Text>
+          {!collapsed && allMenuGroupKeys.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingInline: 18, paddingBottom: 8 }}>
+              <Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 600, color: shellColors.sidebarMuted }}>
+                {t('shell.menuGroups')}
+              </Typography.Text>
+              <Space size={4}>
+                <Tooltip title={t('shell.expandAllMenuGroups')}>
+                  <Button
+                    type="text"
+                    size="small"
+                    aria-label={t('shell.expandAllMenuGroups')}
+                    icon={<MenuUnfoldOutlined />}
+                    onClick={() => setOpenMenuKeys(allMenuGroupKeys)}
+                    style={{ width: 36, height: 36, color: shellColors.sidebarMuted }}
+                  />
+                </Tooltip>
+                <Tooltip title={t('shell.collapseAllMenuGroups')}>
+                  <Button
+                    type="text"
+                    size="small"
+                    aria-label={t('shell.collapseAllMenuGroups')}
+                    icon={<MenuFoldOutlined />}
+                    onClick={() => setOpenMenuKeys([])}
+                    style={{ width: 36, height: 36, color: shellColors.sidebarMuted }}
+                  />
+                </Tooltip>
+              </Space>
+            </div>
           )}
           {hasMenuSearch && menuItems.length === 0 ? (
             <Empty
@@ -492,8 +547,12 @@ export const MainLayout = () => {
                 theme={siderTheme}
                 mode="inline"
                 selectedKeys={[location.pathname]}
+                openKeys={hasMenuSearch ? allMenuGroupKeys : openMenuKeys}
+                onOpenChange={(keys) => setOpenMenuKeys(keys.map(String))}
                 items={menuItems}
-                onClick={({ key }) => navigate(key)}
+                onClick={({ key }) => {
+                  if (key.startsWith('/')) navigate(key);
+                }}
                 style={{
                   borderInlineEnd: 0,
                   background: 'transparent',

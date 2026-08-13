@@ -359,6 +359,9 @@ export const resources = {
         }
       },
       shell: {
+        menuGroups: '菜单分组',
+        expandAllMenuGroups: '展开全部菜单分组',
+        collapseAllMenuGroups: '折叠全部菜单分组',
         brandSubtitle: '工业应用框架',
         workspace: '平台工作区',
         tenant: '租户 {{id}}',
@@ -617,6 +620,8 @@ export const resources = {
         expandAllMenus: '全部展开',
         collapseAllMenus: '全部折叠',
         menuStructureUpdated: '菜单结构已更新',
+        createMenu: '新建菜单',
+        createMenuGroup: '新建分组',
         dictType: '字典类型',
         dictCode: '字典编码',
         dictName: '字典名称',
@@ -1032,6 +1037,9 @@ export const resources = {
         }
       },
       shell: {
+        menuGroups: 'Menu groups',
+        expandAllMenuGroups: 'Expand all menu groups',
+        collapseAllMenuGroups: 'Collapse all menu groups',
         brandSubtitle: 'Industrial Framework',
         workspace: 'Platform Workspace',
         tenant: 'Tenant {{id}}',
@@ -1290,6 +1298,8 @@ export const resources = {
         expandAllMenus: 'Expand all',
         collapseAllMenus: 'Collapse all',
         menuStructureUpdated: 'Menu structure updated',
+        createMenu: 'Create menu',
+        createMenuGroup: 'Create group',
         dictType: 'Dictionary type',
         dictCode: 'Dictionary code',
         dictName: 'Dictionary name',

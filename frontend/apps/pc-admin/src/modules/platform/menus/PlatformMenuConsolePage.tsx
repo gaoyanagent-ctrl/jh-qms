@@ -36,6 +36,7 @@ export const PlatformMenuConsolePage = () => {
   const { formInteractionMode, surfaceWidth } = useIafTheme();
   const [form] = Form.useForm<MenuFormValues>();
   const [createOpen, setCreateOpen] = useState(false);
+  const [creatingType, setCreatingType] = useState<'GROUP' | 'MENU'>('MENU');
   const [editing, setEditing] = useState<PlatformMenu | null>(null);
   const [expandedRowKeys, setExpandedRowKeys] = useState<Key[]>([]);
   const menusQuery = useMenusTreeQuery();
@@ -76,14 +77,15 @@ export const PlatformMenuConsolePage = () => {
       ? menuTree
       : flatMenus.find((item) => item.id === menu.parentId)?.children ?? [];
 
-  const openCreate = () => {
+  const openCreate = (menuType: 'GROUP' | 'MENU') => {
     form.setFieldsValue({
       parentId: null,
-      menuType: 'MENU',
+      menuType,
       visible: true,
       enabled: true,
       sortNo: 100
     });
+    setCreatingType(menuType);
     setCreateOpen(true);
   };
 
@@ -216,8 +218,11 @@ export const PlatformMenuConsolePage = () => {
               {t('platformConfig.collapseAllMenus')}
             </Button>
             <Button onClick={() => menusQuery.refetch()}>{t('common.actions.refresh')}</Button>
-            <PermissionButton require={PLATFORM_PERMISSIONS.menuCreate} type="primary" onClick={openCreate}>
-              {t('common.actions.create')}
+            <PermissionButton require={PLATFORM_PERMISSIONS.menuCreate} onClick={() => openCreate('GROUP')}>
+              {t('platformConfig.createMenuGroup')}
+            </PermissionButton>
+            <PermissionButton require={PLATFORM_PERMISSIONS.menuCreate} type="primary" onClick={() => openCreate('MENU')}>
+              {t('platformConfig.createMenu')}
             </PermissionButton>
           </Space>
         </IafToolbar>
@@ -239,7 +244,9 @@ export const PlatformMenuConsolePage = () => {
       <FormInteractionSurface
         mode={formInteractionMode}
         open={surfaceOpen}
-        title={editing ? `${t('common.actions.edit')} · ${editing.menuCode}` : `${t('common.actions.create')} · ${t('platformConfig.menuConsole')}`}
+        title={editing
+          ? `${t('common.actions.edit')} · ${editing.menuCode}`
+          : t(creatingType === 'GROUP' ? 'platformConfig.createMenuGroup' : 'platformConfig.createMenu')}
         onCancel={() => {
           setCreateOpen(false);
           setEditing(null);
@@ -255,7 +262,7 @@ export const PlatformMenuConsolePage = () => {
           <Form.Item name="parentId" label={t('platformConfig.parentMenu')}>
             <Select
               allowClear
-              options={flatMenus
+              options={groupMenus
                 .filter((menu) => !excludedParentIds.has(menu.id))
                 .map((menu) => ({ value: menu.id, label: `${t(menu.titleKey)} · ${menu.menuCode}` }))}
             />
