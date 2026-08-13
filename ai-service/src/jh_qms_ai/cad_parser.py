@@ -19,6 +19,7 @@ from .parser import SCHEMA_VERSION
 PARSER_VERSION = "libredwg-0.14+ezdxf-1.4.4"
 LIBREDWG_BIN = Path("/opt/libredwg/bin")
 SUPPORTED_ENTITIES = {"TEXT", "MTEXT", "TOLERANCE", "LEADER", "MLEADER"}
+DIMSTYLE_OVERRIDE_CODES = {47: "DIMTP", 48: "DIMTM", 71: "DIMTOL", 72: "DIMLIM", 140: "DIMTXT", 271: "DIMDEC"}
 
 
 class CadParseError(ValueError):
@@ -70,11 +71,44 @@ def _bbox(item: dict[str, Any]) -> dict[str, float]:
     return {"x": min(xs), "y": min(ys), "width": max(width, 0.01), "height": max(height, 0.01)}
 
 
-def _dimension_text(item: dict[str, Any]) -> str:
+def _dimension_style(item: dict[str, Any], styles: dict[str | None, dict[str, Any]]) -> dict[str, Any]:
+    base = styles.get(_handle(item.get("dimstyle")), {})
+    style = {key: base.get(key) for key in ("DIMTP", "DIMTM", "DIMTOL", "DIMLIM", "DIMTXT", "DIMDEC")}
+    eed = item.get("eed") or []
+    for index, value in enumerate(eed[:-1]):
+        field = DIMSTYLE_OVERRIDE_CODES.get(value.get("value")) if value.get("code") == 70 else None
+        following = eed[index + 1]
+        if field and following.get("code") in {40, 70}:
+            style[field] = following.get("value")
+    return style
+
+
+def _dimension_values(item: dict[str, Any], style: dict[str, Any]) -> dict[str, Any]:
     measurement = float(item.get("act_measurement", 0.0))
-    rendered = f"{measurement:.6f}".rstrip("0").rstrip(".")
+    precision = max(0, min(int(style.get("DIMDEC") if style.get("DIMDEC") is not None else 6), 8))
+    rendered = f"{measurement:.{precision}f}"
+    upper = float(style.get("DIMTP") or 0.0) if style.get("DIMTOL") else None
+    lower = -float(style.get("DIMTM") or 0.0) if style.get("DIMTOL") else None
+    tolerance = ""
+    if upper is not None and lower is not None:
+        if math.isclose(upper, -lower):
+            tolerance = f"±{upper:.{precision}f}"
+        else:
+            tolerance = f"+{upper:.{precision}f}/{lower:.{precision}f}"
     user_text = _clean_text(str(item.get("user_text") or ""))
-    return user_text.replace("<>", rendered) if user_text else rendered
+    text = user_text.replace("<>", rendered + tolerance) if user_text else rendered + tolerance
+    return {"text": text, "nominalValue": float(rendered), "upperTolerance": upper,
+            "lowerTolerance": lower, "displayPrecision": precision}
+
+
+def _dimension_bbox(item: dict[str, Any], style: dict[str, Any], text: str) -> dict[str, float]:
+    midpoint = item.get("text_midpt")
+    if not isinstance(midpoint, list) or len(midpoint) < 2:
+        return _bbox(item)
+    height = max(float(style.get("DIMTXT") or 1.0) * 1.35, 0.1)
+    width = max(height, len(text) * height * 0.58)
+    return {"x": float(midpoint[0]) - width / 2, "y": float(midpoint[1]) - height / 2,
+            "width": width, "height": height}
 
 
 def _inside_viewbox(item: dict[str, Any], viewbox: dict[str, float]) -> bool:
@@ -131,6 +165,14 @@ def _transform_bbox(box: dict[str, float], matrix: Any) -> dict[str, float]:
             "height": max(abs(ys[1] - ys[0]), 1.0)}
 
 
+def _clamp_bbox(box: dict[str, float], viewbox: dict[str, float]) -> dict[str, float]:
+    x = min(max(box["x"], viewbox["x"]), viewbox["x"] + viewbox["width"])
+    y = min(max(box["y"], viewbox["y"]), viewbox["y"] + viewbox["height"])
+    return {"x": x, "y": y,
+            "width": max(min(box["x"] + box["width"], viewbox["x"] + viewbox["width"]) - x, 1.0),
+            "height": max(min(box["y"] + box["height"], viewbox["y"] + viewbox["height"]) - y, 1.0)}
+
+
 def parse_dwg(content: bytes, document_id: str, revision: str) -> dict[str, Any]:
     if len(content) < 6 or not content.startswith(b"AC10"):
         raise CadParseError("The uploaded content is not a supported DWG")
@@ -154,6 +196,7 @@ def parse_dwg(content: bytes, document_id: str, revision: str) -> dict[str, Any]
 
     objects = source_model.get("OBJECTS", [])
     layer_names = {_handle(item.get("handle")): item.get("name") for item in objects if item.get("object") == "LAYER"}
+    dimension_styles = {_handle(item.get("handle")): item for item in objects if item.get("object") == "DIMSTYLE"}
     selected = [item for item in objects
                 if (str(item.get("entity", "")).startswith("DIMENSION_") or item.get("entity") in SUPPORTED_ENTITIES)
                 and _inside_viewbox(item, preview["sourceViewBox"])]
@@ -168,11 +211,16 @@ def parse_dwg(content: bytes, document_id: str, revision: str) -> dict[str, Any]
         handle = _handle(item.get("handle"))
         entity_id = f"dwg-{digest}-{handle or index}"
         evidence_key = f"ev-{entity_id}"
-        raw_text = _dimension_text(item) if entity_type == "DIMENSION" else _clean_text(str(item.get("text") or item.get("text_value") or ""))
-        box = _transform_bbox(_bbox(item), preview_matrix)
+        dimension = _dimension_values(item, _dimension_style(item, dimension_styles)) if entity_type == "DIMENSION" else None
+        raw_text = dimension["text"] if dimension else _clean_text(str(item.get("text") or item.get("text_value") or ""))
+        dimension_style = _dimension_style(item, dimension_styles) if dimension else {}
+        native_box = _dimension_bbox(item, dimension_style, raw_text) if dimension else _bbox(item)
+        box = _clamp_bbox(_transform_bbox(native_box, preview_matrix), preview["viewBox"])
         all_boxes.append(box)
         layer = layer_names.get(_handle(item.get("layer")))
         geometry = {key: item[key] for key in ("start", "end", "center", "point", "points", "origin", "ins_pt", "text_midpt", "def_pt", "xline1_pt", "xline2_pt", "act_measurement", "dim_rotation") if key in item}
+        if dimension:
+            geometry.update({key: dimension[key] for key in ("nominalValue", "upperTolerance", "lowerTolerance", "displayPrecision")})
         entity = {"entityId": entity_id, "sourceEntityHandle": handle, "entityType": entity_type,
                   "nativeEntityType": native_type, "layer": layer, "sheetNo": "MODEL", "bbox": box,
                   "geometry": geometry, "rawText": raw_text, "normalizedText": raw_text,
@@ -183,7 +231,7 @@ def parse_dwg(content: bytes, document_id: str, revision: str) -> dict[str, Any]
                          "sheetNo": "MODEL", "pageNo": None, "bbox": box, "rawText": raw_text,
                          "normalizedText": raw_text, "extractorType": "DWG_ENTITY",
                          "extractorVersion": PARSER_VERSION, "modelName": None,
-                         "modelVersion": None, "confidence": 1.0})
+                         "modelVersion": None, "confidence": 0.9 if entity_type == "DIMENSION" else 1.0})
     min_x = min((box["x"] for box in all_boxes), default=0.0)
     min_y = min((box["y"] for box in all_boxes), default=0.0)
     max_x = max((box["x"] + box["width"] for box in all_boxes), default=1.0)

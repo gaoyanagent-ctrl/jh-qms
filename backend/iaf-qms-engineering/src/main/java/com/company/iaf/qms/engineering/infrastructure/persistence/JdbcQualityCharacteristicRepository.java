@@ -3,6 +3,7 @@ package com.company.iaf.qms.engineering.infrastructure.persistence;
 import com.company.iaf.qms.engineering.domain.model.QualityCharacteristic;
 import com.company.iaf.qms.engineering.domain.repository.QualityCharacteristicRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
@@ -32,12 +33,18 @@ public class JdbcQualityCharacteristicRepository implements QualityCharacteristi
             """,tenantId,orgId,revisionId);
         for(var row:rows){ String text=(String)row.get("normalized_text"); Matcher matcher=DIMENSION.matcher(text==null?"":text);
             BigDecimal nominal; BigDecimal upper; BigDecimal lower; String name;
-            if (matcher.find()) {
+            JsonNode geometry = geometry(row.get("geometry_json"));
+            if ("DWG_ENTITY".equals(row.get("extractor_type")) && "DIMENSION".equals(row.get("entity_type"))
+                    && geometry.path("nominalValue").isNumber()) {
+                nominal=geometry.path("nominalValue").decimalValue();
+                upper=decimalOrNull(geometry.path("upperTolerance"));
+                lower=decimalOrNull(geometry.path("lowerTolerance"));
+                name=text;
+            } else if (matcher.find()) {
                 nominal=new BigDecimal(matcher.group(1)); upper=new BigDecimal(matcher.group(2)); lower=upper.negate();
                 name=matcher.group();
             } else if ("DWG_ENTITY".equals(row.get("extractor_type")) && "DIMENSION".equals(row.get("entity_type"))) {
-                Object geometry = row.get("geometry_json");
-                try { nominal = new BigDecimal(JSON.readTree(String.valueOf(geometry)).path("act_measurement").asText()); }
+                try { nominal = new BigDecimal(geometry.path("act_measurement").asText()); }
                 catch (Exception ignored) { continue; }
                 upper=null; lower=null;
                 name=text;
@@ -53,6 +60,13 @@ public class JdbcQualityCharacteristicRepository implements QualityCharacteristi
                     upper == null ? null : nominal.add(upper),lower == null ? null : nominal.add(lower),
                     row.get("confidence"),actorId,actorId);
         }
+    }
+    private static JsonNode geometry(Object value) {
+        try { return JSON.readTree(String.valueOf(value)); }
+        catch (Exception ignored) { return JSON.createObjectNode(); }
+    }
+    private static BigDecimal decimalOrNull(JsonNode value) {
+        return value.isNumber() ? value.decimalValue() : null;
     }
     @Override public List<QualityCharacteristic> findByRevision(long tenantId,long orgId,long revisionId){return jdbc.query(sql(""),this::map,tenantId,orgId,revisionId);}
     @Override public Optional<QualityCharacteristic> findById(long tenantId,long orgId,long revisionId,long id){return jdbc.query(sql(" and id=?"),this::map,tenantId,orgId,revisionId,id).stream().findFirst();}

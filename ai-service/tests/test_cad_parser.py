@@ -13,6 +13,10 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
         "OBJECTS": [
             {"object": "LAYER", "handle": [5, 16], "name": "细实线"},
             {
+                "object": "DIMSTYLE", "handle": [5, 48], "name": "横向",
+                "DIMDEC": 2, "DIMTOL": 0, "DIMTP": 0.0, "DIMTM": 0.0, "DIMTXT": 3.0,
+            },
+            {
                 "entity": "DIMENSION_LINEAR",
                 "handle": [5, 32],
                 "layer": [5, 16],
@@ -21,6 +25,14 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
                 "xline1_pt": [0.0, 0.0, 0.0],
                 "xline2_pt": [34.0, 0.0, 0.0],
                 "text_midpt": [17.0, -2.0, 0.0],
+                "dimstyle": [5, 48],
+                "eed": [
+                    {"code": 0, "value": "DSTYLE"},
+                    {"code": 70, "value": 47}, {"code": 40, "value": 0.3},
+                    {"code": 70, "value": 48}, {"code": 40, "value": 0.3},
+                    {"code": 70, "value": 71}, {"code": 70, "value": 1},
+                    {"code": 70, "value": 271}, {"code": 70, "value": 1},
+                ],
             },
             {
                 "entity": "DIMENSION_LINEAR",
@@ -51,8 +63,12 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
     assert entity["entityType"] == "DIMENSION"
     assert entity["nativeEntityType"] == "DIMENSION_LINEAR"
     assert entity["layer"] == "细实线"
-    assert entity["normalizedText"] == "8-34"
+    assert entity["normalizedText"] == "8-34.0±0.3"
     assert entity["geometry"]["act_measurement"] == 34.0
+    assert entity["geometry"]["nominalValue"] == 34.0
+    assert entity["geometry"]["upperTolerance"] == 0.3
+    assert entity["geometry"]["lowerTolerance"] == -0.3
+    assert entity["geometry"]["displayPrecision"] == 1
     assert result["evidence"][0]["extractorType"] == "DWG_ENTITY"
     preview = result["modelJson"]["sheets"][0]["preview"]
     assert preview["viewBox"]["x"] == 0.0
@@ -65,6 +81,7 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
     box = result["evidence"][0]["bbox"]
     assert 0 <= box["x"] <= preview["viewBox"]["width"]
     assert 0 <= box["y"] <= preview["viewBox"]["height"]
+    assert box["width"] < preview["viewBox"]["width"] / 2
 
 
 def test_parse_dwg_rejects_non_dwg_content():
