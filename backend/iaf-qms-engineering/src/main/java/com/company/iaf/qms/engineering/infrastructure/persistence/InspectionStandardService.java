@@ -10,7 +10,6 @@ import com.company.iaf.qms.engineering.interfaces.dto.*;
 import com.company.iaf.shared.exception.BusinessException;
 import com.company.iaf.shared.security.SecurityContext;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +17,6 @@ import java.sql.Timestamp;
 import java.util.*;
 
 @Service
-@ConditionalOnBean(ApprovalApplicationService.class)
 public class InspectionStandardService {
     private static final String BUSINESS_TYPE="INSPECTION_STANDARD";
     private static final List<StateTransition<InspectionStandardStatus>> TRANSITIONS=List.of(

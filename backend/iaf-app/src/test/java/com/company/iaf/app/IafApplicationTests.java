@@ -18,6 +18,7 @@ import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionFileRepo
 import com.company.iaf.qms.engineering.domain.repository.DrawingLegendRuleRepository;
 import com.company.iaf.qms.engineering.domain.repository.QualityCharacteristicRepository;
 import com.company.iaf.qms.engineering.infrastructure.persistence.InspectionStandardService;
+import com.company.iaf.platform.workflow.application.ApprovalApplicationService;
 import com.company.iaf.qms.engineering.domain.repository.PartRepository;
 import com.company.iaf.qms.engineering.domain.repository.QmsAuditTrail;
 import com.company.iaf.qms.engineering.domain.repository.QmsFileObjectRepository;
@@ -98,6 +99,9 @@ class IafApplicationTests {
 
     @MockBean
     private InspectionStandardService inspectionStandardService;
+
+    @MockBean
+    private ApprovalApplicationService approvalApplicationService;
 
     @Test
     void contextLoads() {
