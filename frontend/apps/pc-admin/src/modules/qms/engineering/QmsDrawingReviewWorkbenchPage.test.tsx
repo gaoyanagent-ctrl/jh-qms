@@ -148,6 +148,7 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     fireEvent.click(await screen.findByText('DIM-EV-9'));
     expect(await screen.findByTestId('pdf-viewer')).toBeInTheDocument();
     expect(await screen.findByText('250%')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId('pdf-viewer').querySelector('canvas')).toHaveAttribute('width', '800'));
     const pdfOverlay = screen.getByTestId('evidence-overlay');
     expect(pdfOverlay).toBeInTheDocument();
     expect(pdfOverlay.style.border).toBe('');

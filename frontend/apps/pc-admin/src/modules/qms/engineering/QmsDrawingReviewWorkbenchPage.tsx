@@ -38,6 +38,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dwgViewerRef = useRef<HTMLDivElement>(null);
   const pdfViewerRef = useRef<HTMLDivElement>(null);
+  const pdfContentRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ x: number; y: number; left: number; top: number } | undefined>(undefined);
   const pdfDragRef = useRef<{ x: number; y: number; left: number; top: number } | undefined>(undefined);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
@@ -83,6 +84,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
       : revision?.fileType === 'DWG' && dwgViewMode === 'PDF' ? companionFileQuery.data : undefined;
     if (!pdfFile || !canvasRef.current) return;
     let cancelled = false;
+    let renderTask: { promise: Promise<void>; cancel?: () => void } | undefined;
     const render = async () => {
       try {
         setRenderError(false);
@@ -92,15 +94,20 @@ export const QmsDrawingReviewWorkbenchPage = () => {
         setPageCount(pdf.numPages);
         const page = await pdf.getPage(Math.min(pageNo, pdf.numPages));
         const base = page.getViewport({ scale: 1 });
-        const scale = Math.min(1.6, 900 / base.width);
+        const scale = Math.min(1.6, 900 / base.width) * pdfZoom;
         const viewport = page.getViewport({ scale });
         const canvas = canvasRef.current!;
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        const outputScale = Math.min(window.devicePixelRatio || 1, 1.5);
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.height = Math.floor(viewport.height * outputScale);
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
         setViewportSize({ width: viewport.width, height: viewport.height });
+        renderTask = page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport,
+          transform: outputScale === 1 ? undefined : [outputScale, 0, 0, outputScale, 0, 0] });
         const [textContent] = await Promise.all([
           page.getTextContent(),
-          page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise
+          renderTask.promise
         ]);
         if (cancelled) return;
         const singles: PdfTextBox[] = textContent.items.flatMap((item) => {
@@ -124,8 +131,8 @@ export const QmsDrawingReviewWorkbenchPage = () => {
       } catch { if (!cancelled) setRenderError(true); }
     };
     void render();
-    return () => { cancelled = true; };
-  }, [companionFileQuery.data, dwgViewMode, fileQuery.data, pageNo, revision?.fileType]);
+    return () => { cancelled = true; renderTask?.cancel?.(); };
+  }, [companionFileQuery.data, dwgViewMode, fileQuery.data, pageNo, pdfZoom, revision?.fileType]);
 
   const evidence = useMemo(() => (evidenceQuery.data ?? []).filter((item) =>
     filter === 'all' || confidenceLevel(item.confidence) === filter), [evidenceQuery.data, filter]);
@@ -200,18 +207,21 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     transform: `rotate(${-selectedRotation}rad)`
   } : undefined;
   const centerPdfOnEvidence = () => {
-    if (!pdfOverlay || viewportSize.width <= 0 || viewportSize.height <= 0) return;
+    if (!pdfOverlay || !pdfViewerRef.current || !pdfContentRef.current) return;
     const zoom = 2.5;
+    if (pdfZoom !== zoom) { setPdfZoom(zoom); return; }
     const centerX = pdfOverlay.left + pdfOverlay.width / 2;
     const centerY = pdfOverlay.top + pdfOverlay.height / 2;
-    setPdfZoom(zoom);
-    setPdfPan({ x: (viewportSize.width / 2 - centerX) * zoom, y: (viewportSize.height / 2 - centerY) * zoom });
+    setPdfPan({
+      x: pdfViewerRef.current.clientWidth / 2 - pdfContentRef.current.offsetLeft - centerX,
+      y: pdfViewerRef.current.clientHeight / 2 - pdfContentRef.current.offsetTop - centerY
+    });
   };
   useEffect(() => {
     if (selected && pdfOverlay && (revision?.fileType === 'PDF' || dwgViewMode === 'PDF')) centerPdfOnEvidence();
     // Re-center after selection, PDF rendering, or switching back to the PDF reference.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected?.id, pdfOverlay?.left, pdfOverlay?.top, dwgViewMode, revision?.fileType]);
+  }, [selected?.id, pdfOverlay?.left, pdfOverlay?.top, dwgViewMode, pdfZoom, revision?.fileType]);
   const modelMissing = Boolean(revision && !parseResultAvailable)
     || (dimQuery.error instanceof ApiError && dimQuery.error.code === 'QMS_INTERMEDIATE_MODEL_NOT_FOUND');
 
@@ -298,8 +308,8 @@ export const QmsDrawingReviewWorkbenchPage = () => {
             style={{ overflow: 'hidden', height: '72vh', minHeight: 420, position: 'relative', textAlign: 'center', cursor: 'grab', touchAction: 'none', background: token.colorFillTertiary, padding: token.paddingSM }}>
             {revision?.fileType === 'DWG' && companionPdf && <Alert style={{ marginBottom: token.marginSM, textAlign: 'left' }} type="info" showIcon
               message={t('qmsReview.pdfReferenceRevision', { revision: revision.revisionCode })} />}
-            <div className="qms-pdf-transform" style={{ display: 'inline-block', position: 'relative', lineHeight: 0,
-              transform: `translate(${pdfPan.x}px, ${pdfPan.y}px) scale(${pdfZoom})`, transformOrigin: 'center' }}>
+            <div ref={pdfContentRef} className="qms-pdf-transform" style={{ display: 'inline-block', position: 'relative', lineHeight: 0,
+              transform: `translate(${pdfPan.x}px, ${pdfPan.y}px)`, transformOrigin: 'center' }}>
               <canvas ref={canvasRef} aria-label={t('qmsReview.pdfCanvas')} />
               {pdfOverlay && <div className="qms-evidence-marker" data-testid="evidence-overlay" aria-label={t('qmsReview.locateEvidence')}
                 style={{ position: 'absolute', pointerEvents: 'none', color: token.colorError,
