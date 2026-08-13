@@ -251,7 +251,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
             onPointerUp={() => { dragRef.current = undefined; }}
             style={{ width: `min(100%, ${72 * preview.viewBox.width / preview.viewBox.height}vh)`, aspectRatio: preview.viewBox.width / preview.viewBox.height,
               marginInline: 'auto', overflow: 'hidden', position: 'relative', cursor: 'grab', background: token.colorFillTertiary, touchAction: 'none' }}>
-            <div style={{ position: 'absolute', inset: 0, transform: `translate(${dwgPan.x}px, ${dwgPan.y}px) scale(${dwgZoom})`, transformOrigin: 'center', transition: 'transform 180ms ease-out' }}>
+            <div className="qms-dwg-transform" style={{ position: 'absolute', inset: 0, transform: `translate(${dwgPan.x}px, ${dwgPan.y}px) scale(${dwgZoom})`, transformOrigin: 'center' }}>
               <img src={dwgUrl} alt={t('qmsReview.dwgCanvas')} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
               {dwgOverlay && <div className="qms-evidence-marker" data-testid="evidence-overlay" aria-label={t('qmsReview.locateEvidence')}
                 style={{ position: 'absolute', pointerEvents: 'none', border: `2px dashed ${token.colorError}`, outline: `1px solid ${token.colorError}`, transformOrigin: 'center', ...dwgOverlay }} />}
