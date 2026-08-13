@@ -160,6 +160,28 @@ class QmsEngineeringPostgresIntegrationTest {
             assertThat(candidate.upperTolerance()).isEqualByComparingTo("0.3");
             assertThat(candidate.reviewedBy()).isEqualTo(2);
         });
+        var standards = new InspectionStandardService(jdbc, revisions, audit,
+                new com.company.iaf.platform.statemachine.application.DefaultStateMachineService(), approvalService);
+        var initialStandard = standards.generate(1, 10, revisionId);
+        assertThat(initialStandard.items()).hasSize(1);
+        jdbc.update("update qms_inspection_standard_item set supplier_batch_method='CUSTOM', review_status='CONFIRMED' where id=?",
+                initialStandard.items().getFirst().id());
+        var addedInspection = characteristics.createManual(3, 1, 10, revisionId, "DIMENSION", "孔径 20±0.1",
+                new BigDecimal("20"), new BigDecimal("0.1"), new BigDecimal("-0.1"), "mm", null,
+                true, false, false, false, false, false, false, "new inspection");
+        assertThat(characteristics.review(3, 1, 10, revisionId, addedInspection.id(), addedInspection.version(),
+                "CONFIRMED", null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, "confirmed")).isTrue();
+        var synchronizedStandard = standards.generate(1, 10, revisionId);
+        assertThat(synchronizedStandard.items()).hasSize(2);
+        assertThat(synchronizedStandard.items()).filteredOn(item -> item.characteristicId() == confirmed.id())
+                .singleElement().extracting(com.company.iaf.qms.engineering.interfaces.dto.InspectionStandardResponse.Item::supplierBatchMethod)
+                .isEqualTo("CUSTOM");
+        addedInspection = characteristics.findById(1, 10, revisionId, addedInspection.id()).orElseThrow();
+        assertThat(characteristics.review(3, 1, 10, revisionId, addedInspection.id(), addedInspection.version(),
+                "CONFIRMED", null, null, null, null, null, null, null,
+                false, null, null, null, null, null, null, "no longer inspected")).isTrue();
+        assertThat(standards.generate(1, 10, revisionId).items()).hasSize(1);
         var corrected = characteristics.findById(1, 10, revisionId, confirmed.id()).orElseThrow();
         assertThat(characteristics.review(2, 1, 10, revisionId, corrected.id(), corrected.version(),
                 "REJECTED", null, null, null, null, null, corrected.characteristicType(), null,
