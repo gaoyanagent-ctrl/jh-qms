@@ -54,6 +54,21 @@ const flattenMenus = (menus: PlatformMenu[]): PlatformMenu[] =>
 
 const cloneMenus = (menus: PlatformMenu[]) => JSON.parse(JSON.stringify(menus)) as PlatformMenu[];
 
+const detachMenu = (menus: PlatformMenu[], menuId: number): PlatformMenu | undefined => {
+  const index = menus.findIndex((menu) => menu.id === menuId);
+  if (index >= 0) return menus.splice(index, 1)[0];
+  for (const menu of menus) {
+    const detached = detachMenu(menu.children, menuId);
+    if (detached) return detached;
+  }
+  return undefined;
+};
+
+const sortMenuTree = (menus: PlatformMenu[]) => {
+  menus.sort((left, right) => left.sortNo - right.sortNo || left.id - right.id);
+  menus.forEach((menu) => sortMenuTree(menu.children));
+};
+
 export const registerMenuMocks = (adapter: MockApiAdapter) => {
   adapter.register('GET', '/api/platform/menus/tree', () => mockSuccess(cloneMenus(mockMenus)));
 
@@ -103,7 +118,20 @@ export const registerMenuMocks = (adapter: MockApiAdapter) => {
     if (!menu) {
       return mockError('Menu not found', 'PLATFORM_PERMISSION_MENU_NOT_FOUND', 404);
     }
-    Object.assign(menu, req.body, { version: menu.version + 1 });
+    const nextParentId = req.body.parentId ?? null;
+    if (nextParentId !== menu.parentId) {
+      const detached = detachMenu(mockMenus, id);
+      const nextParent = nextParentId == null
+        ? null
+        : flattenMenus(mockMenus).find((item) => item.id === nextParentId);
+      if (!detached || (nextParentId != null && !nextParent)) {
+        return mockError('Menu parent not found', 'PLATFORM_PERMISSION_MENU_NOT_FOUND', 404);
+      }
+      detached.parentId = nextParentId;
+      (nextParent?.children ?? mockMenus).push(detached);
+    }
+    Object.assign(menu, req.body, { parentId: nextParentId, version: menu.version + 1 });
+    sortMenuTree(mockMenus);
     return mockSuccess(menu);
   });
 };

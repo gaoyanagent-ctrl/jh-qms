@@ -261,20 +261,22 @@ Route-level permission guards prevent direct URL access to protected platform pa
 ### `PlatformMenuConsolePage`
 
 - Path: `frontend/apps/pc-admin/src/modules/platform/menus/PlatformMenuConsolePage.tsx`
-- Purpose: platform menu management console for menu tree browsing, create, and edit.
+- Purpose: platform menu management console for menu tree browsing, create, edit, grouping, sibling ordering, and controlled expand/collapse.
 - API methods:
   - `menusApi.listMenusTree` (in `src/modules/platform/menus/api.ts`)
   - `menusApi.createMenu`
   - `menusApi.updateMenu`
 - Custom hooks:
-  - `useMenusTreeQuery`, `useCreateMenuMutation`, `useUpdateMenuMutation` (in `src/modules/platform/menus/hooks.ts`)
+  - `useMenusTreeQuery`, `useCreateMenuMutation`, `useUpdateMenuMutation`, `useUpdateMenuStructureMutation` (in `src/modules/platform/menus/hooks.ts`)
 - Permission gates:
   - `platform:menu:create`: create button (`PermissionButton`).
-  - `platform:menu:update`: edit action (`PermissionButton`).
+  - `platform:menu:update`: edit, group selection, and sibling ordering actions (`PermissionButton` / `PermissionGate`).
 - Notes:
   - Uses backend menu tree data and mock handlers for frontend-only development mode.
   - Does not currently edit `sys_menu_permission` links; those are seeded and shown read-only on menu rows.
   - Parent menu options exclude the current menu and all descendants so the UI cannot submit a menu cycle.
+  - `menuTree.ts` plans deterministic sibling normalization and group moves; moving to a descendant is rejected before requests are issued.
+  - The tree table exposes per-node expand/collapse plus accessible expand-all/collapse-all and up/down controls. Ordering has explicit buttons as a keyboard-accessible alternative to drag-only interaction.
   - Create/edit uses `FormInteractionSurface` and `@iaf/theme` form interaction and surface-width preferences.
 
 ### `PlatformDictionaryParameterPage`
@@ -510,6 +512,7 @@ Route-level permission guards prevent direct URL access to protected platform pa
 - Mock files:
   - `src/platform/auth.ts`: Mock handlers for login and current-principal lookup.
   - `src/platform/menus.ts`: Mock handlers for menu tree, current-user menus, menu create, and menu update.
+    Menu updates preserve tree structure when a menu changes group and re-sort siblings by `sortNo`.
   - `src/platform/users.ts`: Mock handlers for users CRUD, resets, and disable.
   - `src/platform/orgs.ts`: Mock handlers for org trees and edits.
   - `src/platform/roles.ts`: Mock handlers for roles lists, permission mapping, assignable permission list, and role menu assignment.

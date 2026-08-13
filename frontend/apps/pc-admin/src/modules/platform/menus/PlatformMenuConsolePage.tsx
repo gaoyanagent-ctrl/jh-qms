@@ -1,28 +1,22 @@
 import type { PlatformMenu } from '@iaf/domain-types';
-import { PermissionButton, PLATFORM_PERMISSIONS } from '@iaf/permissions';
+import { PermissionButton, PermissionGate, PLATFORM_PERMISSIONS } from '@iaf/permissions';
 import { AppPageContainer, FormInteractionSurface, IafSurface, IafToolbar, StatusTag } from '@iaf/ui-core';
 import { iafSurfaceWidths, useIafTheme } from '@iaf/theme';
-import { Button, Form, Input, InputNumber, Select, Space, Table, Tag, message } from 'antd';
+import { ArrowDownOutlined, ArrowUpOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { Button, Form, Input, InputNumber, Select, Space, Table, Tag, Tooltip, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useMemo, useState } from 'react';
+import type { Key } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCreateMenuMutation, useMenusTreeQuery, useUpdateMenuMutation } from './hooks';
+import { useCreateMenuMutation, useMenusTreeQuery, useUpdateMenuMutation, useUpdateMenuStructureMutation } from './hooks';
+import {
+  buildGroupMoveUpdates,
+  buildSiblingMoveUpdates,
+  descendantIdsOf,
+  expandableMenuIds,
+  flattenMenus
+} from './menuTree';
 import type { MenuFormValues } from './types';
-
-const flattenMenus = (menus: PlatformMenu[]): PlatformMenu[] =>
-  menus.flatMap((menu) => [menu, ...flattenMenus(menu.children ?? [])]);
-
-const descendantIdsOf = (menu: PlatformMenu | null): Set<number> => {
-  const ids = new Set<number>();
-  const collect = (children: PlatformMenu[] = []) => {
-    children.forEach((child) => {
-      ids.add(child.id);
-      collect(child.children ?? []);
-    });
-  };
-  collect(menu?.children ?? []);
-  return ids;
-};
 
 const toFormValues = (menu: PlatformMenu): MenuFormValues => ({
   parentId: menu.parentId,
@@ -43,8 +37,11 @@ export const PlatformMenuConsolePage = () => {
   const [form] = Form.useForm<MenuFormValues>();
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<PlatformMenu | null>(null);
+  const [expandedRowKeys, setExpandedRowKeys] = useState<Key[]>([]);
   const menusQuery = useMenusTreeQuery();
-  const flatMenus = useMemo(() => flattenMenus(menusQuery.data ?? []), [menusQuery.data]);
+  const menuTree = useMemo(() => menusQuery.data ?? [], [menusQuery.data]);
+  const flatMenus = useMemo(() => flattenMenus(menuTree), [menuTree]);
+  const groupMenus = useMemo(() => flatMenus.filter((menu) => menu.menuType === 'GROUP'), [flatMenus]);
   const excludedParentIds = useMemo(() => {
     if (!editing) return new Set<number>();
     const ids = descendantIdsOf(editing);
@@ -66,6 +63,18 @@ export const PlatformMenuConsolePage = () => {
       form.resetFields();
     }
   });
+  const structureMutation = useUpdateMenuStructureMutation({
+    onSuccess: () => message.success(t('platformConfig.menuStructureUpdated'))
+  });
+
+  const updateStructure = async (updates: ReturnType<typeof buildSiblingMoveUpdates>) => {
+    if (updates.length > 0) await structureMutation.mutateAsync(updates);
+  };
+
+  const siblingsOf = (menu: PlatformMenu) =>
+    menu.parentId == null
+      ? menuTree
+      : flatMenus.find((item) => item.id === menu.parentId)?.children ?? [];
 
   const openCreate = () => {
     form.setFieldsValue({
@@ -118,6 +127,32 @@ export const PlatformMenuConsolePage = () => {
       render: (codes: string[]) => codes?.map((code) => <Tag key={code}>{code}</Tag>)
     },
     {
+      title: t('platformConfig.menuGroup'),
+      width: 220,
+      render: (_, record) => {
+        const currentGroup = flatMenus.find((menu) => menu.id === record.parentId);
+        const excludedIds = descendantIdsOf(record);
+        excludedIds.add(record.id);
+        return (
+          <PermissionGate require={PLATFORM_PERMISSIONS.menuUpdate} fallback={<span>{currentGroup ? t(currentGroup.titleKey) : t('platformConfig.rootGroup')}</span>}>
+            <Select
+              aria-label={t('platformConfig.changeMenuGroup', { menu: t(record.titleKey) })}
+              value={record.parentId ?? 'root'}
+              disabled={structureMutation.isPending}
+              style={{ width: '100%' }}
+              onChange={(value) => updateStructure(buildGroupMoveUpdates(menuTree, record.id, value === 'root' ? null : Number(value)))}
+              options={[
+                { value: 'root', label: t('platformConfig.rootGroup') },
+                ...groupMenus
+                  .filter((menu) => !excludedIds.has(menu.id))
+                  .map((menu) => ({ value: menu.id, label: t(menu.titleKey) }))
+              ]}
+            />
+          </PermissionGate>
+        );
+      }
+    },
+    {
       title: t('common.fields.status'),
       render: (_, record) => (
         <Space>
@@ -128,12 +163,38 @@ export const PlatformMenuConsolePage = () => {
     },
     {
       title: t('common.actions.actions'),
-      width: 120,
-      render: (_, record) => (
-        <PermissionButton require={PLATFORM_PERMISSIONS.menuUpdate} size="small" onClick={() => openEdit(record)}>
-          {t('common.actions.edit')}
-        </PermissionButton>
-      )
+      width: 200,
+      render: (_, record) => {
+        const siblings = siblingsOf(record);
+        const siblingIndex = siblings.findIndex((menu) => menu.id === record.id);
+        return (
+          <Space size={4}>
+            <PermissionGate require={PLATFORM_PERMISSIONS.menuUpdate}>
+              <Tooltip title={t('platformConfig.moveMenuUp')}>
+                <Button
+                  aria-label={t('platformConfig.moveMenuUp')}
+                  icon={<ArrowUpOutlined />}
+                  size="small"
+                  disabled={siblingIndex <= 0 || structureMutation.isPending}
+                  onClick={() => updateStructure(buildSiblingMoveUpdates(menuTree, record.id, -1))}
+                />
+              </Tooltip>
+              <Tooltip title={t('platformConfig.moveMenuDown')}>
+                <Button
+                  aria-label={t('platformConfig.moveMenuDown')}
+                  icon={<ArrowDownOutlined />}
+                  size="small"
+                  disabled={siblingIndex < 0 || siblingIndex >= siblings.length - 1 || structureMutation.isPending}
+                  onClick={() => updateStructure(buildSiblingMoveUpdates(menuTree, record.id, 1))}
+                />
+              </Tooltip>
+            </PermissionGate>
+            <PermissionButton require={PLATFORM_PERMISSIONS.menuUpdate} size="small" onClick={() => openEdit(record)}>
+              {t('common.actions.edit')}
+            </PermissionButton>
+          </Space>
+        );
+      }
     }
   ];
 
@@ -145,6 +206,15 @@ export const PlatformMenuConsolePage = () => {
         <IafToolbar title={t('platformConfig.menuSummary')}>
           <Space>
             <Tag>{t('workspace.totalRecords', { total: flatMenus.length })}</Tag>
+            <Button
+              icon={<MenuUnfoldOutlined />}
+              onClick={() => setExpandedRowKeys(expandableMenuIds(menuTree))}
+            >
+              {t('platformConfig.expandAllMenus')}
+            </Button>
+            <Button icon={<MenuFoldOutlined />} onClick={() => setExpandedRowKeys([])}>
+              {t('platformConfig.collapseAllMenus')}
+            </Button>
             <Button onClick={() => menusQuery.refetch()}>{t('common.actions.refresh')}</Button>
             <PermissionButton require={PLATFORM_PERMISSIONS.menuCreate} type="primary" onClick={openCreate}>
               {t('common.actions.create')}
@@ -157,8 +227,12 @@ export const PlatformMenuConsolePage = () => {
           bordered
           loading={menusQuery.isLoading}
           columns={columns}
-          dataSource={menusQuery.data ?? []}
+          dataSource={menuTree}
           pagination={false}
+          expandable={{
+            expandedRowKeys,
+            onExpandedRowsChange: (keys) => setExpandedRowKeys([...keys])
+          }}
         />
       </IafSurface>
 
