@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { useQmsCharacteristicsQuery, useQmsEvidenceQuery, useQmsIntermediateModelQuery, useQmsRevisionFileQuery, useQmsRevisionQuery, useReviewQmsCharacteristicMutation } from './hooks';
+import { useQmsCharacteristicsQuery, useQmsEvidenceQuery, useQmsIntermediateModelQuery, useQmsRevisionFileQuery, useQmsRevisionQuery, useQmsRevisionsQuery, useReviewQmsCharacteristicMutation } from './hooks';
 
 // Keep the URL versioned independently from the application bundle. This prevents a
 // previously cached response with an invalid module MIME type from breaking PDF.js.
@@ -40,9 +40,14 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const [dwgZoom, setDwgZoom] = useState(1);
   const [dwgPan, setDwgPan] = useState({ x: 0, y: 0 });
   const [dwgUrl, setDwgUrl] = useState<string>();
-  const fileQuery = useQmsRevisionFileQuery(validId ? revisionId : undefined, validId);
   const revisionQuery = useQmsRevisionQuery(validId ? revisionId : undefined, validId);
   const revision = revisionQuery.data;
+  const revisionsQuery = useQmsRevisionsQuery(revision?.drawingId, revision?.fileType === 'DWG');
+  const companionPdf = useMemo(() => revisionsQuery.data?.filter((item) => item.id !== revisionId && item.fileType === 'PDF'
+    && item.fileId && item.parseStatus === 'SUCCESS').sort((a, b) => b.revisionSeq - a.revisionSeq)[0], [revisionId, revisionsQuery.data]);
+  const [dwgViewMode, setDwgViewMode] = useState<'PDF' | 'DWG'>('PDF');
+  const fileQuery = useQmsRevisionFileQuery(validId ? revisionId : undefined, validId && revision?.fileType === 'PDF');
+  const companionFileQuery = useQmsRevisionFileQuery(companionPdf?.id, revision?.fileType === 'DWG' && Boolean(companionPdf));
   const parseResultAvailable = revision?.parseStatus === 'SUCCESS' || revision?.parseStatus === 'PARTIAL_SUCCESS';
   const dimQuery = useQmsIntermediateModelQuery(validId ? revisionId : undefined, validId && parseResultAvailable);
   const evidenceQuery = useQmsEvidenceQuery(validId ? revisionId : undefined, validId && parseResultAvailable);
@@ -66,12 +71,14 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   }, [selected]);
 
   useEffect(() => {
-    if (!fileQuery.data || revision?.fileType !== 'PDF' || !canvasRef.current) return;
+    const pdfFile = revision?.fileType === 'PDF' ? fileQuery.data
+      : revision?.fileType === 'DWG' && dwgViewMode === 'PDF' ? companionFileQuery.data : undefined;
+    if (!pdfFile || !canvasRef.current) return;
     let cancelled = false;
     const render = async () => {
       try {
         setRenderError(false);
-        const bytes = new Uint8Array(await fileQuery.data.arrayBuffer());
+        const bytes = new Uint8Array(await pdfFile.arrayBuffer());
         const pdf = await getDocument({ data: bytes }).promise;
         if (cancelled) return;
         setPageCount(pdf.numPages);
@@ -88,7 +95,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     };
     void render();
     return () => { cancelled = true; };
-  }, [fileQuery.data, pageNo, revision?.fileType]);
+  }, [companionFileQuery.data, dwgViewMode, fileQuery.data, pageNo, revision?.fileType]);
 
   const evidence = useMemo(() => (evidenceQuery.data ?? []).filter((item) =>
     filter === 'all' || confidenceLevel(item.confidence) === filter), [evidenceQuery.data, filter]);
@@ -125,7 +132,12 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     // Re-center only when the selected evidence changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id, preview]);
-  const pdfOverlay = selected && currentSheet && viewportSize.width > 0 ? {
+  const pdfOverlay = selected && currentSheet && viewportSize.width > 0 ? revision?.fileType === 'DWG' && preview ? {
+    left: (selected.bbox.x - preview.viewBox.x) / preview.viewBox.width * viewportSize.width,
+    top: (selected.bbox.y - preview.viewBox.y) / preview.viewBox.height * viewportSize.height,
+    width: Math.max(selected.bbox.width / preview.viewBox.width * viewportSize.width, 3),
+    height: Math.max(selected.bbox.height / preview.viewBox.height * viewportSize.height, 3)
+  } : {
     left: selected.bbox.x / currentSheet.width * viewportSize.width,
     top: selected.bbox.y / currentSheet.height * viewportSize.height,
     width: selected.bbox.width / currentSheet.width * viewportSize.width,
@@ -184,13 +196,17 @@ export const QmsDrawingReviewWorkbenchPage = () => {
       </Card>
       </Space>
       <Card title={t('qmsReview.viewer')} extra={revision?.fileType === 'DWG' ? <Space size="small">
+        {companionPdf && <Segmented size="small" value={dwgViewMode} onChange={(value) => setDwgViewMode(value as 'PDF' | 'DWG')}
+          options={[{ label: t('qmsReview.pdfReference'), value: 'PDF' }, { label: t('qmsReview.dwgVector'), value: 'DWG' }]} />}
+        {(dwgViewMode === 'DWG' || !companionPdf) && <>
         <Button aria-label={t('qmsReview.zoomOut')} icon={<MinusOutlined />} disabled={dwgZoom <= 0.5} onClick={() => setDwgZoom((value) => Math.max(0.5, value - 0.25))} />
         <Typography.Text style={{ minWidth: 48, textAlign: 'center' }}>{Math.round(dwgZoom * 100)}%</Typography.Text>
         <Button aria-label={t('qmsReview.zoomIn')} icon={<PlusOutlined />} disabled={dwgZoom >= 6} onClick={() => setDwgZoom((value) => Math.min(6, value + 0.25))} />
         <Button aria-label={t('qmsReview.resetView')} icon={<ReloadOutlined />} onClick={() => { setDwgZoom(1); setDwgPan({ x: 0, y: 0 }); }} />
         <Button aria-label={t('qmsReview.locateEvidence')} icon={<AimOutlined />} disabled={!selected} onClick={() => selected && centerDwgOnEvidence(selected)} />
+        </>}
       </Space> : pageCount > 0 && <Space><Button size="small" disabled={pageNo <= 1} onClick={() => setPageNo((value) => value - 1)}>{t('qmsReview.previousPage')}</Button><Typography.Text>{pageNo}/{pageCount}</Typography.Text><Button size="small" disabled={pageNo >= pageCount} onClick={() => setPageNo((value) => value + 1)}>{t('qmsReview.nextPage')}</Button></Space>}>
-        {fileQuery.isLoading || dimQuery.isLoading ? <Spin /> : revision?.fileType === 'DWG' ? !dwgUrl || !preview ? <Alert type="info" showIcon message={t('qmsReview.cadPreviewMissing')} /> :
+        {fileQuery.isLoading || companionFileQuery.isLoading || dimQuery.isLoading ? <Spin /> : revision?.fileType === 'DWG' && (dwgViewMode === 'DWG' || !companionPdf) ? !dwgUrl || !preview ? <Alert type="info" showIcon message={t('qmsReview.cadPreviewMissing')} /> :
           <div ref={dwgViewerRef} data-testid="dwg-viewer" role="img" aria-label={t('qmsReview.dwgCanvas')} tabIndex={0}
             onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { x: event.clientX, y: event.clientY, left: dwgPan.x, top: dwgPan.y }; }}
             onPointerMove={(event) => { if (dragRef.current) setDwgPan({ x: dragRef.current.left + event.clientX - dragRef.current.x, y: dragRef.current.top + event.clientY - dragRef.current.y }); }}
@@ -203,6 +219,8 @@ export const QmsDrawingReviewWorkbenchPage = () => {
             </div>
           </div> : renderError ? <Alert type="error" showIcon message={t('qmsReview.renderFailed')} /> :
           <div style={{ overflow: 'auto', maxHeight: '72vh', textAlign: 'center', background: token.colorFillTertiary, padding: token.paddingSM }}>
+            {revision?.fileType === 'DWG' && companionPdf && <Alert style={{ marginBottom: token.marginSM, textAlign: 'left' }} type="info" showIcon
+              message={t('qmsReview.pdfReferenceRevision', { revision: companionPdf.revisionCode })} />}
             <div style={{ display: 'inline-block', position: 'relative', lineHeight: 0 }}>
               <canvas ref={canvasRef} aria-label={t('qmsReview.pdfCanvas')} />
               {pdfOverlay && <div data-testid="evidence-overlay" style={{ position: 'absolute', pointerEvents: 'none', border: `3px solid ${token.colorError}`, background: token.colorErrorBg, opacity: 0.72, ...pdfOverlay }} />}

@@ -12,6 +12,8 @@ quality-characteristic candidates against their native drawing positions.
 - The shared intermediate model records the preview content, viewBox and CAD coordinate system.
 - The browser supports zoom, wheel zoom, pointer panning, reset and selected-evidence location.
 - Selected evidence is transformed by the renderer's world-to-SVG matrix and highlighted.
+- A successfully parsed PDF revision of the same drawing can be used as the default visual
+  reference while DWG remains the evidence source; reviewers can switch back to DWG vector view.
 - Existing PDF preview behavior remains unchanged.
 - Parser tests, component tests, type checks and production builds pass.
 
