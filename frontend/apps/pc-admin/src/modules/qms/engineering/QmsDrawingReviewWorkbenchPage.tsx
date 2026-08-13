@@ -301,10 +301,16 @@ export const QmsDrawingReviewWorkbenchPage = () => {
               <Typography.Paragraph type="secondary" style={{ marginBottom: 0, overflowWrap: 'break-word' }}>
                 {`${item.name} · ${item.nominalValue ?? '-'} ${item.unit ?? ''} (${item.upperTolerance ?? '-'} / ${item.lowerTolerance ?? '-'})`}
               </Typography.Paragraph>
-              {item.reviewStatus === 'PENDING' && canReview && <Space wrap size="small" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: token.marginXS }}>
-                <Button size="small" type="link" onClick={(event) => { event.stopPropagation(); openReview(item); }}>{t('qmsReview.editConfirm')}</Button>
-                <Button size="small" type="link" danger loading={rejectMutation.isPending} onClick={(event) => { event.stopPropagation(); rejectMutation.mutate({ id: item.id, request: { version: item.version } }); }}>{t('qmsReview.reject')}</Button>
-              </Space>}
+              {canReview && (item.reviewStatus === 'PENDING' || item.reviewStatus === 'CONFIRMED') &&
+                <Space wrap size="small" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: token.marginXS }}>
+                  <Button size="small" type="link" onClick={(event) => { event.stopPropagation(); openReview(item); }}>
+                    {t(item.reviewStatus === 'CONFIRMED' ? 'qmsReview.editConfirmed' : 'qmsReview.editConfirm')}
+                  </Button>
+                  {item.reviewStatus === 'PENDING' && <Button size="small" type="link" danger loading={rejectMutation.isPending}
+                    onClick={(event) => { event.stopPropagation(); rejectMutation.mutate({ id: item.id, request: { version: item.version } }); }}>
+                    {t('qmsReview.reject')}
+                  </Button>}
+                </Space>}
             </div>
           </List.Item>} />
       </Card>

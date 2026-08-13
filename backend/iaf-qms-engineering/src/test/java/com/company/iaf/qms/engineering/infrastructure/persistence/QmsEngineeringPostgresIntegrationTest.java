@@ -97,7 +97,7 @@ class QmsEngineeringPostgresIntegrationTest {
                 "34", "34", null, 0, null, null);
         SourceEvidence cadEvidence = new SourceEvidence(null, 0, 0, 0, 0, 0, "EV-DWG-20", "DWG-DIM-20", "20",
                 "MODEL", null, BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("34"), BigDecimal.ONE,
-                "34", "34", EvidenceExtractorType.DWG_ENTITY, "libredwg-0.14", null, null,
+                "34◆", "34◆", EvidenceExtractorType.DWG_ENTITY, "libredwg-0.14", null, null,
                 BigDecimal.ONE, 0, null, null);
         DrawingParseResult parseResult = new DrawingParseResult("1.0.0", "DRAW-1", "Z1",
                 mapper.readTree("""
@@ -145,8 +145,25 @@ class QmsEngineeringPostgresIntegrationTest {
             assertThat(candidate.nominalValue()).isEqualByComparingTo("34");
             assertThat(candidate.upperTolerance()).isNull();
             assertThat(candidate.lowerTolerance()).isNull();
-            assertThat(candidate.name()).isEqualTo("34");
+            assertThat(candidate.name()).isEqualTo("34◆");
+            assertThat(candidate.reviewStatus()).isEqualTo("CONFIRMED");
+            assertThat(candidate.reviewComment()).isEqualTo("AUTO_CONFIRMED_INSPECTION_DIMENSION");
         });
+        var confirmed = characteristics.findByRevision(1, 10, revisionId).stream()
+                .filter(candidate -> candidate.reviewStatus().equals("CONFIRMED")).findFirst().orElseThrow();
+        assertThat(characteristics.review(2, 1, 10, revisionId, confirmed.id(), confirmed.version(),
+                "CONFIRMED", "8±0.3", new BigDecimal("8"), new BigDecimal("0.3"),
+                new BigDecimal("-0.3"), "mm", "DIMENSION", null, true, false,
+                false, false, false, false, false, "corrected tolerance")).isTrue();
+        assertThat(characteristics.findById(1, 10, revisionId, confirmed.id()).orElseThrow()).satisfies(candidate -> {
+            assertThat(candidate.reviewStatus()).isEqualTo("CONFIRMED");
+            assertThat(candidate.upperTolerance()).isEqualByComparingTo("0.3");
+            assertThat(candidate.reviewedBy()).isEqualTo(2);
+        });
+        var corrected = characteristics.findById(1, 10, revisionId, confirmed.id()).orElseThrow();
+        assertThat(characteristics.review(2, 1, 10, revisionId, corrected.id(), corrected.version(),
+                "REJECTED", null, null, null, null, null, corrected.characteristicType(), null,
+                null, null, null, null, null, null, null, "cannot reject confirmed")).isFalse();
         var manual = characteristics.createManual(1, 1, 10, revisionId, "DIMENSION", "参考尺寸 12",
                 new java.math.BigDecimal("12"), null, null, "mm", null,
                 false, true, false, false, false, false, false, "manual review");
@@ -156,7 +173,7 @@ class QmsEngineeringPostgresIntegrationTest {
         var parsed = characteristics.findByRevision(1, 10, revisionId).stream()
                 .filter(item -> item.characteristicCode().startsWith("DIM-EV-"))
                 .findFirst().orElseThrow();
-        jdbc.update("update qms_quality_characteristic set name='[B]6.5±0.3◆▲' where id=?", parsed.id());
+        jdbc.update("update qms_quality_characteristic set name='[B]6.5±0.3◆▲', review_status='PENDING' where id=?", parsed.id());
         new JdbcDrawingLegendRuleRepository(jdbc).reclassifyPending(1, 1, 10);
         parsed = characteristics.findById(1, 10, revisionId, parsed.id()).orElseThrow();
         assertThat(parsed.inspectionDimension()).isTrue();

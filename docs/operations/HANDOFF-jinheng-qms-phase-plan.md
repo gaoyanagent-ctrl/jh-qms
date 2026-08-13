@@ -43,6 +43,7 @@ Required before dependent QMS flows:
 | TASK-0418 | Gauge acceptance and validity enforcement | TASK-0414 | Planned |
 | TASK-0419 | Revision diff, lineage, and change-impact workbench | TASK-0413, TASK-0417 | Planned |
 | TASK-0420 | Knowledge ingestion and read-only Copilot | TASK-0419 | Planned |
+| TASK-0421 | Auto-confirm inspection dimensions and allow confirmed corrections | TASK-0414 | Implemented |
 
 ## Stage Gates
 

@@ -274,7 +274,7 @@ export const resources = {
       },
       qmsReview: {
         title: '图纸复核工作台', invalidRevision: '无效的图纸版本 ID', evidence: '来源证据', viewer: '图纸预览',
-        characteristics: '质量特性候选', noCharacteristics: '暂无可复核的质量特性候选', editConfirm: '编辑并确认', reject: '驳回',
+        characteristics: '质量特性候选', noCharacteristics: '暂无可复核的质量特性候选', editConfirm: '编辑并确认', editConfirmed: '修改已确认项', reject: '驳回',
         reviewCharacteristic: '复核质量特性', reviewSucceeded: '质量特性已确认', rejectSucceeded: '质量特性已驳回',
         manualCreate: '手工新增', createSucceeded: '质量特性已新增', bulkSucceeded: '批量复核完成',
         bulkConfirm: '批量确认（{{count}}）', bulkReject: '批量驳回（{{count}}）', selectCharacteristic: '选择 {{code}}',
@@ -952,7 +952,7 @@ export const resources = {
       },
       qmsReview: {
         title: 'Drawing Review Workbench', invalidRevision: 'Invalid drawing revision ID', evidence: 'Source Evidence', viewer: 'Drawing Viewer',
-        characteristics: 'Quality Characteristic Candidates', noCharacteristics: 'No quality characteristic candidates', editConfirm: 'Edit and confirm', reject: 'Reject',
+        characteristics: 'Quality Characteristic Candidates', noCharacteristics: 'No quality characteristic candidates', editConfirm: 'Edit and confirm', editConfirmed: 'Edit confirmed item', reject: 'Reject',
         reviewCharacteristic: 'Review Quality Characteristic', reviewSucceeded: 'Quality characteristic confirmed', rejectSucceeded: 'Quality characteristic rejected',
         manualCreate: 'Add manually', createSucceeded: 'Quality characteristic created', bulkSucceeded: 'Bulk review completed',
         bulkConfirm: 'Confirm selected ({{count}})', bulkReject: 'Reject selected ({{count}})', selectCharacteristic: 'Select {{code}}',
