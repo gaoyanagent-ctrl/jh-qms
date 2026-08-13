@@ -167,7 +167,8 @@ export interface QmsDrawingLegendRuleUpdateRequest {
   rules: Array<Pick<QmsDrawingLegendRule, 'id' | 'version' | 'marker' | 'description' | 'enabled' | 'priority'>>;
 }
 export interface QmsInspectionStandardItem { id:number;sequenceNo:number;category:string;itemName:string;requirement:string;characteristicId:number;nominalValue:number|null;lowerLimit:number|null;upperLimit:number|null;specialCharacteristicCode:string|null;supplierBatchSampling:string|null;supplierBatchMethod:string|null;supplierAnnualSampling:string|null;supplierAnnualMethod:string|null;remark:string|null;sourceType:string;evidenceId:number|null;confidence:number;reviewStatus:string; }
-export interface QmsInspectionStandard { id:number;standardNo:string;partId:number;drawingRevisionId:number;documentVersion:number;status:string;sourceType:string;reactionPlan:string|null;version:number;updatedAt:string;items:QmsInspectionStandardItem[]; }
+export interface QmsInspectionStandardApprovalAction { action:string;actorId:number;comment:string|null;actedAt:string; }
+export interface QmsInspectionStandard { id:number;standardNo:string;partId:number;drawingRevisionId:number;documentVersion:number;status:string;approvalStatus:string;sourceType:string;reactionPlan:string|null;version:number;updatedAt:string;submittedBy:number|null;submittedAt:string|null;approvedBy:number|null;approvedAt:string|null;releasedBy:number|null;releasedAt:string|null;approvalActions:QmsInspectionStandardApprovalAction[];items:QmsInspectionStandardItem[]; }
 export interface QmsDrawingIntermediateModel {
   id: number; revisionId: number; parseJobId: number; schemaVersion: string;
   documentId: string; revisionCode: string;

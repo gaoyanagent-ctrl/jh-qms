@@ -22,4 +22,12 @@ describe('qmsEngineeringApi', () => {
     expect(post).toHaveBeenNthCalledWith(1, '/api/qms/parts/12/drawings', drawing);
     expect(post).toHaveBeenNthCalledWith(2, '/api/qms/drawings/34/revisions', revision);
   });
+
+  it('uses controlled inspection standard action endpoints', async () => {
+    const post = vi.spyOn(apiClient, 'post').mockResolvedValue({});
+    await qmsEngineeringApi.actOnInspectionStandard(5, 8, 'submit-approval', 'ready');
+    await qmsEngineeringApi.actOnInspectionStandard(5, 8, 'release', 'publish');
+    expect(post).toHaveBeenNthCalledWith(1, '/api/qms/drawing-revisions/5/inspection-standard/8/submit-approval', { comment: 'ready' });
+    expect(post).toHaveBeenNthCalledWith(2, '/api/qms/drawing-revisions/5/inspection-standard/8/release', { comment: 'publish' });
+  });
 });

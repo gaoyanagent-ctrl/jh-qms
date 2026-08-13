@@ -38,7 +38,7 @@ Required before dependent QMS flows:
 | TASK-0413 | Characteristic classification, manual entry and bulk review | TASK-0409 | Implemented |
 | TASK-0414 | Drawing legend configuration and automatic classification | TASK-0413 | Implemented |
 | TASK-0415 | Inspection Standard draft generation and editable document | TASK-0414, platform rules | Implemented |
-| TASK-0416 | Approval/release integration for controlled documents | TASK-0415, platform workflow/state | Planned |
+| TASK-0416 | Approval/release integration for controlled documents | TASK-0415, platform workflow/state | Implemented |
 | TASK-0417 | Validation Plan generation and controlled release | TASK-0416 | Planned |
 | TASK-0418 | Gauge acceptance and validity enforcement | TASK-0414 | Planned |
 | TASK-0419 | Revision diff, lineage, and change-impact workbench | TASK-0413, TASK-0417 | Planned |
