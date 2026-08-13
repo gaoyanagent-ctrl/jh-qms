@@ -18,14 +18,15 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
                 "user_text": "8-<>",
                 "xline1_pt": [0.0, 0.0, 0.0],
                 "xline2_pt": [34.0, 0.0, 0.0],
+                "text_midpt": [17.0, 2.0, 0.0],
             },
         ]
     }
-    monkeypatch.setattr(
-        subprocess,
-        "run",
-        lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, json.dumps(payload), ""),
-    )
+    def run(command, *args, **kwargs):
+        if str(command[0]).endswith("dwg2SVG"):
+            return subprocess.CompletedProcess(command, 0, '<svg viewBox="0 -100 200 100"><script>alert(1)</script></svg>', "")
+        return subprocess.CompletedProcess(command, 0, json.dumps(payload), "")
+    monkeypatch.setattr(subprocess, "run", run)
 
     result = parse_dwg(b"AC1021-test", "drawing-2", "B")
 
@@ -39,6 +40,11 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
     assert entity["normalizedText"] == "8-34"
     assert entity["geometry"]["act_measurement"] == 34.0
     assert result["evidence"][0]["extractorType"] == "DWG_ENTITY"
+    preview = result["modelJson"]["sheets"][0]["preview"]
+    assert preview["viewBox"] == {"x": 0.0, "y": -100.0, "width": 200.0, "height": 100.0}
+    assert 'id="jh-qms-native-dimensions"' in preview["content"]
+    assert ">8-34</text>" in preview["content"]
+    assert "<script" not in preview["content"]
 
 
 def test_parse_dwg_rejects_non_dwg_content():

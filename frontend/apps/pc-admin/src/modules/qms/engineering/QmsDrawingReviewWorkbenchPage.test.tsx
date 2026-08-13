@@ -25,6 +25,8 @@ const renderPage = () => render(
 describe('QmsDrawingReviewWorkbenchPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:dwg-preview') });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
     vi.mocked(qmsEngineeringApi.getRevision).mockResolvedValue({
       id: 3, drawingId: 2, revisionCode: 'C', revisionSeq: 3, fileId: 3, fileType: 'DWG',
       effectiveDate: null, releaseDate: null, supersedesRevisionId: null, parseStatus: 'PENDING',
@@ -39,7 +41,7 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
 
   it('shows revision status and explicit CAD preview boundary', async () => {
     renderPage();
-    expect(await screen.findByText('DWG 在线预览将在 CAD 解析适配器阶段接入。')).toBeInTheDocument();
+    expect(await screen.findByText('DWG 图形预览尚未生成，请重试解析。')).toBeInTheDocument();
     expect(screen.getByText('暂无解析证据')).toBeInTheDocument();
     expect(screen.getByText('已上传')).toBeInTheDocument();
     await waitFor(() => {
@@ -57,7 +59,11 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     });
     vi.mocked(qmsEngineeringApi.getIntermediateModel).mockResolvedValue({
       id: 1, revisionId: 3, parseJobId: 1, schemaVersion: '1.0.0', documentId: '3', revisionCode: 'C',
-      model: { schemaVersion: '1.0.0', documentId: '3', revision: 'C', sheets: [] }, createdAt: '2026-08-12T00:00:00Z'
+      model: { schemaVersion: '1.0.0', documentId: '3', revision: 'C', sheets: [{
+        sheetNo: 'MODEL', width: 200, height: 100, titleBlock: {}, views: [], entities: [], notes: [], characteristicCandidates: [],
+        preview: { format: 'SVG', content: '<svg viewBox="0 0 200 100"></svg>', viewBox: { x: 0, y: 0, width: 200, height: 100 },
+          coordinateSystem: 'CAD_Y_UP', generatedBy: 'libredwg-0.14' }
+      }] }, createdAt: '2026-08-12T00:00:00Z'
     });
     vi.mocked(qmsEngineeringApi.listCharacteristics).mockResolvedValue([{
       id: 1, partId: 2, drawingRevisionId: 3, sourceEntityId: 'dwg-1', evidenceId: 1,
@@ -74,5 +80,7 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     expect(content.style.width).toBe('100%');
     expect(content.style.minWidth).toBe('0');
     expect(content).toHaveTextContent('34 · 34 mm (- / -)');
+    expect(screen.getByTestId('dwg-viewer')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '放大' })).toBeEnabled();
   });
 });
