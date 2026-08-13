@@ -41,6 +41,16 @@ body {
   opacity: 1;
 }
 
+.qms-dwg-transform {
+  transition: transform 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qms-dwg-transform {
+    transition: none;
+  }
+}
+
 .iaf-shell-root,
 .iaf-shell-root * {
   box-sizing: border-box;
