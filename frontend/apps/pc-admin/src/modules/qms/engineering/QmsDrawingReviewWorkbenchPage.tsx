@@ -105,7 +105,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     if (!preview || !dwgViewerRef.current) return;
     const box = dwgViewerRef.current.getBoundingClientRect();
     const centerX = (source.bbox.x + source.bbox.width / 2 - preview.viewBox.x) / preview.viewBox.width;
-    const centerY = (-source.bbox.y - source.bbox.height / 2 - preview.viewBox.y) / preview.viewBox.height;
+    const centerY = (source.bbox.y + source.bbox.height / 2 - preview.viewBox.y) / preview.viewBox.height;
     const zoom = 2.5;
     setDwgZoom(zoom);
     setDwgPan({ x: (0.5 - centerX) * box.width * zoom, y: (0.5 - centerY) * box.height * zoom });
@@ -123,7 +123,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   } : undefined;
   const dwgOverlay = selected && preview ? {
     left: `${(selected.bbox.x - preview.viewBox.x) / preview.viewBox.width * 100}%`,
-    top: `${(-selected.bbox.y - selected.bbox.height - preview.viewBox.y) / preview.viewBox.height * 100}%`,
+    top: `${(selected.bbox.y - preview.viewBox.y) / preview.viewBox.height * 100}%`,
     width: `${Math.max(selected.bbox.width / preview.viewBox.width * 100, 0.25)}%`,
     height: `${Math.max(selected.bbox.height / preview.viewBox.height * 100, 0.25)}%`
   } : undefined;

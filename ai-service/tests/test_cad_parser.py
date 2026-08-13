@@ -18,7 +18,15 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
                 "user_text": "8-<>",
                 "xline1_pt": [0.0, 0.0, 0.0],
                 "xline2_pt": [34.0, 0.0, 0.0],
-                "text_midpt": [17.0, 2.0, 0.0],
+                "text_midpt": [17.0, -2.0, 0.0],
+            },
+            {
+                "entity": "DIMENSION_LINEAR",
+                "handle": [5, 33],
+                "ownerhandle": [5, 99],
+                "act_measurement": 999.0,
+                "text_midpt": [-500.0, 500.0, 0.0],
+                "def_pt": [-400.0, 500.0, 0.0],
             },
         ]
     }
@@ -42,6 +50,7 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
     assert result["evidence"][0]["extractorType"] == "DWG_ENTITY"
     preview = result["modelJson"]["sheets"][0]["preview"]
     assert preview["viewBox"] == {"x": 0.0, "y": -100.0, "width": 200.0, "height": 100.0}
+    assert preview["coordinateSystem"] == "SVG_NATIVE"
     assert 'id="jh-qms-native-dimensions"' in preview["content"]
     assert ">8-34</text>" in preview["content"]
     assert "<script" not in preview["content"]
