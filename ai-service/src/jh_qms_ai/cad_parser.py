@@ -19,7 +19,8 @@ from .parser import SCHEMA_VERSION
 PARSER_VERSION = "libredwg-0.14+ezdxf-1.4.4"
 LIBREDWG_BIN = Path("/opt/libredwg/bin")
 SUPPORTED_ENTITIES = {"TEXT", "MTEXT", "TOLERANCE", "LEADER", "MLEADER"}
-DIMSTYLE_OVERRIDE_CODES = {47: "DIMTP", 48: "DIMTM", 71: "DIMTOL", 72: "DIMLIM", 140: "DIMTXT", 271: "DIMDEC"}
+DIMSTYLE_OVERRIDE_CODES = {47: "DIMTP", 48: "DIMTM", 71: "DIMTOL", 72: "DIMLIM", 73: "DIMTIH",
+                           74: "DIMTOH", 140: "DIMTXT", 271: "DIMDEC"}
 
 
 class CadParseError(ValueError):
@@ -73,7 +74,7 @@ def _bbox(item: dict[str, Any]) -> dict[str, float]:
 
 def _dimension_style(item: dict[str, Any], styles: dict[str | None, dict[str, Any]]) -> dict[str, Any]:
     base = styles.get(_handle(item.get("dimstyle")), {})
-    style = {key: base.get(key) for key in ("DIMTP", "DIMTM", "DIMTOL", "DIMLIM", "DIMTXT", "DIMDEC")}
+    style = {key: base.get(key) for key in ("DIMTP", "DIMTM", "DIMTOL", "DIMLIM", "DIMTIH", "DIMTOH", "DIMTXT", "DIMDEC")}
     eed = item.get("eed") or []
     for index, value in enumerate(eed[:-1]):
         field = DIMSTYLE_OVERRIDE_CODES.get(value.get("value")) if value.get("code") == 70 else None
@@ -97,8 +98,12 @@ def _dimension_values(item: dict[str, Any], style: dict[str, Any]) -> dict[str, 
             tolerance = f"+{upper:.{precision}f}/{lower:.{precision}f}"
     user_text = _clean_text(str(item.get("user_text") or ""))
     text = user_text.replace("<>", rendered + tolerance) if user_text else rendered + tolerance
+    explicit_rotation = float(item.get("text_rotation") or 0.0)
+    follows_dimension_line = not bool(style.get("DIMTIH")) and not bool(style.get("DIMTOH"))
+    text_rotation = explicit_rotation if not math.isclose(explicit_rotation, 0.0) else (
+        float(item.get("dim_rotation") or 0.0) if follows_dimension_line else 0.0)
     return {"text": text, "nominalValue": float(rendered), "upperTolerance": upper,
-            "lowerTolerance": lower, "displayPrecision": precision}
+            "lowerTolerance": lower, "displayPrecision": precision, "textRotation": text_rotation}
 
 
 def _dimension_bbox(item: dict[str, Any], style: dict[str, Any], text: str) -> dict[str, float]:
@@ -220,7 +225,7 @@ def parse_dwg(content: bytes, document_id: str, revision: str) -> dict[str, Any]
         layer = layer_names.get(_handle(item.get("layer")))
         geometry = {key: item[key] for key in ("start", "end", "center", "point", "points", "origin", "ins_pt", "text_midpt", "def_pt", "xline1_pt", "xline2_pt", "act_measurement", "dim_rotation") if key in item}
         if dimension:
-            geometry.update({key: dimension[key] for key in ("nominalValue", "upperTolerance", "lowerTolerance", "displayPrecision")})
+            geometry.update({key: dimension[key] for key in ("nominalValue", "upperTolerance", "lowerTolerance", "displayPrecision", "textRotation")})
         entity = {"entityId": entity_id, "sourceEntityHandle": handle, "entityType": entity_type,
                   "nativeEntityType": native_type, "layer": layer, "sheetNo": "MODEL", "bbox": box,
                   "geometry": geometry, "rawText": raw_text, "normalizedText": raw_text,

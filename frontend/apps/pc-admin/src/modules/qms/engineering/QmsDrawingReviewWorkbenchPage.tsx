@@ -16,6 +16,8 @@ import { useQmsCharacteristicsQuery, useQmsEvidenceQuery, useQmsIntermediateMode
 GlobalWorkerOptions.workerSrc = `${workerUrl}?v=task-0406-1`;
 
 const confidenceLevel = (value: number) => value >= 0.9 ? 'high' : value >= 0.7 ? 'medium' : 'low';
+type PdfTextBox = { text: string; left: number; top: number; width: number; height: number; rotation: number };
+const normalizedMarkerText = (value?: string | null) => (value ?? '').normalize('NFKC').replace(/\s+/g, '').toLowerCase();
 
 export const QmsDrawingReviewWorkbenchPage = () => {
   const { t } = useTranslation();
@@ -37,6 +39,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const dwgViewerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ x: number; y: number; left: number; top: number } | undefined>(undefined);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  const [pdfTextBoxes, setPdfTextBoxes] = useState<PdfTextBox[]>([]);
   const [dwgZoom, setDwgZoom] = useState(1);
   const [dwgPan, setDwgPan] = useState({ x: 0, y: 0 });
   const [dwgUrl, setDwgUrl] = useState<string>();
@@ -94,7 +97,29 @@ export const QmsDrawingReviewWorkbenchPage = () => {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
         setViewportSize({ width: viewport.width, height: viewport.height });
-        await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+        const [textContent] = await Promise.all([
+          page.getTextContent(),
+          page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise
+        ]);
+        if (cancelled) return;
+        const singles: PdfTextBox[] = textContent.items.flatMap((item) => {
+          if (!('str' in item) || !item.str.trim()) return [];
+          const [x, y] = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
+          const height = Math.max(Math.hypot(item.transform[2], item.transform[3]) * viewport.scale, 3);
+          return [{ text: item.str, left: x, top: y - height,
+            width: Math.max(item.width * viewport.scale, 3), height,
+            rotation: -Math.atan2(item.transform[1], item.transform[0]) }];
+        });
+        const windows = singles.flatMap((_, start) => Array.from({ length: Math.min(5, singles.length - start) }, (__, offset) => {
+          const group = singles.slice(start, start + offset + 1);
+          const left = Math.min(...group.map((item) => item.left));
+          const top = Math.min(...group.map((item) => item.top));
+          const right = Math.max(...group.map((item) => item.left + item.width));
+          const bottom = Math.max(...group.map((item) => item.top + item.height));
+          return { text: group.map((item) => item.text).join(''), left, top, width: right - left,
+            height: bottom - top, rotation: group[0].rotation };
+        }));
+        setPdfTextBoxes(windows);
       } catch { if (!cancelled) setRenderError(true); }
     };
     void render();
@@ -106,6 +131,9 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const currentSheet = revision?.fileType === 'DWG' ? dimQuery.data?.model.sheets[0] : dimQuery.data?.model.sheets.find((sheet) =>
     sheet.sheetNo === (selected?.sheetNo ?? String(pageNo)));
   const preview = currentSheet?.preview;
+  const selectedEntity = currentSheet?.entities.find((entity) => entity.entityId === selected?.entityId);
+  const selectedRotation = typeof selectedEntity?.geometry?.textRotation === 'number'
+    ? selectedEntity.geometry.textRotation : 0;
   useEffect(() => {
     if (!preview?.content) { setDwgUrl(undefined); return; }
     const url = URL.createObjectURL(new Blob([preview.content], { type: 'image/svg+xml' }));
@@ -136,17 +164,28 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     // Re-center only when the selected evidence changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id, preview]);
-  const pdfOverlay = selected && currentSheet && viewportSize.width > 0 && revision?.fileType !== 'DWG' ? {
-    left: selected.bbox.x / currentSheet.width * viewportSize.width,
-    top: selected.bbox.y / currentSheet.height * viewportSize.height,
-    width: selected.bbox.width / currentSheet.width * viewportSize.width,
-    height: selected.bbox.height / currentSheet.height * viewportSize.height
+  const selectedText = normalizedMarkerText(selected?.normalizedText || selected?.rawText);
+  const dimensionText = selectedText.match(/(?:⌀|r)?\d+(?:\.\d+)?(?:±\d+(?:\.\d+)?)?/)?.[0] ?? '';
+  const exactPdfBoxes = selectedText.length >= 3
+    ? pdfTextBoxes.filter((box) => normalizedMarkerText(box.text).includes(selectedText)) : [];
+  const fallbackPdfBoxes = exactPdfBoxes.length === 0 && dimensionText.length >= 2
+    ? pdfTextBoxes.filter((box) => normalizedMarkerText(box.text).includes(dimensionText)) : [];
+  const matchedPdfBox = [...exactPdfBoxes, ...fallbackPdfBoxes]
+    .sort((a, b) => a.width * a.height - b.width * b.height)[0];
+  const approximatePdfBox = selected && preview && viewportSize.width > 0 ? {
+    left: (selected.bbox.x - preview.viewBox.x) / preview.viewBox.width * viewportSize.width,
+    top: (selected.bbox.y - preview.viewBox.y) / preview.viewBox.height * viewportSize.height,
+    width: Math.max(selected.bbox.width / preview.viewBox.width * viewportSize.width, 8),
+    height: Math.max(selected.bbox.height / preview.viewBox.height * viewportSize.height, 8),
+    rotation: -selectedRotation
   } : undefined;
+  const pdfOverlay = selected && viewportSize.width > 0 ? matchedPdfBox ?? approximatePdfBox : undefined;
   const dwgOverlay = selected && preview ? {
     left: `${(selected.bbox.x - preview.viewBox.x) / preview.viewBox.width * 100}%`,
     top: `${(selected.bbox.y - preview.viewBox.y) / preview.viewBox.height * 100}%`,
     width: `${Math.max(selected.bbox.width / preview.viewBox.width * 100, 0.25)}%`,
-    height: `${Math.max(selected.bbox.height / preview.viewBox.height * 100, 0.25)}%`
+    height: `${Math.max(selected.bbox.height / preview.viewBox.height * 100, 0.5)}%`,
+    transform: `rotate(${-selectedRotation}rad)`
   } : undefined;
   const modelMissing = Boolean(revision && !parseResultAvailable)
     || (dimQuery.error instanceof ApiError && dimQuery.error.code === 'QMS_INTERMEDIATE_MODEL_NOT_FOUND');
@@ -164,8 +203,8 @@ export const QmsDrawingReviewWorkbenchPage = () => {
       </Space>
     </Card>
     {modelMissing && <Alert style={{ marginBottom: token.marginMD }} type="info" showIcon message={t('qmsReview.waitingForParse')} description={t('qmsReview.waitingForParseDescription')} />}
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) minmax(0, 1fr)', gap: token.marginMD, alignItems: 'start' }}>
-      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+    <div className="qms-review-workbench">
+      <Space className="qms-review-list-pane" direction="vertical" size="middle" style={{ width: '100%' }}>
       <Card title={t('qmsReview.characteristics')}>
         <List loading={characteristicsQuery.isLoading} dataSource={characteristicsQuery.data ?? []}
           locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('qmsReview.noCharacteristics')} /> }}
@@ -194,7 +233,7 @@ export const QmsDrawingReviewWorkbenchPage = () => {
           </List.Item>} />
       </Card>
       </Space>
-      <Card title={t('qmsReview.viewer')} extra={revision?.fileType === 'DWG' ? <Space size="small">
+      <Card className="qms-review-viewer-card" title={t('qmsReview.viewer')} extra={revision?.fileType === 'DWG' ? <Space size="small">
         {companionPdf && <Segmented size="small" value={dwgViewMode} onChange={(value) => setDwgViewMode(value as 'PDF' | 'DWG')}
           options={[{ label: t('qmsReview.pdfReference'), value: 'PDF' }, { label: t('qmsReview.dwgVector'), value: 'DWG' }]} />}
         {(dwgViewMode === 'DWG' || !companionPdf) && <>
@@ -214,7 +253,8 @@ export const QmsDrawingReviewWorkbenchPage = () => {
               marginInline: 'auto', overflow: 'hidden', position: 'relative', cursor: 'grab', background: token.colorFillTertiary, touchAction: 'none' }}>
             <div style={{ position: 'absolute', inset: 0, transform: `translate(${dwgPan.x}px, ${dwgPan.y}px) scale(${dwgZoom})`, transformOrigin: 'center', transition: 'transform 180ms ease-out' }}>
               <img src={dwgUrl} alt={t('qmsReview.dwgCanvas')} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
-              {dwgOverlay && <div data-testid="evidence-overlay" style={{ position: 'absolute', pointerEvents: 'none', border: `2px solid ${token.colorError}`, background: token.colorErrorBg, opacity: 0.72, ...dwgOverlay }} />}
+              {dwgOverlay && <div className="qms-evidence-marker" data-testid="evidence-overlay" aria-label={t('qmsReview.locateEvidence')}
+                style={{ position: 'absolute', pointerEvents: 'none', border: `2px dashed ${token.colorError}`, outline: `1px solid ${token.colorError}`, transformOrigin: 'center', ...dwgOverlay }} />}
             </div>
           </div> : renderError ? <Alert type="error" showIcon message={t('qmsReview.renderFailed')} /> :
           <div style={{ overflow: 'auto', maxHeight: '72vh', textAlign: 'center', background: token.colorFillTertiary, padding: token.paddingSM }}>
@@ -222,7 +262,10 @@ export const QmsDrawingReviewWorkbenchPage = () => {
               message={t('qmsReview.pdfReferenceRevision', { revision: revision.revisionCode })} />}
             <div style={{ display: 'inline-block', position: 'relative', lineHeight: 0 }}>
               <canvas ref={canvasRef} aria-label={t('qmsReview.pdfCanvas')} />
-              {pdfOverlay && <div data-testid="evidence-overlay" style={{ position: 'absolute', pointerEvents: 'none', border: `3px solid ${token.colorError}`, background: token.colorErrorBg, opacity: 0.72, ...pdfOverlay }} />}
+              {pdfOverlay && <div className="qms-evidence-marker" data-testid="evidence-overlay" aria-label={t('qmsReview.locateEvidence')}
+                style={{ position: 'absolute', pointerEvents: 'none', border: `2px dashed ${token.colorError}`, outline: `1px solid ${token.colorError}`,
+                  transform: `rotate(${pdfOverlay.rotation}rad)`, transformOrigin: 'center', left: pdfOverlay.left, top: pdfOverlay.top,
+                  width: pdfOverlay.width, height: pdfOverlay.height }} />}
             </div>
           </div>}
       </Card>
