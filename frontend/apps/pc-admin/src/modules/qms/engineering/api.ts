@@ -28,6 +28,7 @@ export const qmsEngineeringApi = {
   getInspectionStandard:(revisionId:number)=>apiClient.get<QmsInspectionStandard|null>(`/api/qms/drawing-revisions/${revisionId}/inspection-standard`),
   generateInspectionStandard:(revisionId:number)=>apiClient.post<QmsInspectionStandard>(`/api/qms/drawing-revisions/${revisionId}/inspection-standard/generate`),
   updateInspectionStandard:(revisionId:number,id:number,request:unknown)=>apiClient.put<QmsInspectionStandard>(`/api/qms/drawing-revisions/${revisionId}/inspection-standard/${id}`,request),
+  actOnInspectionStandard:(revisionId:number,id:number,action:'submit-approval'|'approve'|'reject'|'release',comment?:string)=>apiClient.post<QmsInspectionStandard>(`/api/qms/drawing-revisions/${revisionId}/inspection-standard/${id}/${action}`,{comment}),
   listParts: (params: { keyword?: string; pageNo: number; pageSize: number }) =>
     apiClient.get<PageResult<QmsPart>>('/api/qms/parts', { query: params }),
   getPart: (id: number) => apiClient.get<QmsPart>(`/api/qms/parts/${id}`),

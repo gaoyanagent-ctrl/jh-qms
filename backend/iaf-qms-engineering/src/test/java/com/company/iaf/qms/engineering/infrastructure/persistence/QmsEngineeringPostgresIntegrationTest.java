@@ -113,7 +113,17 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(revision.revisionSeq()).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from qms_audit_log", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
-                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(11);
+                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(14);
+        assertThat(jdbc.queryForList("select permission_code from sys_permission where permission_code like 'qms:inspection-standard:%' order by permission_code", String.class))
+                .containsExactly("qms:inspection-standard:approve", "qms:inspection-standard:edit",
+                        "qms:inspection-standard:release", "qms:inspection-standard:submit");
+        var approvalService = new com.company.iaf.platform.workflow.infrastructure.persistence.JdbcApprovalApplicationService(jdbc);
+        var submitted = approvalService.submit(1, 10, "TEST_DOCUMENT", 99, 101, "ready");
+        assertThat(submitted.status()).isEqualTo(com.company.iaf.platform.workflow.application.ApprovalStatus.PENDING);
+        var approved = approvalService.approve(1, 10, "TEST_DOCUMENT", 99, 102, "approved");
+        assertThat(approved.status()).isEqualTo(com.company.iaf.platform.workflow.application.ApprovalStatus.APPROVED);
+        assertThat(approved.actions()).extracting(com.company.iaf.platform.workflow.application.ApprovalRecord.Action::action)
+                .containsExactly("SUBMIT", "APPROVED");
         assertThat(jdbc.queryForObject("select count(*) from qms_drawing_parse_job", Integer.class)).isEqualTo(1);
         assertThat(parseResults.findModel(1, 10, revisionId)).isPresent();
         assertThat(parseResults.findEntities(1, 10, revisionId)).extracting(DrawingEntity::entityId)

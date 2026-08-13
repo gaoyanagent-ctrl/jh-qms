@@ -32,6 +32,8 @@ public enum QmsEngineeringErrorCode implements ErrorCode {
     INSPECTION_STANDARD_NOT_FOUND("QMS_INSPECTION_STANDARD_NOT_FOUND", "Inspection standard draft not found"),
     INSPECTION_STANDARD_NO_ELIGIBLE_SOURCE("QMS_INSPECTION_STANDARD_NO_ELIGIBLE_SOURCE", "No eligible confirmed quality characteristic"),
     INSPECTION_STANDARD_CONFLICT("QMS_INSPECTION_STANDARD_CONFLICT", "Inspection standard was changed by another user"),
+    INSPECTION_STANDARD_INVALID_STATE("QMS_INSPECTION_STANDARD_INVALID_STATE", "Inspection standard action is not allowed in its current state"),
+    INSPECTION_STANDARD_RELEASE_BLOCKED("QMS_INSPECTION_STANDARD_RELEASE_BLOCKED", "Inspection standard has unresolved or unapproved items"),
     AUDIT_WRITE_FAILED("QMS_AUDIT_WRITE_FAILED", "QMS audit record could not be written");
 
     private final String code;

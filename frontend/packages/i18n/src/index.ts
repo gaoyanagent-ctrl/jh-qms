@@ -218,10 +218,13 @@ export const resources = {
         qmsPartDetail: '零件详情'
       },
       qms: {
+        inspectionStandard: {
+          title: '检验标准', empty: '尚未生成检验标准', emptyHelp: '仅已确认且属于检验范围的质量特性会进入草稿。', generate: '生成草稿', generated: '检验标准草稿已生成', save: '保存草稿', saved: '草稿已保存', back: '返回', version: '版本 {{version}}', reactionPlan: '异常反应计划', submit: '提交审批', approve: '批准', reject: '驳回', release: '发布', actionComment: '审批意见', actionSuccess: '操作已完成', documentStatus: '文件状态', approvalStatus: '审批状态', readOnly: '当前状态为只读，只有草稿或驳回状态可以编辑。', history: '审批履历', actor: '操作人 #{{id}}', noHistory: '尚无审批记录', columns: { sequence: '序号', category: '类别', item: '检验项目', requirement: '要求/规格', special: '特殊特性', batchSampling: '批次抽样', batchMethod: '批次方法', annualSampling: '年度抽样', annualMethod: '年度方法', remark: '备注' }
+        },
         status: {
           ACTIVE: '启用', INACTIVE: '停用', OBSOLETE: '作废', DRAFT: '草稿', UPLOADED: '已上传',
           PARSING: '解析中', PARSED: '已解析', REVIEWING: '复核中', CONFIRMED: '已确认',
-          RELEASED: '已发布', SUPERSEDED: '已替代', FAILED: '失败', PENDING: '待处理',
+          RELEASED: '已发布', SUPERSEDED: '已替代', FAILED: '失败', PENDING: '待处理', APPROVING: '审批中', APPROVED: '已批准', NOT_SUBMITTED: '未提交', AI_GENERATED: 'AI 草稿',
           QUEUED: '已排队', RUNNING: '处理中', PARTIAL_SUCCESS: '部分成功', SUCCESS: '成功', SUCCEEDED: '成功', CANCELLED: '已取消', REJECTED: '已驳回'
         },
         drawingType: { PRODUCT: '产品图', PART: '零件图', ASSEMBLY: '装配图', OTHER: '其他' },
@@ -880,10 +883,13 @@ export const resources = {
         qmsPartDetail: 'Part Detail'
       },
       qms: {
+        inspectionStandard: {
+          title: 'Inspection Standard', empty: 'No inspection standard yet', emptyHelp: 'Only confirmed characteristics within inspection scope are included.', generate: 'Generate draft', generated: 'Draft generated', save: 'Save draft', saved: 'Draft saved', back: 'Back', version: 'Version {{version}}', reactionPlan: 'Exception reaction plan', submit: 'Submit approval', approve: 'Approve', reject: 'Reject', release: 'Release', actionComment: 'Decision comment', actionSuccess: 'Action completed', documentStatus: 'Document status', approvalStatus: 'Approval status', readOnly: 'This controlled state is read-only. Only draft or rejected documents can be edited.', history: 'Approval history', actor: 'Actor #{{id}}', noHistory: 'No approval history', columns: { sequence: 'No.', category: 'Category', item: 'Inspection item', requirement: 'Requirement', special: 'Special', batchSampling: 'Batch sampling', batchMethod: 'Batch method', annualSampling: 'Annual sampling', annualMethod: 'Annual method', remark: 'Remark' }
+        },
         status: {
           ACTIVE: 'Active', INACTIVE: 'Inactive', OBSOLETE: 'Obsolete', DRAFT: 'Draft', UPLOADED: 'Uploaded',
           PARSING: 'Parsing', PARSED: 'Parsed', REVIEWING: 'Reviewing', CONFIRMED: 'Confirmed',
-          RELEASED: 'Released', SUPERSEDED: 'Superseded', FAILED: 'Failed', PENDING: 'Pending',
+          RELEASED: 'Released', SUPERSEDED: 'Superseded', FAILED: 'Failed', PENDING: 'Pending', APPROVING: 'Approving', APPROVED: 'Approved', NOT_SUBMITTED: 'Not submitted', AI_GENERATED: 'AI draft',
           QUEUED: 'Queued', RUNNING: 'Running', PARTIAL_SUCCESS: 'Partial success', SUCCESS: 'Success', SUCCEEDED: 'Succeeded', CANCELLED: 'Cancelled', REJECTED: 'Rejected'
         },
         drawingType: { PRODUCT: 'Product', PART: 'Part', ASSEMBLY: 'Assembly', OTHER: 'Other' },

@@ -296,3 +296,10 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
 # `V0410__inspection_standard_draft.sql`
 
 - Creates versioned Inspection Standard headers/items with characteristic and evidence lineage.
+## V0411 Inspection Standard Approval
+
+- Owner modules: `iaf-platform-workflow` contract and `iaf-qms-engineering` controlled document.
+- `platform_approval_instance`: tenant/org-scoped approval status and submit/decision metadata.
+- `platform_approval_action`: immutable ordered submit/approve/reject history.
+- `qms_inspection_standard`: adds separate approval state and submit/approve/release actors/timestamps.
+- Adds `qms:inspection-standard:submit`, `approve`, and `release` permissions for platform admins.

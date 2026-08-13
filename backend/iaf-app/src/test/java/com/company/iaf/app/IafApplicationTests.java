@@ -14,6 +14,10 @@ import com.company.iaf.qms.engineering.domain.repository.DrawingRepository;
 import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionRepository;
 import com.company.iaf.qms.engineering.domain.repository.DrawingParseJobRepository;
 import com.company.iaf.qms.engineering.domain.repository.DrawingParseResultRepository;
+import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionFileRepository;
+import com.company.iaf.qms.engineering.domain.repository.DrawingLegendRuleRepository;
+import com.company.iaf.qms.engineering.domain.repository.QualityCharacteristicRepository;
+import com.company.iaf.qms.engineering.infrastructure.persistence.InspectionStandardService;
 import com.company.iaf.qms.engineering.domain.repository.PartRepository;
 import com.company.iaf.qms.engineering.domain.repository.QmsAuditTrail;
 import com.company.iaf.qms.engineering.domain.repository.QmsFileObjectRepository;
@@ -82,6 +86,18 @@ class IafApplicationTests {
 
     @MockBean
     private QmsObjectStorage qmsObjectStorage;
+
+    @MockBean
+    private DrawingRevisionFileRepository drawingRevisionFileRepository;
+
+    @MockBean
+    private DrawingLegendRuleRepository drawingLegendRuleRepository;
+
+    @MockBean
+    private QualityCharacteristicRepository qualityCharacteristicRepository;
+
+    @MockBean
+    private InspectionStandardService inspectionStandardService;
 
     @Test
     void contextLoads() {

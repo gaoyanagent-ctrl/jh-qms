@@ -53,8 +53,11 @@ export const QMS_PERMISSIONS = {
   drawingRevisionUpload: 'qms:drawing-revision:upload',
   drawingRevisionRetryParse: 'qms:drawing-revision:retry-parse',
   qualityCharacteristicReview: 'qms:quality-characteristic:review',
-  drawingLegendManage: 'qms:drawing-legend:manage'
-  ,inspectionStandardEdit: 'qms:inspection-standard:edit'
+  drawingLegendManage: 'qms:drawing-legend:manage',
+  inspectionStandardEdit: 'qms:inspection-standard:edit',
+  inspectionStandardSubmit: 'qms:inspection-standard:submit',
+  inspectionStandardApprove: 'qms:inspection-standard:approve',
+  inspectionStandardRelease: 'qms:inspection-standard:release'
 } as const;
 
 export type QmsPermissionCode = (typeof QMS_PERMISSIONS)[keyof typeof QMS_PERMISSIONS];

@@ -625,6 +625,9 @@ Current tests:
 
 `iaf-platform-workflow`
 - Purpose: approval workflow facade over Flowable.
+- `ApprovalApplicationService` is the engine-neutral submit/approve/reject/query contract.
+- `JdbcApprovalApplicationService` persists the phase-one approval instance and immutable action history;
+  QMS depends only on the application contract, allowing a later Flowable adapter replacement.
 - Current state: module POM only.
 
 `iaf-platform-statemachine`
@@ -742,6 +745,9 @@ Platform Foundation stabilization documents
 - Depends on: `iaf-platform-core`, Spring Web/JDBC/TX/Validation, Jackson, and springdoc
   common contracts. It does not depend on another business module's infrastructure.
 - Assembly: included by `iaf-app`; architectural rationale is ADR-0009.
+- `InspectionStandardService` validates controlled-document transitions through
+  `StateMachineService`, delegates human decisions to `ApprovalApplicationService`, blocks
+  unresolved releases, and writes QMS audit records for submit/approve/reject/release.
 
 `com.company.iaf.qms.engineering.application.PartApplicationService`
 - Layer: application.

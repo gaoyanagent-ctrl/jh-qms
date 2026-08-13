@@ -613,3 +613,9 @@ Planned stack:
 
 - The Drawing Review Workbench links to an editable inspection document with rule generation,
   reaction plan, requirement, sampling, method and remark fields.
+## QMS Inspection Standard Approval
+
+- `QmsInspectionStandardPage` renders document and approval states separately, enables editing only
+  for draft/rejected states, exposes permission-aware controlled actions, and shows approval history.
+- `qmsEngineeringApi.actOnInspectionStandard` owns submit/approve/reject/release HTTP calls.
+- `QmsInspectionStandard` domain type includes controlled-document actors, timestamps, and actions.
