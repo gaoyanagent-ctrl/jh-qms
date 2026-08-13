@@ -10,7 +10,7 @@ import { QmsDrawingReviewWorkbenchPage } from './QmsDrawingReviewWorkbenchPage';
 vi.mock('pdfjs-dist', () => ({ GlobalWorkerOptions: {}, getDocument: vi.fn() }));
 vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({ default: 'worker.js' }));
 vi.mock('./api', () => ({ qmsEngineeringApi: {
-  getRevision: vi.fn(), getRevisionFileContent: vi.fn(), getIntermediateModel: vi.fn(), listEvidence: vi.fn(),
+  getRevision: vi.fn(), listRevisions: vi.fn(), getRevisionFileContent: vi.fn(), getIntermediateModel: vi.fn(), listEvidence: vi.fn(),
   listCharacteristics: vi.fn(), confirmCharacteristic: vi.fn(), rejectCharacteristic: vi.fn()
 } }));
 
@@ -34,6 +34,7 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
       createdAt: '2026-08-12T00:00:00Z', updatedAt: '2026-08-12T00:00:00Z'
     });
     vi.mocked(qmsEngineeringApi.getRevisionFileContent).mockResolvedValue(new Blob(['dwg']));
+    vi.mocked(qmsEngineeringApi.listRevisions).mockResolvedValue([]);
     vi.mocked(qmsEngineeringApi.listEvidence).mockResolvedValue([]);
     vi.mocked(qmsEngineeringApi.listCharacteristics).mockResolvedValue([]);
     vi.mocked(qmsEngineeringApi.getIntermediateModel).mockRejectedValue(new Error('missing'));
@@ -86,5 +87,33 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     screen.getByTestId('dwg-viewer').dispatchEvent(wheel);
     expect(wheel.defaultPrevented).toBe(true);
     expect(await screen.findByText('125%')).toBeInTheDocument();
+  });
+
+  it('uses the latest successfully parsed PDF revision as the DWG reference view', async () => {
+    vi.mocked(qmsEngineeringApi.getRevision).mockResolvedValue({
+      id: 3, drawingId: 2, revisionCode: 'B', revisionSeq: 2, fileId: 3, fileType: 'DWG',
+      effectiveDate: null, releaseDate: null, supersedesRevisionId: null, parseStatus: 'SUCCESS',
+      reviewStatus: 'PENDING', status: 'PARSED', checksum: 'sum', version: 1,
+      createdAt: '2026-08-12T00:00:00Z', updatedAt: '2026-08-12T00:00:00Z'
+    });
+    vi.mocked(qmsEngineeringApi.listRevisions).mockResolvedValue([{
+      id: 4, drawingId: 2, revisionCode: 'D', revisionSeq: 4, fileId: 4, fileType: 'PDF',
+      effectiveDate: null, releaseDate: null, supersedesRevisionId: null, parseStatus: 'SUCCESS',
+      reviewStatus: 'PENDING', status: 'PARSED', checksum: 'pdf', version: 1,
+      createdAt: '2026-08-12T00:00:00Z', updatedAt: '2026-08-12T00:00:00Z'
+    }]);
+    vi.mocked(qmsEngineeringApi.getIntermediateModel).mockResolvedValue({
+      id: 1, revisionId: 3, parseJobId: 1, schemaVersion: '1.0.0', documentId: '3', revisionCode: 'B',
+      model: { schemaVersion: '1.0.0', documentId: '3', revision: 'B', sheets: [{ sheetNo: 'MODEL', width: 200, height: 100,
+        titleBlock: {}, views: [], entities: [], notes: [], characteristicCandidates: [], preview: { format: 'SVG', content: '<svg viewBox="0 0 200 100"></svg>',
+          viewBox: { x: 0, y: 0, width: 200, height: 100 }, coordinateSystem: 'SVG_NATIVE', generatedBy: 'test' } }] },
+      createdAt: '2026-08-12T00:00:00Z'
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('PDF 校对底图')).toBeInTheDocument();
+    expect(screen.getByText('DWG 矢量图')).toBeInTheDocument();
+    await waitFor(() => expect(qmsEngineeringApi.getRevisionFileContent).toHaveBeenCalledWith(4));
   });
 });
