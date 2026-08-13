@@ -89,6 +89,8 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
       characteristicCode: 'DIM-EV-1410', characteristicType: 'DIMENSION', name: '34', nominalValue: 34,
       upperTolerance: null, lowerTolerance: null, upperLimit: null, lowerLimit: null, unit: 'mm',
       specialCharacteristicCode: null, confidence: 1, status: 'ACTIVE', reviewStatus: 'PENDING',
+      inspectionDimension: true, referenceDimension: false, idealDimension: false, fitDimension: false,
+      locationDimension: false, regulatoryFlag: false, mandatoryInspection: false,
       reviewedBy: null, reviewedAt: null, reviewComment: null, version: 0
     }]);
 
@@ -137,6 +139,8 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
       characteristicCode: 'DIM-EV-9', characteristicType: 'DIMENSION', name: '6.5±0.3', nominalValue: 6.5,
       upperTolerance: 0.3, lowerTolerance: -0.3, upperLimit: 6.8, lowerLimit: 6.2, unit: 'mm',
       specialCharacteristicCode: null, confidence: 0.9, status: 'DRAFT', reviewStatus: 'PENDING',
+      inspectionDimension: true, referenceDimension: false, idealDimension: false, fitDimension: false,
+      locationDimension: false, regulatoryFlag: false, mandatoryInspection: false,
       reviewedBy: null, reviewedAt: null, reviewComment: null, version: 0
     }]);
 

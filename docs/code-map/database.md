@@ -282,3 +282,10 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
 - Stores nominal/tolerance/limit values, parser confidence, pending review state, reviewer,
   comment, audit metadata and optimistic-lock version.
 - Seeds `qms:quality-characteristic:review` and assigns it to active platform administrators.
+
+### `V0408__quality_characteristic_classification.sql`
+
+- Allows manually entered characteristics without synthetic source evidence.
+- Adds inspection, reference, ideal, fit, location, regulatory and mandatory flags plus
+  database constraints for incompatible classifications.
+- Existing dimension candidates are deterministically classified as inspection dimensions.

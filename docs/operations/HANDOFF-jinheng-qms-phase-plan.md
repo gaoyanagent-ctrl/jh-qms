@@ -32,14 +32,17 @@ Required before dependent QMS flows:
 | TASK-0406 | PDF preview, overlay, and Review Workbench shell | TASK-0402, TASK-0405 | Implemented |
 | TASK-0407 | Python AI service skeleton and PDF parser golden-sample pipeline | TASK-0405 | Implemented |
 | TASK-0408 | CAD parser SPI and DWG mock/provider contract | TASK-0405 | Implemented |
-| TASK-0409 | Quality Characteristic review/confirm/reject closed loop | TASK-0405, TASK-0407 | Planned |
-| TASK-0410 | Inspection Standard draft generation and editable document | TASK-0409, platform rules | Planned |
-| TASK-0411 | Coverage/consistency checker and release gate | TASK-0410 | Planned |
-| TASK-0412 | Approval/release integration for controlled documents | TASK-0411, platform workflow/state | Planned |
-| TASK-0413 | Validation Plan generation and controlled release | TASK-0412 | Planned |
-| TASK-0414 | Gauge acceptance and validity enforcement | TASK-0410 | Planned |
-| TASK-0415 | Revision diff, lineage, and change-impact workbench | TASK-0409, TASK-0413 | Planned |
-| TASK-0416 | Knowledge ingestion and read-only Copilot | TASK-0415 | Planned |
+| TASK-0409 | Quality Characteristic review/confirm/reject closed loop | TASK-0405, TASK-0407 | Implemented |
+| TASK-0410 | LibreDWG provider and normalized DWG extraction | TASK-0408 | Implemented |
+| TASK-0412 | DWG vector browser with evidence-linked selection | TASK-0410 | Implemented |
+| TASK-0413 | Characteristic classification, manual entry and bulk review | TASK-0409 | Implemented |
+| TASK-0414 | Inspection Standard draft generation and editable document | TASK-0413, platform rules | Next |
+| TASK-0415 | Coverage/consistency checker and release gate | TASK-0414 | Planned |
+| TASK-0416 | Approval/release integration for controlled documents | TASK-0415, platform workflow/state | Planned |
+| TASK-0417 | Validation Plan generation and controlled release | TASK-0416 | Planned |
+| TASK-0418 | Gauge acceptance and validity enforcement | TASK-0414 | Planned |
+| TASK-0419 | Revision diff, lineage, and change-impact workbench | TASK-0413, TASK-0417 | Planned |
+| TASK-0420 | Knowledge ingestion and read-only Copilot | TASK-0419 | Planned |
 
 ## Stage Gates
 

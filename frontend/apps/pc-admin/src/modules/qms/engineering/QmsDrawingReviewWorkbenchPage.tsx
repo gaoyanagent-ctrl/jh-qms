@@ -1,15 +1,15 @@
-import type { QmsQualityCharacteristic, QmsQualityCharacteristicReviewRequest, QmsSourceEvidence } from '@iaf/domain-types';
+import type { QmsQualityCharacteristic, QmsQualityCharacteristicCreateRequest, QmsQualityCharacteristicReviewRequest, QmsSourceEvidence } from '@iaf/domain-types';
 import { AimOutlined, MinusOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { QMS_PERMISSIONS, useHasPermission } from '@iaf/permissions';
 import { AppPageContainer, StatusTag } from '@iaf/ui-core';
-import { Alert, App, Button, Card, Empty, Form, Input, InputNumber, List, Modal, Segmented, Space, Spin, Tag, Typography, theme } from 'antd';
+import { Alert, App, Button, Card, Checkbox, Empty, Form, Input, InputNumber, List, Modal, Segmented, Select, Space, Spin, Tag, Typography, theme } from 'antd';
 import { ApiError } from '@iaf/api-client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { useQmsCharacteristicsQuery, useQmsEvidenceQuery, useQmsIntermediateModelQuery, useQmsRevisionFileQuery, useQmsRevisionFilesQuery, useQmsRevisionQuery, useQmsRevisionRoleFileQuery, useReviewQmsCharacteristicMutation } from './hooks';
+import { useBulkReviewQmsCharacteristicsMutation, useCreateQmsCharacteristicMutation, useQmsCharacteristicsQuery, useQmsEvidenceQuery, useQmsIntermediateModelQuery, useQmsRevisionFileQuery, useQmsRevisionFilesQuery, useQmsRevisionQuery, useQmsRevisionRoleFileQuery, useReviewQmsCharacteristicMutation } from './hooks';
 
 // Keep the URL versioned independently from the application bundle. This prevents a
 // previously cached response with an invalid module MIME type from breaking PDF.js.
@@ -29,6 +29,10 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const validId = Number.isSafeInteger(revisionId) && revisionId > 0;
   const [selected, setSelected] = useState<QmsSourceEvidence>();
   const [editing, setEditing] = useState<QmsQualityCharacteristic>();
+  const [creating, setCreating] = useState(false);
+  const [selectedCharacteristicIds, setSelectedCharacteristicIds] = useState<number[]>([]);
+  const [reviewFilter, setReviewFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [form] = Form.useForm<QmsQualityCharacteristicReviewRequest>();
   const canReview = useHasPermission(QMS_PERMISSIONS.qualityCharacteristicReview);
   const [filter, setFilter] = useState<string>('all');
@@ -61,6 +65,8 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const characteristicsQuery = useQmsCharacteristicsQuery(validId ? revisionId : undefined, validId && parseResultAvailable);
   const confirmMutation = useReviewQmsCharacteristicMutation(revisionId, 'confirm', () => { setEditing(undefined); message.success(t('qmsReview.reviewSucceeded')); });
   const rejectMutation = useReviewQmsCharacteristicMutation(revisionId, 'reject', () => message.success(t('qmsReview.rejectSucceeded')));
+  const createMutation = useCreateQmsCharacteristicMutation(revisionId, () => { setCreating(false); form.resetFields(); message.success(t('qmsReview.createSucceeded')); });
+  const bulkMutation = useBulkReviewQmsCharacteristicsMutation(revisionId, () => { setSelectedCharacteristicIds([]); message.success(t('qmsReview.bulkSucceeded')); });
 
   const locateCharacteristic = (item: QmsQualityCharacteristic) => {
     const source = evidenceQuery.data?.find((evidenceItem) => evidenceItem.id === item.evidenceId);
@@ -71,8 +77,18 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const openReview = (item: QmsQualityCharacteristic) => {
     setEditing(item);
     form.setFieldsValue({ version: item.version, name: item.name, nominalValue: item.nominalValue,
-      upperTolerance: item.upperTolerance, lowerTolerance: item.lowerTolerance, unit: item.unit, comment: item.reviewComment });
+      upperTolerance: item.upperTolerance, lowerTolerance: item.lowerTolerance, unit: item.unit,
+      characteristicType: item.characteristicType, specialCharacteristicCode: item.specialCharacteristicCode,
+      inspectionDimension: item.inspectionDimension, referenceDimension: item.referenceDimension,
+      idealDimension: item.idealDimension, fitDimension: item.fitDimension, locationDimension: item.locationDimension,
+      regulatoryFlag: item.regulatoryFlag, mandatoryInspection: item.mandatoryInspection, comment: item.reviewComment });
     locateCharacteristic(item);
+  };
+  const openCreate = () => {
+    setCreating(true); setEditing(undefined); form.resetFields();
+    form.setFieldsValue({ characteristicType: 'DIMENSION', unit: 'mm', inspectionDimension: true,
+      referenceDimension: false, idealDimension: false, fitDimension: false, locationDimension: false,
+      regulatoryFlag: false, mandatoryInspection: false });
   };
 
   useEffect(() => {
@@ -136,6 +152,12 @@ export const QmsDrawingReviewWorkbenchPage = () => {
 
   const evidence = useMemo(() => (evidenceQuery.data ?? []).filter((item) =>
     filter === 'all' || confidenceLevel(item.confidence) === filter), [evidenceQuery.data, filter]);
+  const visibleCharacteristics = useMemo(() => (characteristicsQuery.data ?? []).filter((item) =>
+    (reviewFilter === 'all' || item.reviewStatus === reviewFilter) &&
+    (typeFilter === 'all' || item.characteristicType === typeFilter)), [characteristicsQuery.data, reviewFilter, typeFilter]);
+  const selectedPending = (characteristicsQuery.data ?? []).filter((item) => selectedCharacteristicIds.includes(item.id) && item.reviewStatus === 'PENDING');
+  const bulkReview = (decision: 'CONFIRMED' | 'REJECTED') => bulkMutation.mutate({ decision,
+    targets: selectedPending.map((item) => ({ id: item.id, version: item.version })) });
   const currentSheet = revision?.fileType === 'DWG' ? dimQuery.data?.model.sheets[0] : dimQuery.data?.model.sheets.find((sheet) =>
     sheet.sheetNo === (selected?.sheetNo ?? String(pageNo)));
   const preview = currentSheet?.preview;
@@ -250,14 +272,31 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     {modelMissing && <Alert style={{ marginBottom: token.marginMD }} type="info" showIcon message={t('qmsReview.waitingForParse')} description={t('qmsReview.waitingForParseDescription')} />}
     <div className="qms-review-workbench">
       <Space className="qms-review-list-pane" direction="vertical" size="middle" style={{ width: '100%' }}>
-      <Card title={t('qmsReview.characteristics')}>
-        <List loading={characteristicsQuery.isLoading} dataSource={characteristicsQuery.data ?? []}
+      <Card title={t('qmsReview.characteristics')} extra={canReview && <Button size="small" onClick={openCreate}>{t('qmsReview.manualCreate')}</Button>}>
+        <Space wrap size="small" style={{ marginBottom: token.marginSM }}>
+          <Segmented size="small" value={reviewFilter} onChange={(value) => setReviewFilter(String(value))}
+            options={[{ label: t('qmsReview.filters.all'), value: 'all' }, { label: t('qmsReview.filters.pending'), value: 'PENDING' },
+              { label: t('qmsReview.filters.confirmed'), value: 'CONFIRMED' }, { label: t('qmsReview.filters.rejected'), value: 'REJECTED' }]} />
+          <Select size="small" aria-label={t('qmsReview.fields.type')} value={typeFilter} onChange={setTypeFilter} style={{ minWidth: 120 }}
+            options={[{ label: t('qmsReview.filters.allTypes'), value: 'all' }, { label: t('qmsReview.types.dimension'), value: 'DIMENSION' },
+              { label: t('qmsReview.types.appearance'), value: 'APPEARANCE' }, { label: t('qmsReview.types.performance'), value: 'PERFORMANCE' },
+              { label: t('qmsReview.types.other'), value: 'OTHER' }]} />
+          {canReview && <><Button size="small" disabled={selectedPending.length === 0} loading={bulkMutation.isPending} onClick={() => bulkReview('CONFIRMED')}>{t('qmsReview.bulkConfirm', { count: selectedPending.length })}</Button>
+            <Button size="small" danger disabled={selectedPending.length === 0} loading={bulkMutation.isPending} onClick={() => bulkReview('REJECTED')}>{t('qmsReview.bulkReject', { count: selectedPending.length })}</Button></>}
+        </Space>
+        <List loading={characteristicsQuery.isLoading} dataSource={visibleCharacteristics}
           locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('qmsReview.noCharacteristics')} /> }}
-          renderItem={(item) => <List.Item onClick={() => locateCharacteristic(item)} style={{ cursor: 'pointer', paddingInline: token.paddingSM }}>
+          renderItem={(item) => <List.Item onClick={() => locateCharacteristic(item)} style={{ cursor: item.evidenceId ? 'pointer' : 'default', paddingInline: token.paddingSM }}>
             <div data-testid="characteristic-list-content" style={{ width: '100%', minWidth: 0 }}>
               <Space wrap size={[token.marginXS, token.marginXXS]} style={{ marginBottom: token.marginXXS }}>
+                {canReview && item.reviewStatus === 'PENDING' && <Checkbox aria-label={t('qmsReview.selectCharacteristic', { code: item.characteristicCode })}
+                  checked={selectedCharacteristicIds.includes(item.id)} onClick={(event) => event.stopPropagation()}
+                  onChange={(event) => setSelectedCharacteristicIds((ids) => event.target.checked ? [...ids, item.id] : ids.filter((id) => id !== item.id))} />}
                 <Typography.Text strong style={{ overflowWrap: 'anywhere' }}>{item.characteristicCode}</Typography.Text>
                 <Tag style={{ marginInlineEnd: 0 }}>{item.reviewStatus}</Tag>
+                {item.inspectionDimension && <Tag color="processing">{t('qmsReview.flags.inspection')}</Tag>}
+                {item.referenceDimension && <Tag>{t('qmsReview.flags.reference')}</Tag>}
+                {item.idealDimension && <Tag>{t('qmsReview.flags.ideal')}</Tag>}
               </Space>
               <Typography.Paragraph type="secondary" style={{ marginBottom: 0, overflowWrap: 'break-word' }}>
                 {`${item.name} · ${item.nominalValue ?? '-'} ${item.unit ?? ''} (${item.upperTolerance ?? '-'} / ${item.lowerTolerance ?? '-'})`}
@@ -329,16 +368,30 @@ export const QmsDrawingReviewWorkbenchPage = () => {
           </div>}
       </Card>
     </div>
-    <Modal open={Boolean(editing)} title={t('qmsReview.reviewCharacteristic')} confirmLoading={confirmMutation.isPending}
-      onCancel={() => setEditing(undefined)} onOk={() => form.validateFields().then((request) => editing && confirmMutation.mutate({ id: editing.id, request }))}>
+    <Modal open={Boolean(editing) || creating} title={creating ? t('qmsReview.manualCreate') : t('qmsReview.reviewCharacteristic')}
+      confirmLoading={confirmMutation.isPending || createMutation.isPending}
+      onCancel={() => { setEditing(undefined); setCreating(false); }} onOk={() => form.validateFields().then((request) => {
+        if (creating) createMutation.mutate(request as QmsQualityCharacteristicCreateRequest);
+        else if (editing) confirmMutation.mutate({ id: editing.id, request });
+      })}>
       <Form form={form} layout="vertical">
         <Form.Item name="version" hidden><InputNumber /></Form.Item>
         <Form.Item name="name" label={t('qmsReview.fields.name')} rules={[{ required: true }]}><Input /></Form.Item>
+        <Space align="start" wrap>
+          <Form.Item name="characteristicType" label={t('qmsReview.fields.type')} rules={[{ required: true }]}><Select style={{ width: 160 }} options={[
+            { label: t('qmsReview.types.dimension'), value: 'DIMENSION' }, { label: t('qmsReview.types.appearance'), value: 'APPEARANCE' },
+            { label: t('qmsReview.types.performance'), value: 'PERFORMANCE' }, { label: t('qmsReview.types.other'), value: 'OTHER' }]} /></Form.Item>
+          <Form.Item name="specialCharacteristicCode" label={t('qmsReview.fields.specialCode')}><Input style={{ width: 140 }} /></Form.Item>
+        </Space>
         <Space align="start" wrap>
           <Form.Item name="nominalValue" label={t('qmsReview.fields.nominal')} rules={[{ required: true }]}><InputNumber /></Form.Item>
           <Form.Item name="upperTolerance" label={t('qmsReview.fields.upperTolerance')}><InputNumber /></Form.Item>
           <Form.Item name="lowerTolerance" label={t('qmsReview.fields.lowerTolerance')}><InputNumber /></Form.Item>
           <Form.Item name="unit" label={t('qmsReview.fields.unit')}><Input style={{ width: 90 }} /></Form.Item>
+        </Space>
+        <Space wrap>
+          {(['inspectionDimension','referenceDimension','idealDimension','fitDimension','locationDimension','regulatoryFlag','mandatoryInspection'] as const).map((field) =>
+            <Form.Item key={field} name={field} valuePropName="checked" style={{ marginBottom: token.marginSM }}><Checkbox>{t(`qmsReview.flags.${field}`)}</Checkbox></Form.Item>)}
         </Space>
         <Form.Item name="comment" label={t('qmsReview.fields.comment')}><Input.TextArea rows={2} /></Form.Item>
       </Form>

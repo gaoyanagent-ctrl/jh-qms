@@ -28,6 +28,7 @@ public enum QmsEngineeringErrorCode implements ErrorCode {
     EVIDENCE_NOT_FOUND("QMS_SOURCE_EVIDENCE_NOT_FOUND", "Source evidence not found"),
     CHARACTERISTIC_REVIEW_INVALID("QMS_CHARACTERISTIC_REVIEW_INVALID", "Characteristic review decision is invalid"),
     CHARACTERISTIC_REVIEW_CONFLICT("QMS_CHARACTERISTIC_REVIEW_CONFLICT", "Characteristic was already reviewed or changed"),
+    CHARACTERISTIC_CLASSIFICATION_INVALID("QMS_CHARACTERISTIC_CLASSIFICATION_INVALID", "Characteristic classification is invalid"),
     AUDIT_WRITE_FAILED("QMS_AUDIT_WRITE_FAILED", "QMS audit record could not be written");
 
     private final String code;

@@ -603,3 +603,5 @@ Planned stack:
 - `packages/api-client#getBlob` is the shared authenticated binary-download entry point.
 - TASK-0409 adds the candidate list to the same workbench. Selecting a candidate locates its
   retained evidence; permitted reviewers can edit dimension values and confirm or reject it.
+- TASK-0413 adds review/type filters, accessible row selection, manual characteristic creation,
+  classification editing, and optimistic bulk confirm/reject while keeping the drawing pane fixed.

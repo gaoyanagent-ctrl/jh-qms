@@ -137,6 +137,26 @@ class QmsEngineeringPostgresIntegrationTest {
             assertThat(candidate.lowerTolerance()).isNull();
             assertThat(candidate.name()).isEqualTo("34");
         });
+        var manual = characteristics.createManual(1, 1, 10, revisionId, "DIMENSION", "参考尺寸 12",
+                new java.math.BigDecimal("12"), null, null, "mm", null,
+                false, true, false, false, false, false, false, "manual review");
+        assertThat(manual.evidenceId()).isNull();
+        assertThat(manual.characteristicCode()).startsWith("MAN-");
+        assertThat(manual.referenceDimension()).isTrue();
+        var parsed = characteristics.findByRevision(1, 10, revisionId).stream()
+                .filter(item -> item.characteristicCode().startsWith("DIM-EV-"))
+                .findFirst().orElseThrow();
+        assertThat(parsed.inspectionDimension()).isTrue();
+        assertThat(characteristics.review(1, 1, 10, revisionId, parsed.id(), parsed.version(),
+                "CONFIRMED", parsed.name(), parsed.nominalValue(), parsed.upperTolerance(),
+                parsed.lowerTolerance(), parsed.unit(), parsed.characteristicType(), "B",
+                false, false, true, false, false, false, false, "classified")).isTrue();
+        assertThat(characteristics.findById(1, 10, revisionId, parsed.id())).get().satisfies(reviewed -> {
+            assertThat(reviewed.reviewStatus()).isEqualTo("CONFIRMED");
+            assertThat(reviewed.idealDimension()).isTrue();
+            assertThat(reviewed.inspectionDimension()).isFalse();
+            assertThat(reviewed.specialCharacteristicCode()).isEqualTo("B");
+        });
         assertThat(jdbc.queryForObject("""
                 select count(*)
                   from sys_role_permission rp

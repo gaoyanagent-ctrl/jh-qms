@@ -126,16 +126,35 @@ export interface QmsSourceEvidence {
 }
 export interface QmsQualityCharacteristic {
   id: number; partId: number; drawingRevisionId: number; sourceEntityId: string | null;
-  evidenceId: number; characteristicCode: string; characteristicType: string; name: string;
+  evidenceId: number | null; characteristicCode: string; characteristicType: string; name: string;
   nominalValue: number | null; upperTolerance: number | null; lowerTolerance: number | null;
   upperLimit: number | null; lowerLimit: number | null; unit: string | null;
   specialCharacteristicCode: string | null; confidence: number; status: string;
+  inspectionDimension: boolean; referenceDimension: boolean; idealDimension: boolean;
+  fitDimension: boolean; locationDimension: boolean; regulatoryFlag: boolean;
+  mandatoryInspection: boolean;
   reviewStatus: 'PENDING' | 'CONFIRMED' | 'REJECTED'; reviewedBy: number | null;
   reviewedAt: string | null; reviewComment: string | null; version: number;
 }
 export interface QmsQualityCharacteristicReviewRequest {
   version: number; name?: string | null; nominalValue?: number | null;
   upperTolerance?: number | null; lowerTolerance?: number | null; unit?: string | null;
+  characteristicType?: string | null; specialCharacteristicCode?: string | null;
+  inspectionDimension?: boolean | null; referenceDimension?: boolean | null;
+  idealDimension?: boolean | null; fitDimension?: boolean | null; locationDimension?: boolean | null;
+  regulatoryFlag?: boolean | null; mandatoryInspection?: boolean | null;
+  comment?: string | null;
+}
+export interface QmsQualityCharacteristicCreateRequest {
+  characteristicType: string; name: string; nominalValue?: number | null;
+  upperTolerance?: number | null; lowerTolerance?: number | null; unit?: string | null;
+  specialCharacteristicCode?: string | null; inspectionDimension: boolean;
+  referenceDimension: boolean; idealDimension: boolean; fitDimension: boolean;
+  locationDimension: boolean; regulatoryFlag: boolean; mandatoryInspection: boolean;
+  comment?: string | null;
+}
+export interface QmsQualityCharacteristicBulkReviewRequest {
+  decision: 'CONFIRMED' | 'REJECTED'; targets: Array<{ id: number; version: number }>;
   comment?: string | null;
 }
 export interface QmsDrawingIntermediateModel {

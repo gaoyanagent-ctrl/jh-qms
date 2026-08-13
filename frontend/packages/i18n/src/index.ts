@@ -264,15 +264,19 @@ export const resources = {
         title: '图纸复核工作台', invalidRevision: '无效的图纸版本 ID', evidence: '来源证据', viewer: '图纸预览',
         characteristics: '质量特性候选', noCharacteristics: '暂无可复核的质量特性候选', editConfirm: '编辑并确认', reject: '驳回',
         reviewCharacteristic: '复核质量特性', reviewSucceeded: '质量特性已确认', rejectSucceeded: '质量特性已驳回',
+        manualCreate: '手工新增', createSucceeded: '质量特性已新增', bulkSucceeded: '批量复核完成',
+        bulkConfirm: '批量确认（{{count}}）', bulkReject: '批量驳回（{{count}}）', selectCharacteristic: '选择 {{code}}',
         zoomIn: '放大', zoomOut: '缩小', resetView: '重置视图', locateEvidence: '定位选中证据',
         dwgCanvas: 'DWG 图形预览', cadPreviewMissing: 'DWG 图形预览尚未生成，请重试解析。',
         pdfReference: 'PDF 校对底图', dwgVector: 'DWG 矢量图', pdfReferenceRevision: '当前显示配套 PDF 校对底图（版本 {{revision}}），质量特性来源于 DWG。',
-        fields: { name: '特性名称', nominal: '名义值', upperTolerance: '上偏差', lowerTolerance: '下偏差', unit: '单位', comment: '复核意见' },
+        fields: { name: '特性名称', type: '特性类型', specialCode: '特殊特性代码', nominal: '名义值', upperTolerance: '上偏差', lowerTolerance: '下偏差', unit: '单位', comment: '复核意见' },
+        types: { dimension: '尺寸', appearance: '外观', performance: '性能', other: '其他' },
+        flags: { inspection: '检验尺寸', reference: '参考尺寸', ideal: '理想尺寸', inspectionDimension: '检验尺寸', referenceDimension: '参考尺寸', idealDimension: '理想尺寸', fitDimension: '配合尺寸', locationDimension: '位置尺寸', regulatoryFlag: '法规特性', mandatoryInspection: '强制检验' },
         evidenceCount: '共 {{count}} 条证据', noEvidence: '暂无解析证据', sheet: '图幅', page: '页码',
         previousPage: '上一页', nextPage: '下一页', pdfCanvas: 'PDF 图纸画布',
         waitingForParse: '图纸尚未生成解析结果', waitingForParseDescription: '文件仍可预览。解析器完成后，证据列表和定位高亮会自动可用。',
         cadPending: 'DWG 在线预览将在 CAD 解析适配器阶段接入。', renderFailed: 'PDF 渲染失败，请检查文件是否有效。',
-        filters: { all: '全部', high: '高', medium: '中', low: '低' }
+        filters: { all: '全部', high: '高', medium: '中', low: '低', pending: '待复核', confirmed: '已确认', rejected: '已驳回', allTypes: '全部类型' }
       },
       settings: {
         theme: '主题',
@@ -913,15 +917,19 @@ export const resources = {
         title: 'Drawing Review Workbench', invalidRevision: 'Invalid drawing revision ID', evidence: 'Source Evidence', viewer: 'Drawing Viewer',
         characteristics: 'Quality Characteristic Candidates', noCharacteristics: 'No quality characteristic candidates', editConfirm: 'Edit and confirm', reject: 'Reject',
         reviewCharacteristic: 'Review Quality Characteristic', reviewSucceeded: 'Quality characteristic confirmed', rejectSucceeded: 'Quality characteristic rejected',
+        manualCreate: 'Add manually', createSucceeded: 'Quality characteristic created', bulkSucceeded: 'Bulk review completed',
+        bulkConfirm: 'Confirm selected ({{count}})', bulkReject: 'Reject selected ({{count}})', selectCharacteristic: 'Select {{code}}',
         zoomIn: 'Zoom in', zoomOut: 'Zoom out', resetView: 'Reset view', locateEvidence: 'Locate evidence',
         dwgCanvas: 'DWG drawing preview', cadPreviewMissing: 'DWG preview is unavailable. Retry parsing this revision.',
         pdfReference: 'PDF reference', dwgVector: 'DWG vector', pdfReferenceRevision: 'Showing the companion PDF reference (revision {{revision}}); characteristics come from DWG.',
-        fields: { name: 'Name', nominal: 'Nominal', upperTolerance: 'Upper tolerance', lowerTolerance: 'Lower tolerance', unit: 'Unit', comment: 'Review comment' },
+        fields: { name: 'Name', type: 'Characteristic type', specialCode: 'Special code', nominal: 'Nominal', upperTolerance: 'Upper tolerance', lowerTolerance: 'Lower tolerance', unit: 'Unit', comment: 'Review comment' },
+        types: { dimension: 'Dimension', appearance: 'Appearance', performance: 'Performance', other: 'Other' },
+        flags: { inspection: 'Inspection', reference: 'Reference', ideal: 'Ideal', inspectionDimension: 'Inspection dimension', referenceDimension: 'Reference dimension', idealDimension: 'Ideal dimension', fitDimension: 'Fit dimension', locationDimension: 'Location dimension', regulatoryFlag: 'Regulatory', mandatoryInspection: 'Mandatory inspection' },
         evidenceCount: '{{count}} evidence items', noEvidence: 'No parse evidence', sheet: 'Sheet', page: 'Page',
         previousPage: 'Previous', nextPage: 'Next', pdfCanvas: 'PDF drawing canvas',
         waitingForParse: 'No parse result is available yet', waitingForParseDescription: 'The file remains previewable. Evidence and location highlights become available after parsing.',
         cadPending: 'DWG preview will be connected with the CAD parser adapter.', renderFailed: 'PDF rendering failed. Check that the file is valid.',
-        filters: { all: 'All', high: 'High', medium: 'Medium', low: 'Low' }
+        filters: { all: 'All', high: 'High', medium: 'Medium', low: 'Low', pending: 'Pending', confirmed: 'Confirmed', rejected: 'Rejected', allTypes: 'All types' }
       },
       settings: {
         theme: 'Theme',

@@ -53,8 +53,8 @@ public class JdbcQualityCharacteristicRepository implements QualityCharacteristi
                 insert into qms_quality_characteristic
                 (tenant_id,org_id,part_id,drawing_revision_id,source_entity_id,evidence_id,characteristic_code,
                  characteristic_type,name,nominal_value,upper_tolerance,lower_tolerance,upper_limit,lower_limit,
-                 unit,confidence,created_by,updated_by)
-                values (?,?,?,?,?,?,?,'DIMENSION',?,?,?,?,?,?,'mm',?,?,?) on conflict do nothing
+                 unit,inspection_dimension,confidence,created_by,updated_by)
+                values (?,?,?,?,?,?,?,'DIMENSION',?,?,?,?,?,?,'mm',true,?,?,?) on conflict do nothing
                 """,tenantId,orgId,row.get("part_id"),revisionId,row.get("entity_id"),row.get("evidence_id"),
                     "DIM-EV-"+row.get("evidence_id"),name,nominal,upper,lower,
                     upper == null ? null : nominal.add(upper),lower == null ? null : nominal.add(lower),
@@ -70,25 +70,56 @@ public class JdbcQualityCharacteristicRepository implements QualityCharacteristi
     }
     @Override public List<QualityCharacteristic> findByRevision(long tenantId,long orgId,long revisionId){return jdbc.query(sql(""),this::map,tenantId,orgId,revisionId);}
     @Override public Optional<QualityCharacteristic> findById(long tenantId,long orgId,long revisionId,long id){return jdbc.query(sql(" and id=?"),this::map,tenantId,orgId,revisionId,id).stream().findFirst();}
-    @Override public boolean review(long actorId,long tenantId,long orgId,long revisionId,long id,int version,String reviewStatus,String name,BigDecimal nominal,BigDecimal upper,BigDecimal lower,String unit,String comment){
+    @Override public QualityCharacteristic createManual(long actorId,long tenantId,long orgId,long revisionId,
+            String characteristicType,String name,BigDecimal nominal,BigDecimal upper,BigDecimal lower,
+            String unit,String specialCode,boolean inspection,boolean reference,boolean ideal,boolean fit,
+            boolean location,boolean regulatory,boolean mandatory,String comment) {
+        Long id=jdbc.queryForObject("select nextval(pg_get_serial_sequence('qms_quality_characteristic','id'))",Long.class);
+        int inserted=jdbc.update("""
+            insert into qms_quality_characteristic
+            (id,tenant_id,org_id,part_id,drawing_revision_id,evidence_id,characteristic_code,
+             characteristic_type,name,nominal_value,upper_tolerance,lower_tolerance,upper_limit,lower_limit,
+             unit,special_characteristic_code,inspection_dimension,reference_dimension,ideal_dimension,
+             fit_dimension,location_dimension,regulatory_flag,mandatory_inspection,confidence,
+             review_comment,created_by,updated_by)
+            select ?,r.tenant_id,r.org_id,d.part_id,r.id,null,?, ?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?, ?,1,?,?,?
+              from qms_drawing_revision r join qms_drawing d on d.tenant_id=r.tenant_id and d.id=r.drawing_id
+             where r.tenant_id=? and r.org_id=? and r.id=? and r.deleted=false and d.deleted=false
+            """,id,"MAN-"+id,characteristicType,name,nominal,upper,lower,
+            upper==null||nominal==null?null:nominal.add(upper),lower==null||nominal==null?null:nominal.add(lower),
+            unit,specialCode,inspection,reference,ideal,fit,location,regulatory,mandatory,comment,
+            actorId,actorId,tenantId,orgId,revisionId);
+        if(inserted!=1)throw new IllegalStateException("Revision disappeared while creating characteristic");
+        return findById(tenantId,orgId,revisionId,id).orElseThrow();
+    }
+    @Override public boolean review(long actorId,long tenantId,long orgId,long revisionId,long id,int version,String reviewStatus,String name,BigDecimal nominal,BigDecimal upper,BigDecimal lower,String unit,String characteristicType,String specialCode,Boolean inspection,Boolean reference,Boolean ideal,Boolean fit,Boolean location,Boolean regulatory,Boolean mandatory,String comment){
         return jdbc.update("""
             update qms_quality_characteristic
             set review_status=?, name=coalesce(?,name), nominal_value=coalesce(?,nominal_value),
                 upper_tolerance=coalesce(?,upper_tolerance), lower_tolerance=coalesce(?,lower_tolerance),
                 upper_limit=coalesce(?,nominal_value)+coalesce(?,upper_tolerance),
                 lower_limit=coalesce(?,nominal_value)+coalesce(?,lower_tolerance),
-                unit=coalesce(?,unit), review_comment=?, reviewed_by=?, reviewed_at=current_timestamp,
+                unit=coalesce(?,unit), characteristic_type=coalesce(?,characteristic_type),
+                special_characteristic_code=?, inspection_dimension=coalesce(?,inspection_dimension),
+                reference_dimension=coalesce(?,reference_dimension), ideal_dimension=coalesce(?,ideal_dimension),
+                fit_dimension=coalesce(?,fit_dimension), location_dimension=coalesce(?,location_dimension),
+                regulatory_flag=coalesce(?,regulatory_flag), mandatory_inspection=coalesce(?,mandatory_inspection),
+                review_comment=?, reviewed_by=?, reviewed_at=current_timestamp,
                 updated_by=?, updated_at=current_timestamp, version=version+1
             where tenant_id=? and org_id=? and drawing_revision_id=? and id=? and version=?
               and review_status='PENDING' and deleted=false
             """,
-            reviewStatus,name,nominal,upper,lower,nominal,upper,nominal,lower,unit,comment,actorId,actorId,tenantId,orgId,revisionId,id,version)==1;
+            reviewStatus,name,nominal,upper,lower,nominal,upper,nominal,lower,unit,characteristicType,
+            specialCode,inspection,reference,ideal,fit,location,regulatory,mandatory,comment,actorId,actorId,
+            tenantId,orgId,revisionId,id,version)==1;
     }
     private String sql(String suffix) {
         return """
             select id,tenant_id,org_id,part_id,drawing_revision_id,source_entity_id,evidence_id,
                    characteristic_code,characteristic_type,name,nominal_value,upper_tolerance,
                    lower_tolerance,upper_limit,lower_limit,unit,special_characteristic_code,
+                   inspection_dimension,reference_dimension,ideal_dimension,fit_dimension,
+                   location_dimension,regulatory_flag,mandatory_inspection,
                    confidence,status,review_status,reviewed_by,reviewed_at,review_comment,version
             from qms_quality_characteristic
             where tenant_id=? and org_id=? and drawing_revision_id=? and deleted=false
@@ -97,14 +128,17 @@ public class JdbcQualityCharacteristicRepository implements QualityCharacteristi
 
     private QualityCharacteristic map(ResultSet r, int rowNum) throws SQLException {
         Number reviewedBy = (Number) r.getObject("reviewed_by");
+        Number evidenceId = (Number) r.getObject("evidence_id");
         return new QualityCharacteristic(
             r.getLong("id"), r.getLong("tenant_id"), r.getLong("org_id"), r.getLong("part_id"),
-            r.getLong("drawing_revision_id"), r.getString("source_entity_id"), r.getLong("evidence_id"),
+            r.getLong("drawing_revision_id"), r.getString("source_entity_id"), evidenceId == null ? null : evidenceId.longValue(),
             r.getString("characteristic_code"), r.getString("characteristic_type"), r.getString("name"),
             r.getBigDecimal("nominal_value"), r.getBigDecimal("upper_tolerance"),
             r.getBigDecimal("lower_tolerance"), r.getBigDecimal("upper_limit"),
             r.getBigDecimal("lower_limit"), r.getString("unit"),
-            r.getString("special_characteristic_code"), r.getBigDecimal("confidence"),
+            r.getString("special_characteristic_code"),r.getBoolean("inspection_dimension"),
+            r.getBoolean("reference_dimension"),r.getBoolean("ideal_dimension"),r.getBoolean("fit_dimension"),
+            r.getBoolean("location_dimension"),r.getBoolean("regulatory_flag"),r.getBoolean("mandatory_inspection"),r.getBigDecimal("confidence"),
             r.getString("status"), r.getString("review_status"),
             reviewedBy == null ? null : reviewedBy.longValue(),
             JdbcPartRepository.utc(r.getTimestamp("reviewed_at")), r.getString("review_comment"),
