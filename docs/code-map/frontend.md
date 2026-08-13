@@ -618,6 +618,8 @@ Planned stack:
 
 - The Drawing Review Workbench links to an editable inspection document with rule generation,
   reaction plan, requirement, sampling, method and remark fields.
+- Editable inspection drafts expose `同步质量特性`; it disables conflicting save work, shows
+  loading/success feedback, and immediately replaces the table with the synchronized response.
 ## QMS Inspection Standard Approval
 
 - `QmsInspectionStandardPage` renders document and approval states separately, enables editing only

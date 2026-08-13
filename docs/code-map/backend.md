@@ -833,6 +833,10 @@ TASK-0405 parse-result contract:
 - TASK-0421 automatically confirms parser-created inspection dimensions after legend
   classification. `JdbcQualityCharacteristicRepository.review` also permits a confirmed
   item to be corrected and reconfirmed while retaining optimistic locking and reviewer audit.
+- TASK-0422 makes `InspectionStandardService.generate` synchronize an existing editable draft:
+  eligible confirmed characteristics are added or refreshed, obsolete items are soft-deleted,
+  and user-entered sampling, methods, and remarks are preserved. Approval and released states
+  reject synchronization.
 
 ### Manufacturing Modules
 

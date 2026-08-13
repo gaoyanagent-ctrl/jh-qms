@@ -622,7 +622,8 @@ The parser lifecycle is an internal application port, not an unauthenticated HTT
 # QMS inspection standard draft
 
 - `GET /api/qms/drawing-revisions/{revisionId}/inspection-standard` reads the current draft.
-- `POST .../generate` creates rule-derived items only from eligible confirmed characteristics.
+- `POST .../generate` creates a rule-derived draft, or synchronizes an existing editable draft
+  with eligible confirmed characteristics while preserving user-entered execution fields.
 - `PUT .../{id}` saves execution fields and reaction plan with optimistic locking.
 - `POST .../{id}/submit-approval` freezes a reviewed draft and starts an approval instance.
 - `POST .../{id}/approve|reject` records a human decision; self-approval is forbidden.
