@@ -49,11 +49,13 @@ def test_parse_dwg_preserves_native_dimension_data(monkeypatch):
     assert entity["geometry"]["act_measurement"] == 34.0
     assert result["evidence"][0]["extractorType"] == "DWG_ENTITY"
     preview = result["modelJson"]["sheets"][0]["preview"]
-    assert preview["viewBox"] == {"x": 0.0, "y": -100.0, "width": 200.0, "height": 100.0}
+    assert preview["viewBox"] == {"x": 0.0, "y": 0.0, "width": 200.0, "height": 100.0}
+    assert preview["sourceViewBox"] == {"x": 0.0, "y": -100.0, "width": 200.0, "height": 100.0}
     assert preview["coordinateSystem"] == "SVG_NATIVE"
     assert 'id="jh-qms-native-dimensions"' in preview["content"]
     assert ">8-34</text>" in preview["content"]
     assert "<script" not in preview["content"]
+    assert result["evidence"][0]["bbox"]["y"] == 98.0
 
 
 def test_parse_dwg_rejects_non_dwg_content():

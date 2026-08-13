@@ -98,23 +98,27 @@ def _svg_preview(source: Path) -> dict[str, Any]:
     if not match:
         raise CadParseError("DWG SVG renderer returned an invalid viewBox")
     x, y, width, height = (float(value) for value in match.groups())
-    return {"format": "SVG", "content": svg, "viewBox": {"x": x, "y": y, "width": width, "height": height},
+    source_viewbox = {"x": x, "y": y, "width": width, "height": height}
+    svg = svg[:match.start()] + f'viewBox="0 0 {width} {height}"' + svg[match.end():]
+    return {"format": "SVG", "content": svg, "viewBox": {"x": 0.0, "y": 0.0, "width": width, "height": height},
+            "sourceViewBox": source_viewbox,
             "coordinateSystem": "SVG_NATIVE", "generatedBy": PARSER_VERSION}
 
 
 def _add_dimension_overlays(preview: dict[str, Any], dimensions: list[dict[str, Any]]) -> None:
     viewbox = preview["viewBox"]
+    source_viewbox = preview["sourceViewBox"]
     overlays = ['<g id="jh-qms-native-dimensions" fill="#1677ff" stroke="#1677ff" stroke-width="0.8">']
     font_size = max(min(viewbox["width"], viewbox["height"]) / 180, 2.5)
     for item in dimensions:
         points = _points(item)
         if len(points) >= 2:
             first, second = points[0], points[1]
-            overlays.append(f'<line x1="{first[0]}" y1="{first[1]}" x2="{second[0]}" y2="{second[1]}" opacity="0.7"/>')
+            overlays.append(f'<line x1="{first[0] - source_viewbox["x"]}" y1="{first[1] - source_viewbox["y"]}" x2="{second[0] - source_viewbox["x"]}" y2="{second[1] - source_viewbox["y"]}" opacity="0.7"/>')
         midpoint = item.get("text_midpt") or item.get("def_pt")
         if isinstance(midpoint, list) and len(midpoint) >= 2:
             label = html.escape(_dimension_text(item))
-            overlays.append(f'<text x="{midpoint[0]}" y="{midpoint[1]}" font-size="{font_size}" stroke="none">{label}</text>')
+            overlays.append(f'<text x="{midpoint[0] - source_viewbox["x"]}" y="{midpoint[1] - source_viewbox["y"]}" font-size="{font_size}" stroke="none">{label}</text>')
     overlays.append("</g>")
     preview["content"] = preview["content"].replace("</svg>", "".join(overlays) + "</svg>")
 
@@ -144,7 +148,7 @@ def parse_dwg(content: bytes, document_id: str, revision: str) -> dict[str, Any]
     layer_names = {_handle(item.get("handle")): item.get("name") for item in objects if item.get("object") == "LAYER"}
     selected = [item for item in objects
                 if (str(item.get("entity", "")).startswith("DIMENSION_") or item.get("entity") in SUPPORTED_ENTITIES)
-                and _inside_viewbox(item, preview["viewBox"])]
+                and _inside_viewbox(item, preview["sourceViewBox"])]
     _add_dimension_overlays(preview, [item for item in selected if str(item.get("entity", "")).startswith("DIMENSION_")])
     digest = hashlib.sha256(content).hexdigest()[:12]
     entities: list[dict[str, Any]] = []
@@ -159,6 +163,8 @@ def parse_dwg(content: bytes, document_id: str, revision: str) -> dict[str, Any]
         evidence_key = f"ev-{entity_id}"
         raw_text = _dimension_text(item) if entity_type == "DIMENSION" else _clean_text(str(item.get("text") or item.get("text_value") or ""))
         box = _bbox(item)
+        box["x"] -= preview["sourceViewBox"]["x"]
+        box["y"] -= preview["sourceViewBox"]["y"]
         all_boxes.append(box)
         layer = layer_names.get(_handle(item.get("layer")))
         geometry = {key: item[key] for key in ("start", "end", "center", "point", "points", "origin", "ins_pt", "text_midpt", "def_pt", "xline1_pt", "xline2_pt", "act_measurement", "dim_rotation") if key in item}
