@@ -2,6 +2,7 @@ import { IafThemeProvider } from '@iaf/theme';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App as AntApp } from 'antd';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { getDocument } from 'pdfjs-dist';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { qmsEngineeringApi } from './api';
@@ -28,6 +29,18 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     vi.clearAllMocks();
     Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn(() => 'blob:dwg-preview') });
     Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', { configurable: true, value: vi.fn(() => ({})) });
+    vi.mocked(getDocument).mockReturnValue({ promise: Promise.resolve({
+      numPages: 1,
+      getPage: vi.fn().mockResolvedValue({
+        getViewport: ({ scale }: { scale: number }) => ({
+          width: 200 * scale, height: 100 * scale, scale,
+          convertToViewportPoint: (x: number, y: number) => [x * scale, (100 - y) * scale]
+        }),
+        getTextContent: vi.fn().mockResolvedValue({ items: [{ str: '6.5±0.3', transform: [1, 0, 0, 10, 80, 50], width: 20 }] }),
+        render: vi.fn(() => ({ promise: Promise.resolve() }))
+      })
+    }) } as unknown as ReturnType<typeof getDocument>);
     vi.mocked(qmsEngineeringApi.getRevision).mockResolvedValue({
       id: 3, drawingId: 2, revisionCode: 'C', revisionSeq: 3, fileId: 3, fileType: 'DWG',
       effectiveDate: null, releaseDate: null, supersedesRevisionId: null, parseStatus: 'PENDING',
@@ -37,7 +50,9 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     vi.mocked(qmsEngineeringApi.getRevisionFileContent).mockResolvedValue(new Blob(['dwg']));
     vi.mocked(qmsEngineeringApi.listRevisions).mockResolvedValue([]);
     vi.mocked(qmsEngineeringApi.listRevisionFiles).mockResolvedValue([]);
-    vi.mocked(qmsEngineeringApi.getRevisionRoleFileContent).mockResolvedValue(new Blob(['pdf']));
+    vi.mocked(qmsEngineeringApi.getRevisionRoleFileContent).mockResolvedValue({
+      arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+    } as unknown as Blob);
     vi.mocked(qmsEngineeringApi.listEvidence).mockResolvedValue([]);
     vi.mocked(qmsEngineeringApi.listCharacteristics).mockResolvedValue([]);
     vi.mocked(qmsEngineeringApi.getIntermediateModel).mockRejectedValue(new Error('missing'));
@@ -131,8 +146,14 @@ describe('QmsDrawingReviewWorkbenchPage', () => {
     expect(screen.getByText('DWG 矢量图')).toBeInTheDocument();
     await waitFor(() => expect(qmsEngineeringApi.getRevisionRoleFileContent).toHaveBeenCalledWith(3, 'PDF_REFERENCE'));
     fireEvent.click(await screen.findByText('DIM-EV-9'));
+    expect(await screen.findByTestId('pdf-viewer')).toBeInTheDocument();
+    expect(await screen.findByText('250%')).toBeInTheDocument();
+    const pdfOverlay = screen.getByTestId('evidence-overlay');
+    expect(pdfOverlay).toBeInTheDocument();
+    expect(pdfOverlay.style.border).toBe('');
+    expect(pdfOverlay.getAttribute('style')).not.toContain('dashed');
+    fireEvent.click(screen.getByText('DWG 矢量图'));
     expect(await screen.findByTestId('dwg-viewer')).toBeInTheDocument();
-    expect(screen.getByTestId('evidence-overlay')).toBeInTheDocument();
     expect(screen.getByTestId('evidence-overlay').getAttribute('style')).toContain('rotate(-1.5707963267949rad)');
     expect(document.querySelector('.qms-review-workbench')).toBeInTheDocument();
     expect(document.querySelector('.qms-review-list-pane')).toBeInTheDocument();

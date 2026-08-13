@@ -36,17 +36,21 @@ body {
 
 .qms-evidence-marker {
   background: transparent;
+  border: 0;
+  outline: 2px solid currentColor;
   outline-offset: 3px;
   border-radius: 2px;
   opacity: 1;
 }
 
-.qms-dwg-transform {
+.qms-dwg-transform,
+.qms-pdf-transform {
   transition: transform 180ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .qms-dwg-transform {
+  .qms-dwg-transform,
+  .qms-pdf-transform {
     transition: none;
   }
 }
