@@ -2,7 +2,6 @@ package com.company.iaf.platform.workflow.infrastructure.persistence;
 
 import com.company.iaf.platform.workflow.application.*;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,7 +9,6 @@ import java.sql.Timestamp;
 import java.util.Optional;
 
 @Service
-@ConditionalOnBean(JdbcTemplate.class)
 public class JdbcApprovalApplicationService implements ApprovalApplicationService {
     private final JdbcTemplate jdbc;
     public JdbcApprovalApplicationService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
