@@ -39,7 +39,8 @@ update qms_quality_characteristic set
  inspection_dimension=position('◆' in name)>0,
  location_dimension=position('▲' in name)>0,
  fit_dimension=position('★' in name)>0,
- reference_dimension=(name ~ '^\\s*(\\[[A-Za-z]+\\])?\\s*\\('),
+ reference_dimension=(ltrim(name) like '(%' or
+   (left(ltrim(name),1)='[' and substring(ltrim(name),3,1)=']' and ltrim(substring(ltrim(name),4)) like '(%')),
  regulatory_flag=position('[R]' in name)>0,
  special_characteristic_code=case when position('[A]' in name)>0 then 'A' when position('[B]' in name)>0 then 'B' when position('[R]' in name)>0 then 'R' else null end
 where review_status='PENDING' and evidence_id is not null and deleted=false;
