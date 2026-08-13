@@ -64,6 +64,77 @@ describe('MainLayout', () => {
     expect(screen.getByLabelText('偏好设置')).toBeInTheDocument();
   });
 
+  it('renders QMS group title and allows menu groups to collapse and expand', async () => {
+    useAuthStore.setState({
+      token: 'token',
+      principal: {
+        tenantId: 1,
+        userId: 1,
+        username: 'admin',
+        displayName: 'Admin',
+        permissions: ['qms:part:view']
+      }
+    });
+    vi.mocked(useCurrentUserMenusQuery).mockReturnValue({
+      data: [{
+        id: 40,
+        tenantId: 1,
+        parentId: null,
+        menuCode: 'qms',
+        menuType: 'GROUP',
+        titleKey: 'menu.qms',
+        routePath: null,
+        componentKey: null,
+        icon: 'AppstoreOutlined',
+        sortNo: 400,
+        visible: true,
+        enabled: true,
+        version: 1,
+        permissionCodes: [],
+        children: [{
+          id: 41,
+          tenantId: 1,
+          parentId: 40,
+          menuCode: 'qms.engineering.parts',
+          menuType: 'MENU',
+          titleKey: 'menu.qmsParts',
+          routePath: '/qms/engineering/parts',
+          componentKey: 'qms/engineering/QmsPartListPage',
+          icon: 'FileSearchOutlined',
+          sortNo: 410,
+          visible: true,
+          enabled: true,
+          version: 1,
+          permissionCodes: ['qms:part:view'],
+          children: []
+        }]
+      }]
+    } as unknown as ReturnType<typeof useCurrentUserMenusQuery>);
+
+    render(
+      <IafThemeProvider>
+        <AntApp>
+          <MemoryRouter initialEntries={['/qms/engineering/parts']}>
+            <Routes>
+              <Route element={<MainLayout />}>
+                <Route path="/qms/engineering/parts" element={<div>qms-content</div>} />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </AntApp>
+      </IafThemeProvider>
+    );
+
+    const menuScroll = screen.getByTestId('iaf-shell-menu-scroll');
+    expect(await screen.findByText('质量管理')).toBeInTheDocument();
+    expect(menuScroll).toHaveTextContent('工程数据');
+    expect(menuScroll.querySelectorAll('.ant-menu-submenu-open')).toHaveLength(1);
+    fireEvent.click(screen.getByLabelText('折叠全部菜单分组'));
+    await waitFor(() => expect(menuScroll.querySelectorAll('.ant-menu-submenu-open')).toHaveLength(0));
+    fireEvent.click(screen.getByLabelText('展开全部菜单分组'));
+    await waitFor(() => expect(menuScroll.querySelectorAll('.ant-menu-submenu-open')).toHaveLength(1));
+  });
+
   it('shows the QMS engineering menu only with part view permission', () => {
     useAuthStore.setState({
       token: 'token',

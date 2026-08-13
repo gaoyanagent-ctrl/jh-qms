@@ -39,3 +39,16 @@ export const useUpdateMenuMutation = (options?: { onSuccess?: () => void }) => {
     }
   });
 };
+
+export const useUpdateMenuStructureMutation = (options?: { onSuccess?: () => void }) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (updates: Array<{ id: number; values: MenuUpdateRequest }>) =>
+      Promise.all(updates.map(({ id, values }) => menusApi.updateMenu(id, values))),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['platform-menus-tree'] });
+      await queryClient.invalidateQueries({ queryKey: ['platform-current-user-menus'] });
+      options?.onSuccess?.();
+    }
+  });
+};
