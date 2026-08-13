@@ -37,11 +37,15 @@ export const QmsDrawingReviewWorkbenchPage = () => {
   const [renderError, setRenderError] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dwgViewerRef = useRef<HTMLDivElement>(null);
+  const pdfViewerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ x: number; y: number; left: number; top: number } | undefined>(undefined);
+  const pdfDragRef = useRef<{ x: number; y: number; left: number; top: number } | undefined>(undefined);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [pdfTextBoxes, setPdfTextBoxes] = useState<PdfTextBox[]>([]);
   const [dwgZoom, setDwgZoom] = useState(1);
   const [dwgPan, setDwgPan] = useState({ x: 0, y: 0 });
+  const [pdfZoom, setPdfZoom] = useState(1);
+  const [pdfPan, setPdfPan] = useState({ x: 0, y: 0 });
   const [dwgUrl, setDwgUrl] = useState<string>();
   const revisionQuery = useQmsRevisionQuery(validId ? revisionId : undefined, validId);
   const revision = revisionQuery.data;
@@ -61,9 +65,6 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     const source = evidenceQuery.data?.find((evidenceItem) => evidenceItem.id === item.evidenceId);
     if (source) {
       setSelected(source);
-      // DWG evidence has no valid PDF coordinate until a registration transform exists.
-      // Locate it only on the coordinate system that produced the evidence.
-      if (revision?.fileType === 'DWG') setDwgViewMode('DWG');
     }
   };
   const openReview = (item: QmsQualityCharacteristic) => {
@@ -150,6 +151,17 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     viewer.addEventListener('wheel', handleWheel, { passive: false });
     return () => viewer.removeEventListener('wheel', handleWheel);
   }, [dwgUrl, preview, revision?.fileType]);
+  useEffect(() => {
+    const viewer = pdfViewerRef.current;
+    const pdfVisible = revision?.fileType === 'PDF' || (revision?.fileType === 'DWG' && dwgViewMode === 'PDF');
+    if (!viewer || !pdfVisible) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      setPdfZoom((value) => Math.min(6, Math.max(0.5, value + (event.deltaY < 0 ? 0.25 : -0.25))));
+    };
+    viewer.addEventListener('wheel', handleWheel, { passive: false });
+    return () => viewer.removeEventListener('wheel', handleWheel);
+  }, [dwgViewMode, revision?.fileType, viewportSize]);
   const centerDwgOnEvidence = (source: QmsSourceEvidence) => {
     if (!preview || !dwgViewerRef.current) return;
     const box = dwgViewerRef.current.getBoundingClientRect();
@@ -187,6 +199,19 @@ export const QmsDrawingReviewWorkbenchPage = () => {
     height: `${Math.max(selected.bbox.height / preview.viewBox.height * 100, 0.5)}%`,
     transform: `rotate(${-selectedRotation}rad)`
   } : undefined;
+  const centerPdfOnEvidence = () => {
+    if (!pdfOverlay || viewportSize.width <= 0 || viewportSize.height <= 0) return;
+    const zoom = 2.5;
+    const centerX = pdfOverlay.left + pdfOverlay.width / 2;
+    const centerY = pdfOverlay.top + pdfOverlay.height / 2;
+    setPdfZoom(zoom);
+    setPdfPan({ x: (viewportSize.width / 2 - centerX) * zoom, y: (viewportSize.height / 2 - centerY) * zoom });
+  };
+  useEffect(() => {
+    if (selected && pdfOverlay && (revision?.fileType === 'PDF' || dwgViewMode === 'PDF')) centerPdfOnEvidence();
+    // Re-center after selection, PDF rendering, or switching back to the PDF reference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id, pdfOverlay?.left, pdfOverlay?.top, dwgViewMode, revision?.fileType]);
   const modelMissing = Boolean(revision && !parseResultAvailable)
     || (dimQuery.error instanceof ApiError && dimQuery.error.code === 'QMS_INTERMEDIATE_MODEL_NOT_FOUND');
 
@@ -233,17 +258,26 @@ export const QmsDrawingReviewWorkbenchPage = () => {
           </List.Item>} />
       </Card>
       </Space>
-      <Card className="qms-review-viewer-card" title={t('qmsReview.viewer')} extra={revision?.fileType === 'DWG' ? <Space size="small">
+      <Card className="qms-review-viewer-card" title={t('qmsReview.viewer')} extra={<Space size="small" wrap>
+        {revision?.fileType === 'PDF' && pageCount > 0 && <><Button size="small" disabled={pageNo <= 1} onClick={() => setPageNo((value) => value - 1)}>{t('qmsReview.previousPage')}</Button><Typography.Text>{pageNo}/{pageCount}</Typography.Text><Button size="small" disabled={pageNo >= pageCount} onClick={() => setPageNo((value) => value + 1)}>{t('qmsReview.nextPage')}</Button></>}
+        {revision?.fileType === 'DWG' && <>
         {companionPdf && <Segmented size="small" value={dwgViewMode} onChange={(value) => setDwgViewMode(value as 'PDF' | 'DWG')}
           options={[{ label: t('qmsReview.pdfReference'), value: 'PDF' }, { label: t('qmsReview.dwgVector'), value: 'DWG' }]} />}
-        {(dwgViewMode === 'DWG' || !companionPdf) && <>
+        </>}
+        {(revision?.fileType === 'DWG' && (dwgViewMode === 'DWG' || !companionPdf)) ? <>
         <Button aria-label={t('qmsReview.zoomOut')} icon={<MinusOutlined />} disabled={dwgZoom <= 0.5} onClick={() => setDwgZoom((value) => Math.max(0.5, value - 0.25))} />
         <Typography.Text style={{ minWidth: 48, textAlign: 'center' }}>{Math.round(dwgZoom * 100)}%</Typography.Text>
         <Button aria-label={t('qmsReview.zoomIn')} icon={<PlusOutlined />} disabled={dwgZoom >= 6} onClick={() => setDwgZoom((value) => Math.min(6, value + 0.25))} />
         <Button aria-label={t('qmsReview.resetView')} icon={<ReloadOutlined />} onClick={() => { setDwgZoom(1); setDwgPan({ x: 0, y: 0 }); }} />
         <Button aria-label={t('qmsReview.locateEvidence')} icon={<AimOutlined />} disabled={!selected} onClick={() => selected && centerDwgOnEvidence(selected)} />
+        </> : <>
+        <Button aria-label={t('qmsReview.zoomOut')} icon={<MinusOutlined />} disabled={pdfZoom <= 0.5} onClick={() => setPdfZoom((value) => Math.max(0.5, value - 0.25))} />
+        <Typography.Text style={{ minWidth: 48, textAlign: 'center' }}>{Math.round(pdfZoom * 100)}%</Typography.Text>
+        <Button aria-label={t('qmsReview.zoomIn')} icon={<PlusOutlined />} disabled={pdfZoom >= 6} onClick={() => setPdfZoom((value) => Math.min(6, value + 0.25))} />
+        <Button aria-label={t('qmsReview.resetView')} icon={<ReloadOutlined />} onClick={() => { setPdfZoom(1); setPdfPan({ x: 0, y: 0 }); }} />
+        <Button aria-label={t('qmsReview.locateEvidence')} icon={<AimOutlined />} disabled={!pdfOverlay} onClick={centerPdfOnEvidence} />
         </>}
-      </Space> : pageCount > 0 && <Space><Button size="small" disabled={pageNo <= 1} onClick={() => setPageNo((value) => value - 1)}>{t('qmsReview.previousPage')}</Button><Typography.Text>{pageNo}/{pageCount}</Typography.Text><Button size="small" disabled={pageNo >= pageCount} onClick={() => setPageNo((value) => value + 1)}>{t('qmsReview.nextPage')}</Button></Space>}>
+      </Space>}>
         {fileQuery.isLoading || companionFileQuery.isLoading || ((dwgViewMode === 'DWG' || !companionPdf) && dimQuery.isLoading) ? <Spin /> : revision?.fileType === 'DWG' && (dwgViewMode === 'DWG' || !companionPdf) ? !dwgUrl || !preview ? <Alert type="info" showIcon message={t('qmsReview.cadPreviewMissing')} /> :
           <div ref={dwgViewerRef} data-testid="dwg-viewer" role="img" aria-label={t('qmsReview.dwgCanvas')} tabIndex={0}
             onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { x: event.clientX, y: event.clientY, left: dwgPan.x, top: dwgPan.y }; }}
@@ -254,16 +288,21 @@ export const QmsDrawingReviewWorkbenchPage = () => {
             <div className="qms-dwg-transform" style={{ position: 'absolute', inset: 0, transform: `translate(${dwgPan.x}px, ${dwgPan.y}px) scale(${dwgZoom})`, transformOrigin: 'center' }}>
               <img src={dwgUrl} alt={t('qmsReview.dwgCanvas')} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
               {dwgOverlay && <div className="qms-evidence-marker" data-testid="evidence-overlay" aria-label={t('qmsReview.locateEvidence')}
-                style={{ position: 'absolute', pointerEvents: 'none', border: `2px dashed ${token.colorError}`, outline: `1px solid ${token.colorError}`, transformOrigin: 'center', ...dwgOverlay }} />}
+                style={{ position: 'absolute', pointerEvents: 'none', color: token.colorError, transformOrigin: 'center', ...dwgOverlay }} />}
             </div>
           </div> : renderError ? <Alert type="error" showIcon message={t('qmsReview.renderFailed')} /> :
-          <div style={{ overflow: 'auto', maxHeight: '72vh', textAlign: 'center', background: token.colorFillTertiary, padding: token.paddingSM }}>
+          <div ref={pdfViewerRef} data-testid="pdf-viewer" tabIndex={0} role="img" aria-label={t('qmsReview.pdfCanvas')}
+            onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); pdfDragRef.current = { x: event.clientX, y: event.clientY, left: pdfPan.x, top: pdfPan.y }; }}
+            onPointerMove={(event) => { if (pdfDragRef.current) setPdfPan({ x: pdfDragRef.current.left + event.clientX - pdfDragRef.current.x, y: pdfDragRef.current.top + event.clientY - pdfDragRef.current.y }); }}
+            onPointerUp={() => { pdfDragRef.current = undefined; }}
+            style={{ overflow: 'hidden', height: '72vh', minHeight: 420, position: 'relative', textAlign: 'center', cursor: 'grab', touchAction: 'none', background: token.colorFillTertiary, padding: token.paddingSM }}>
             {revision?.fileType === 'DWG' && companionPdf && <Alert style={{ marginBottom: token.marginSM, textAlign: 'left' }} type="info" showIcon
               message={t('qmsReview.pdfReferenceRevision', { revision: revision.revisionCode })} />}
-            <div style={{ display: 'inline-block', position: 'relative', lineHeight: 0 }}>
+            <div className="qms-pdf-transform" style={{ display: 'inline-block', position: 'relative', lineHeight: 0,
+              transform: `translate(${pdfPan.x}px, ${pdfPan.y}px) scale(${pdfZoom})`, transformOrigin: 'center' }}>
               <canvas ref={canvasRef} aria-label={t('qmsReview.pdfCanvas')} />
               {pdfOverlay && <div className="qms-evidence-marker" data-testid="evidence-overlay" aria-label={t('qmsReview.locateEvidence')}
-                style={{ position: 'absolute', pointerEvents: 'none', border: `2px dashed ${token.colorError}`, outline: `1px solid ${token.colorError}`,
+                style={{ position: 'absolute', pointerEvents: 'none', color: token.colorError,
                   transform: `rotate(${pdfOverlay.rotation}rad)`, transformOrigin: 'center', left: pdfOverlay.left, top: pdfOverlay.top,
                   width: pdfOverlay.width, height: pdfOverlay.height }} />}
             </div>
