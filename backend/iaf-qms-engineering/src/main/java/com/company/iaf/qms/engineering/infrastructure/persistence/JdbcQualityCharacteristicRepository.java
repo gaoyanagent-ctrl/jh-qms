@@ -60,6 +60,13 @@ public class JdbcQualityCharacteristicRepository implements QualityCharacteristi
                     upper == null ? null : nominal.add(upper),lower == null ? null : nominal.add(lower),
                     row.get("confidence"),actorId,actorId);
         }
+        applyLegendRules(actorId,tenantId,orgId,revisionId);
+    }
+    private void applyLegendRules(long actorId,long tenantId,long orgId,long revisionId) {
+        var legend = new JdbcDrawingLegendRuleRepository(jdbc);
+        // Reclassification is deliberately restricted to pending characteristics; reviewed
+        // human decisions remain authoritative when a legend is later changed.
+        legend.reclassifyPending(actorId,tenantId,orgId);
     }
     private static JsonNode geometry(Object value) {
         try { return JSON.readTree(String.valueOf(value)); }

@@ -289,3 +289,7 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
 - Adds inspection, reference, ideal, fit, location, regulatory and mandatory flags plus
   database constraints for incompatible classifications.
 - Existing dimension candidates are deterministically classified as inspection dimensions.
+# `V0409__drawing_legend_configuration.sql`
+
+- Creates versioned `qms_drawing_legend_rule`, seeds seven Jinheng symbols, permission/menu,
+  and initially classifies evidence-backed pending candidates.

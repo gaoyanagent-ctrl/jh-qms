@@ -856,3 +856,8 @@ TASK-0405 parse-result contract:
 `iaf-wms-strategy`
 - Purpose: WMS strategy rules such as putaway, allocation, and picking strategies.
 - Current state: module POM only.
+# QMS drawing legend rules
+
+- `DrawingLegendRuleService` and `JdbcDrawingLegendRuleRepository` manage tenant rules.
+- Enabled rules classify parser-created pending candidates; configuration changes preserve
+  reviewed and manually entered characteristics.

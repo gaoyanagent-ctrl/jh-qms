@@ -16,10 +16,14 @@ import type {
   QmsDrawingRevisionFile,
   QmsDrawingRevisionFileRole
 } from '@iaf/domain-types';
+import type { QmsDrawingLegendRule, QmsDrawingLegendRuleUpdateRequest } from '@iaf/domain-types';
 import type { QmsFileObject } from '@iaf/domain-types';
 import { apiClient } from '../../../api/client';
 
 export const qmsEngineeringApi = {
+  listDrawingLegendRules: () => apiClient.get<QmsDrawingLegendRule[]>('/api/qms/drawing-legend-rules'),
+  updateDrawingLegendRules: (request: QmsDrawingLegendRuleUpdateRequest) =>
+    apiClient.put<QmsDrawingLegendRule[]>('/api/qms/drawing-legend-rules', request),
   listParts: (params: { keyword?: string; pageNo: number; pageSize: number }) =>
     apiClient.get<PageResult<QmsPart>>('/api/qms/parts', { query: params }),
   getPart: (id: number) => apiClient.get<QmsPart>(`/api/qms/parts/${id}`),

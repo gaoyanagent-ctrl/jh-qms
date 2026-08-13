@@ -52,7 +52,8 @@ export const QMS_PERMISSIONS = {
   drawingRevisionCreate: 'qms:drawing-revision:create',
   drawingRevisionUpload: 'qms:drawing-revision:upload',
   drawingRevisionRetryParse: 'qms:drawing-revision:retry-parse',
-  qualityCharacteristicReview: 'qms:quality-characteristic:review'
+  qualityCharacteristicReview: 'qms:quality-characteristic:review',
+  drawingLegendManage: 'qms:drawing-legend:manage'
 } as const;
 
 export type QmsPermissionCode = (typeof QMS_PERMISSIONS)[keyof typeof QMS_PERMISSIONS];

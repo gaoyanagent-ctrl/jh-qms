@@ -213,6 +213,7 @@ export const resources = {
         kanban: '平台 Kanban',
         qms: '质量管理',
         qmsParts: '工程数据',
+        qmsDrawingLegend: '图纸图例配置',
         qmsPartDetail: '零件详情'
       },
       qms: {
@@ -259,6 +260,13 @@ export const resources = {
           revisionCode: '版本号', revisionSeq: '版本序号', effectiveDate: '生效日期', parseStatus: '解析状态',
           reviewStatus: '复核状态', supersedesRevision: '替代版本', file: '源文件', parseJob: '解析任务'
         }
+      },
+      qmsLegend: {
+        title: '图纸图例配置', subtitle: '维护图纸符号与质量特性分类的映射规则', rules: '识别规则',
+        enabled: '启用', marker: '图例符号', meaning: '图例说明', classification: '质量分类', matchMode: '匹配方式', priority: '优先级',
+        contains: '文本包含', wraps: '包裹尺寸值', saved: '图例配置已保存，待复核候选已重新分类',
+        effectTitle: '规则生效范围', effectDescription: '保存后立即用于后续图纸解析，并重新分类当前组织内待复核的数据；不会覆盖已确认或已驳回的人工结果。',
+        example: '识别示例', important: '重要特性'
       },
       qmsReview: {
         title: '图纸复核工作台', invalidRevision: '无效的图纸版本 ID', evidence: '来源证据', viewer: '图纸预览',
@@ -866,6 +874,7 @@ export const resources = {
         kanban: 'Platform Kanban',
         qms: 'Quality Management',
         qmsParts: 'Engineering Data',
+        qmsDrawingLegend: 'Drawing Legend',
         qmsPartDetail: 'Part Detail'
       },
       qms: {
@@ -912,6 +921,13 @@ export const resources = {
           revisionCode: 'Revision', revisionSeq: 'Sequence', effectiveDate: 'Effective date', parseStatus: 'Parse status',
           reviewStatus: 'Review status', supersedesRevision: 'Supersedes revision', file: 'Source file', parseJob: 'Parse job'
         }
+      },
+      qmsLegend: {
+        title: 'Drawing Legend Configuration', subtitle: 'Map drawing symbols to quality-characteristic classifications', rules: 'Recognition rules',
+        enabled: 'Enabled', marker: 'Marker', meaning: 'Legend meaning', classification: 'Classification', matchMode: 'Match mode', priority: 'Priority',
+        contains: 'Text contains', wraps: 'Wraps dimension', saved: 'Legend saved and pending candidates reclassified',
+        effectTitle: 'Rule scope', effectDescription: 'Saving affects future parsing and pending candidates in the current organization. Confirmed or rejected human decisions are preserved.',
+        example: 'Recognition example', important: 'Important characteristic'
       },
       qmsReview: {
         title: 'Drawing Review Workbench', invalidRevision: 'Invalid drawing revision ID', evidence: 'Source Evidence', viewer: 'Drawing Viewer',
