@@ -201,6 +201,7 @@ export const resources = {
       },
       menu: {
         qmsDrawingReview: '图纸评审',
+        qmsInspectionStandard: '检验标准',
         workbench: '工作台',
         platform: '平台管理',
         users: '用户管理',
@@ -862,6 +863,7 @@ export const resources = {
       },
       menu: {
         qmsDrawingReview: 'Drawing Review',
+        qmsInspectionStandard: 'Inspection Standard',
         workbench: 'Workbench',
         platform: 'Platform',
         users: 'Users',

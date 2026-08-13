@@ -619,3 +619,8 @@ The parser lifecycle is an internal application port, not an unauthenticated HTT
 - `GET /api/qms/drawing-legend-rules` lists tenant legend mappings.
 - `PUT /api/qms/drawing-legend-rules` applies versioned bulk edits and reclassifies
   evidence-backed pending candidates; both require `qms:drawing-legend:manage`.
+# QMS inspection standard draft
+
+- `GET /api/qms/drawing-revisions/{revisionId}/inspection-standard` reads the current draft.
+- `POST .../generate` creates rule-derived items only from eligible confirmed characteristics.
+- `PUT .../{id}` saves execution fields and reaction plan with optimistic locking.

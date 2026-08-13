@@ -293,3 +293,6 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
 
 - Creates versioned `qms_drawing_legend_rule`, seeds seven Jinheng symbols, permission/menu,
   and initially classifies evidence-backed pending candidates.
+# `V0410__inspection_standard_draft.sql`
+
+- Creates versioned Inspection Standard headers/items with characteristic and evidence lineage.

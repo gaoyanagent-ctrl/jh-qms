@@ -113,7 +113,7 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(revision.revisionSeq()).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from qms_audit_log", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
-                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(10);
+                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(11);
         assertThat(jdbc.queryForObject("select count(*) from qms_drawing_parse_job", Integer.class)).isEqualTo(1);
         assertThat(parseResults.findModel(1, 10, revisionId)).isPresent();
         assertThat(parseResults.findEntities(1, 10, revisionId)).extracting(DrawingEntity::entityId)
