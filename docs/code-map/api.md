@@ -577,7 +577,12 @@ business keys without creating duplicate rows. A transport `Idempotency-Key` led
 deferred to the upload workflow.
 # QMS drawing revision files
 
-- `POST /api/qms/drawing-revisions/{revisionId}/file` — multipart PDF/DWG upload.
+- A revision owns two role-specific files: `DWG_SOURCE` for parsing and
+  `PDF_REFERENCE` for human-readable visual comparison.
+- `GET /api/qms/drawing-revisions/{revisionId}/files` — list both attachments.
+- `POST /api/qms/drawing-revisions/{revisionId}/files/{role}` — upload the file for one role.
+- `GET /api/qms/drawing-revisions/{revisionId}/files/{role}/content` — authenticated role content.
+- `POST /api/qms/drawing-revisions/{revisionId}/file` — legacy primary PDF/DWG upload.
 - `GET /api/qms/drawing-revisions/{revisionId}/file` — file metadata.
 - `GET /api/qms/drawing-revisions/{revisionId}/file/content` — authenticated content download.
 

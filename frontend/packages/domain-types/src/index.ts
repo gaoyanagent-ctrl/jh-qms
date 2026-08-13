@@ -158,6 +158,11 @@ export interface QmsFileObject {
   checksumSha256: string;
   createdAt: string;
 }
+export type QmsDrawingRevisionFileRole = 'DWG_SOURCE' | 'PDF_REFERENCE';
+export interface QmsDrawingRevisionFile {
+  role: QmsDrawingRevisionFileRole;
+  file: QmsFileObject;
+}
 
 export interface LoginRequest {
   tenantCode: string;

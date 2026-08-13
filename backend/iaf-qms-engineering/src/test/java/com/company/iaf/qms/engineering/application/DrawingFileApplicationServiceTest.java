@@ -1,12 +1,14 @@
 package com.company.iaf.qms.engineering.application;
 
 import com.company.iaf.qms.engineering.domain.model.DrawingRevision;
+import com.company.iaf.qms.engineering.domain.model.DrawingRevisionFileRole;
 import com.company.iaf.qms.engineering.domain.model.QmsFileObject;
 import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionRepository;
 import com.company.iaf.qms.engineering.domain.repository.QmsAuditTrail;
 import com.company.iaf.qms.engineering.domain.repository.QmsFileObjectRepository;
 import com.company.iaf.qms.engineering.domain.repository.QmsObjectStorage;
 import com.company.iaf.qms.engineering.domain.repository.DrawingParseJobRepository;
+import com.company.iaf.qms.engineering.domain.repository.DrawingRevisionFileRepository;
 import com.company.iaf.platform.statemachine.application.DefaultStateMachineService;
 import com.company.iaf.shared.exception.BusinessException;
 import org.junit.jupiter.api.Test;
@@ -29,8 +31,9 @@ class DrawingFileApplicationServiceTest {
     private final QmsObjectStorage storage = mock(QmsObjectStorage.class);
     private final QmsAuditTrail audit = mock(QmsAuditTrail.class);
     private final DrawingParseJobRepository parseJobs = mock(DrawingParseJobRepository.class);
+    private final DrawingRevisionFileRepository revisionFiles = mock(DrawingRevisionFileRepository.class);
     private final DrawingFileApplicationService service = new DrawingFileApplicationService(
-            revisions, files, storage, audit, parseJobs, new DefaultStateMachineService());
+            revisions, files, storage, audit, parseJobs, revisionFiles, new DefaultStateMachineService());
 
     @Test
     void rejectsUnsupportedExtensionBeforeObjectStorageWrite() {
@@ -74,6 +77,29 @@ class DrawingFileApplicationServiceTest {
         verify(storage).put(any(), any(), eq((long) content.length), eq("application/pdf"));
         verify(parseJobs).enqueue(anyLong(), eq(1L), eq(10L), eq(5L), eq(9L), eq("PDF"), eq(1));
         verify(audit).record(eq(1L), anyLong(), eq("DRAWING_REVISION_FILE_UPLOADED"),
+                eq("DrawingRevision"), eq(5L), any());
+    }
+
+    @Test
+    void storesPdfReferenceWithoutChangingRevisionOrStartingParseJob() {
+        byte[] content = "%PDF-1.7 reference".getBytes();
+        DrawingRevision revision = DrawingRevision.metadataDraft(1, 10, 3, "A", 1, null, null);
+        when(revisions.findById(1, 10, 5)).thenReturn(Optional.of(revision));
+        when(storage.bucket()).thenReturn("qms-files");
+        when(files.insert(anyLong(), any())).thenReturn(9L);
+        QmsFileObject stored = new QmsFileObject(9L, 1, 10, "drawing.pdf", "application/pdf", "pdf",
+                content.length, "checksum", "qms-files", "object-key", 0, OffsetDateTime.now());
+        when(files.findById(1, 10, 9)).thenReturn(Optional.of(stored));
+
+        var response = service.upload(1, 10, 5, DrawingRevisionFileRole.PDF_REFERENCE,
+                new MockMultipartFile("file", "drawing.pdf", "application/pdf", content));
+
+        assertThat(response.id()).isEqualTo(9L);
+        verify(revisionFiles).attach(anyLong(), eq(1L), eq(10L), eq(5L), eq(9L),
+                eq(DrawingRevisionFileRole.PDF_REFERENCE));
+        verifyNoInteractions(parseJobs);
+        verify(revisions, never()).attachFile(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), any(), any(), any(), anyInt());
+        verify(audit).record(eq(1L), anyLong(), eq("DRAWING_REVISION_REFERENCE_FILE_UPLOADED"),
                 eq("DrawingRevision"), eq(5L), any());
     }
 }

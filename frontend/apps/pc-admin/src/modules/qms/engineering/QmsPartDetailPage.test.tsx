@@ -21,6 +21,8 @@ vi.mock('./api', () => ({
     listLatestParseJobs: vi.fn(),
     retryParseJob: vi.fn(),
     uploadRevisionFile: vi.fn(),
+    uploadRevisionRoleFile: vi.fn(),
+    listRevisionFiles: vi.fn(),
     getRevision: vi.fn()
   }
 }));
@@ -66,6 +68,7 @@ describe('QmsPartDetailPage', () => {
       createdAt: '2026-08-12T00:00:00Z', updatedAt: '2026-08-12T00:00:00Z'
     }]);
     vi.mocked(qmsEngineeringApi.listLatestParseJobs).mockResolvedValue([]);
+    vi.mocked(qmsEngineeringApi.listRevisionFiles).mockResolvedValue([]);
     vi.mocked(qmsEngineeringApi.createDrawing).mockResolvedValue({} as never);
     vi.mocked(qmsEngineeringApi.createRevision).mockResolvedValue({} as never);
   });
@@ -88,7 +91,8 @@ describe('QmsPartDetailPage', () => {
     expect(await screen.findByText('JH-BRK-001 · Bracket')).toBeInTheDocument();
     expect(await screen.findByText('DWG-BRK-001')).toBeInTheDocument();
     expect((await screen.findAllByText('A')).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: '上传文件' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '上传DWG' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '上传PDF' })).toBeEnabled();
   });
 
   it('keeps the upload action visible but disabled without upload permission', async () => {
@@ -100,7 +104,8 @@ describe('QmsPartDetailPage', () => {
       }
     });
     renderPage();
-    expect(await screen.findByRole('button', { name: '上传文件' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: '上传DWG' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '上传PDF' })).toBeDisabled();
   });
 
   it('creates a drawing through the permission-aware form', async () => {
