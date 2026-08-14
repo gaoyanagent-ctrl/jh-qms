@@ -113,7 +113,7 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(revision.revisionSeq()).isEqualTo(1);
         assertThat(jdbc.queryForObject("select count(*) from qms_audit_log", Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
-                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(14);
+                "select count(*) from sys_permission where permission_code like 'qms:%'", Integer.class)).isEqualTo(18);
         assertThat(jdbc.queryForList("select permission_code from sys_permission where permission_code like 'qms:inspection-standard:%' order by permission_code", String.class))
                 .containsExactly("qms:inspection-standard:approve", "qms:inspection-standard:edit",
                         "qms:inspection-standard:release", "qms:inspection-standard:submit");
@@ -181,7 +181,33 @@ class QmsEngineeringPostgresIntegrationTest {
         assertThat(characteristics.review(3, 1, 10, revisionId, addedInspection.id(), addedInspection.version(),
                 "CONFIRMED", null, null, null, null, null, null, null,
                 false, null, null, null, null, null, null, "no longer inspected")).isTrue();
-        assertThat(standards.generate(1, 10, revisionId).items()).hasSize(1);
+        var finalStandard = standards.generate(1, 10, revisionId);
+        assertThat(finalStandard.items()).hasSize(1);
+        jdbc.update("update qms_inspection_standard set status='RELEASED',approval_status='APPROVED' where id=?", finalStandard.id());
+        jdbc.update("update qms_inspection_standard_item set category='PERFORMANCE',supplier_batch_sampling='每批',supplier_annual_sampling='每年一次',review_status='CONFIRMED' where id=?", finalStandard.items().getFirst().id());
+        var validationPlans = new ValidationPlanService(jdbc, audit,
+                new com.company.iaf.platform.statemachine.application.DefaultStateMachineService(), approvalService);
+        var validationPlan = validationPlans.generate(1, 10, finalStandard.id());
+        assertThat(validationPlan.items()).singleElement().satisfies(item -> {
+            assertThat(item.batchRequired()).isTrue();
+            assertThat(item.typeRequired()).isTrue();
+            assertThat(item.dvRequired()).isFalse();
+            assertThat(item.pvRequired()).isFalse();
+            assertThat(item.methodAcceptanceCriteria()).isEqualTo(item.standardSource());
+        });
+        var planItem = validationPlan.items().getFirst();
+        var updatedPlan = validationPlans.update(1, 10, finalStandard.id(), validationPlan.id(),
+                new com.company.iaf.qms.engineering.interfaces.dto.ValidationPlanUpdateRequest(
+                        validationPlan.version(), 88L, List.of(new com.company.iaf.qms.engineering.interfaces.dto.ValidationPlanUpdateRequest.Item(
+                        planItem.id(), "耐久试验合格", 99L, true, false, planItem.typeRequired(),
+                        planItem.batchRequired(), 3, java.time.LocalDate.of(2026, 8, 15),
+                        java.time.LocalDate.of(2026, 8, 20), "沿用已验证方案"))));
+        assertThat(updatedPlan.items()).singleElement().satisfies(item -> {
+            assertThat(item.reviewStatus()).isEqualTo("CONFIRMED");
+            assertThat(item.dvRequired()).isTrue();
+            assertThat(item.laboratoryId()).isEqualTo(99L);
+            assertThat(item.quantity()).isEqualTo(3);
+        });
         var corrected = characteristics.findById(1, 10, revisionId, confirmed.id()).orElseThrow();
         assertThat(characteristics.review(2, 1, 10, revisionId, corrected.id(), corrected.version(),
                 "REJECTED", null, null, null, null, null, corrected.characteristicType(), null,

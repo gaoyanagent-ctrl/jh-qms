@@ -837,6 +837,8 @@ TASK-0405 parse-result contract:
   eligible confirmed characteristics are added or refreshed, obsolete items are soft-deleted,
   and user-entered sampling, methods, and remarks are preserved. Approval and released states
   reject synchronization.
+- TASK-0417 adds `ValidationPlanService` for rule-derived performance-item mapping, human review,
+  approval, rejection, and controlled release through the shared state-machine and approval ports.
 
 ### Manufacturing Modules
 

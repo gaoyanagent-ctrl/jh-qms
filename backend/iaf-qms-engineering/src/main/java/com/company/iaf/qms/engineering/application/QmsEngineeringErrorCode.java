@@ -34,6 +34,12 @@ public enum QmsEngineeringErrorCode implements ErrorCode {
     INSPECTION_STANDARD_CONFLICT("QMS_INSPECTION_STANDARD_CONFLICT", "Inspection standard was changed by another user"),
     INSPECTION_STANDARD_INVALID_STATE("QMS_INSPECTION_STANDARD_INVALID_STATE", "Inspection standard action is not allowed in its current state"),
     INSPECTION_STANDARD_RELEASE_BLOCKED("QMS_INSPECTION_STANDARD_RELEASE_BLOCKED", "Inspection standard has unresolved or unapproved items"),
+    VALIDATION_PLAN_NOT_FOUND("QMS_VALIDATION_PLAN_NOT_FOUND", "Validation plan not found"),
+    VALIDATION_PLAN_SOURCE_NOT_RELEASED("QMS_VALIDATION_PLAN_SOURCE_NOT_RELEASED", "A released inspection standard is required"),
+    VALIDATION_PLAN_NO_PERFORMANCE_SOURCE("QMS_VALIDATION_PLAN_NO_PERFORMANCE_SOURCE", "No performance inspection item is available"),
+    VALIDATION_PLAN_CONFLICT("QMS_VALIDATION_PLAN_CONFLICT", "Validation plan was changed by another user"),
+    VALIDATION_PLAN_INVALID_STATE("QMS_VALIDATION_PLAN_INVALID_STATE", "Validation plan action is not allowed in its current state"),
+    VALIDATION_PLAN_RELEASE_BLOCKED("QMS_VALIDATION_PLAN_RELEASE_BLOCKED", "Validation plan has unresolved or unapproved items"),
     AUDIT_WRITE_FAILED("QMS_AUDIT_WRITE_FAILED", "QMS audit record could not be written");
 
     private final String code;

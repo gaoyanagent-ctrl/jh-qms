@@ -626,3 +626,8 @@ Planned stack:
   for draft/rejected states, exposes permission-aware controlled actions, and shows approval history.
 - `qmsEngineeringApi.actOnInspectionStandard` owns submit/approve/reject/release HTTP calls.
 - `QmsInspectionStandard` domain type includes controlled-document actors, timestamps, and actions.
+
+# QMS validation plan
+
+- `QmsValidationPlanPage` opens from an inspection standard, renders VAL-001/VAL-002 mappings,
+  captures human DV/PV/laboratory/quantity/date decisions, and exposes permission-aware approval actions.

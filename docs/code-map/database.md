@@ -309,3 +309,7 @@ Existing Flyway migrations must not be edited after commit. Add a new migration 
 - Promotes existing pending inspection dimensions to `CONFIRMED` only when they are not
   reference or ideal dimensions, recording automatic reviewer metadata and a version increment.
 - Adds no table, API, or permission; later parser runs apply the same rule after legend classification.
+# QMS validation plan
+
+- `V0413__validation_plan.sql` creates controlled `qms_validation_plan` and
+  `qms_validation_plan_item` tables, source lineage, indexes, and four validation-plan permissions.

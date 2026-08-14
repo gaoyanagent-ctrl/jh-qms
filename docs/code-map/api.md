@@ -629,3 +629,9 @@ The parser lifecycle is an internal application port, not an unauthenticated HTT
 - `POST .../{id}/approve|reject` records a human decision; self-approval is forbidden.
 - `POST .../{id}/release` releases an approved, fully reviewed standard as read-only.
 - Permissions: `qms:inspection-standard:submit|approve|release` for their respective actions.
+# QMS validation plan
+
+- `GET /api/qms/inspection-standards/{standardId}/validation-plan` reads the current plan.
+- `POST .../generate` creates a draft from released-standard performance items.
+- `PUT .../{id}` confirms DV/PV, lab, quantity, dates, criteria, and equivalence fields.
+- `POST .../{id}/submit-approval|approve|reject|release` controls publication.

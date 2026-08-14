@@ -30,4 +30,12 @@ describe('qmsEngineeringApi', () => {
     expect(post).toHaveBeenNthCalledWith(1, '/api/qms/drawing-revisions/5/inspection-standard/8/submit-approval', { comment: 'ready' });
     expect(post).toHaveBeenNthCalledWith(2, '/api/qms/drawing-revisions/5/inspection-standard/8/release', { comment: 'publish' });
   });
+
+  it('uses controlled validation plan endpoints nested under the source standard', async () => {
+    const post = vi.spyOn(apiClient, 'post').mockResolvedValue({});
+    await qmsEngineeringApi.generateValidationPlan(8);
+    await qmsEngineeringApi.actOnValidationPlan(8, 13, 'submit-approval', 'ready');
+    expect(post).toHaveBeenNthCalledWith(1, '/api/qms/inspection-standards/8/validation-plan/generate');
+    expect(post).toHaveBeenNthCalledWith(2, '/api/qms/inspection-standards/8/validation-plan/13/submit-approval', { comment: 'ready' });
+  });
 });

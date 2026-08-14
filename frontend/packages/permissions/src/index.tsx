@@ -57,7 +57,11 @@ export const QMS_PERMISSIONS = {
   inspectionStandardEdit: 'qms:inspection-standard:edit',
   inspectionStandardSubmit: 'qms:inspection-standard:submit',
   inspectionStandardApprove: 'qms:inspection-standard:approve',
-  inspectionStandardRelease: 'qms:inspection-standard:release'
+  inspectionStandardRelease: 'qms:inspection-standard:release',
+  validationPlanEdit: 'qms:validation-plan:edit',
+  validationPlanSubmit: 'qms:validation-plan:submit',
+  validationPlanApprove: 'qms:validation-plan:approve',
+  validationPlanRelease: 'qms:validation-plan:release'
 } as const;
 
 export type QmsPermissionCode = (typeof QMS_PERMISSIONS)[keyof typeof QMS_PERMISSIONS];

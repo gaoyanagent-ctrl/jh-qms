@@ -17,6 +17,7 @@ import { QmsPartDetailPage } from './modules/qms/engineering/QmsPartDetailPage';
 import { QmsDrawingReviewWorkbenchPage } from './modules/qms/engineering/QmsDrawingReviewWorkbenchPage';
 import { QmsDrawingLegendConfigPage } from './modules/qms/engineering/QmsDrawingLegendConfigPage';
 import { QmsInspectionStandardPage } from './modules/qms/engineering/QmsInspectionStandardPage';
+import { QmsValidationPlanPage } from './modules/qms/engineering/QmsValidationPlanPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +61,7 @@ export const App = () => (
               <Route path="/qms/engineering/parts/:partId" element={<QmsPartDetailPage />} />
               <Route path="/qms/engineering/drawing-revisions/:revisionId/review" element={<QmsDrawingReviewWorkbenchPage />} />
               <Route path="/qms/engineering/drawing-revisions/:revisionId/inspection-standard" element={<QmsInspectionStandardPage />} />
+              <Route path="/qms/engineering/inspection-standards/:inspectionStandardId/validation-plan" element={<QmsValidationPlanPage />} />
             </Route>
             <Route element={<PermissionRoute require={QMS_PERMISSIONS.drawingLegendManage} fallbackPath="/" />}>
               <Route path="/qms/engineering/drawing-legend" element={<QmsDrawingLegendConfigPage />} />
