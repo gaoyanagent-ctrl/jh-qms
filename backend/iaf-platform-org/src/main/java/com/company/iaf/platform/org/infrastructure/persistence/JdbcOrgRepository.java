@@ -54,7 +54,7 @@ public class JdbcOrgRepository implements OrgRepository {
         return jdbcTemplate.query(
                 "select " + SELECT_COLUMNS + """
                           from sys_org
-                         where tenant_id = ? and """ + DELETED_FALSE + """
+                         where tenant_id = ? and deleted = false
                          order by coalesce(parent_id, 0), sort_no, id
                         """,
                 this::mapOrg,

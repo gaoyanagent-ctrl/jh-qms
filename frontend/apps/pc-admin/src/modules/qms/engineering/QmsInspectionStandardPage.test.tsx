@@ -45,4 +45,12 @@ describe('QmsInspectionStandardPage',()=>{
     expect(vi.mocked(qmsEngineeringApi.updateInspectionStandard).mock.invocationCallOrder[0])
       .toBeLessThan(vi.mocked(qmsEngineeringApi.actOnInspectionStandard).mock.invocationCallOrder[0]);
   });
+
+  it('explains and disables approval for the submitting user',async()=>{
+    vi.mocked(qmsEngineeringApi.getInspectionStandard).mockResolvedValue({...standard(),status:'APPROVING',approvalStatus:'PENDING',submittedBy:1});
+    renderPage();
+    expect(await screen.findByText('提交人不能审批自己的申请，请使用其他审批账号操作。')).toBeInTheDocument();
+    expect(screen.getByRole('button',{name:/批\s*准/})).toBeDisabled();
+    expect(screen.getByRole('button',{name:/驳\s*回/})).toBeDisabled();
+  });
 });
