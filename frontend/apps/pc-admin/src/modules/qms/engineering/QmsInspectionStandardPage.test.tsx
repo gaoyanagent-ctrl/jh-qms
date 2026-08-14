@@ -4,7 +4,7 @@ import { QMS_PERMISSIONS } from '@iaf/permissions';
 import { IafThemeProvider } from '@iaf/theme';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App as AntApp } from 'antd';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { qmsEngineeringApi } from './api';
@@ -29,5 +29,20 @@ describe('QmsInspectionStandardPage',()=>{
     fireEvent.click(await screen.findByRole('button',{name:'同步质量特性'}));
     await waitFor(()=>expect(qmsEngineeringApi.generateInspectionStandard).toHaveBeenCalledWith(5));
     expect(await screen.findByText('尺寸 2')).toBeInTheDocument();
+  });
+
+  it('saves the current draft before submitting it for approval',async()=>{
+    const saved={...standard(),version:2,items:standard().items.map(item=>({...item,reviewStatus:'CONFIRMED'}))};
+    const submitted={...saved,status:'APPROVING',approvalStatus:'PENDING'};
+    vi.mocked(qmsEngineeringApi.updateInspectionStandard).mockResolvedValue(saved);
+    vi.mocked(qmsEngineeringApi.actOnInspectionStandard).mockResolvedValue(submitted);
+    renderPage();
+    fireEvent.click(await screen.findByRole('button',{name:'提交审批'}));
+    const dialog=await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button',{name:'OK'}));
+    await waitFor(()=>expect(qmsEngineeringApi.updateInspectionStandard).toHaveBeenCalled());
+    expect(qmsEngineeringApi.actOnInspectionStandard).toHaveBeenCalledWith(5,8,'submit-approval','');
+    expect(vi.mocked(qmsEngineeringApi.updateInspectionStandard).mock.invocationCallOrder[0])
+      .toBeLessThan(vi.mocked(qmsEngineeringApi.actOnInspectionStandard).mock.invocationCallOrder[0]);
   });
 });
