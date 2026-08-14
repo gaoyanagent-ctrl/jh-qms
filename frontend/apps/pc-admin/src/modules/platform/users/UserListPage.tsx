@@ -288,6 +288,9 @@ export const UserListPage = () => {
               <Form.Item name="password" label={t('users.password')} rules={[{ required: true, message: t('auth.required'), min: 8 }]}>
                 <Input.Password />
               </Form.Item>
+              <Form.Item name="primaryOrgId" label={t('users.primaryOrganization')} rules={[{ required: true, message: t('auth.required') }]}>
+                <Select showSearch loading={orgTreeQuery.isLoading} options={orgOptions} optionFilterProp="label" />
+              </Form.Item>
             </>
           )}
           <Form.Item name="displayName" label={t('users.displayName')} rules={[{ required: true, message: t('auth.required') }]}>

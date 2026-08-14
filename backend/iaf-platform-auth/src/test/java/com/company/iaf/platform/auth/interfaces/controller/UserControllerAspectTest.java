@@ -148,7 +148,7 @@ class UserControllerAspectTest {
         mockMvc.perform(post("/api/platform/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"carol\",\"password\":\"password123\","
-                                + "\"displayName\":\"Carol\"}"))
+                                + "\"displayName\":\"Carol\",\"primaryOrgId\":1}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

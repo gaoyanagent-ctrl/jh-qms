@@ -112,9 +112,14 @@ public class UserApplicationService {
         if (userRepository.existsByUsername(tenantId, request.username())) {
             throw new BusinessException(PlatformAuthErrorCode.USERNAME_ALREADY_EXISTS);
         }
+        Long primaryOrgId = request.primaryOrgId() != null
+                ? request.primaryOrgId() : SecurityContext.getCurrentOrgId().orElse(null);
+        if (primaryOrgId == null || !userOrgRepository.allOrgsExist(tenantId, List.of(primaryOrgId))) {
+            throw new BusinessException(CommonErrorCode.VALIDATION_FAILED, "A valid primary organization is required");
+        }
         long operatorUserId = SecurityContext.getUserId().orElse(0L);
         PlatformUser draft = new PlatformUser(
-                null,
+                primaryOrgId,
                 tenantId,
                 request.username(),
                 request.displayName(),
@@ -128,8 +133,11 @@ public class UserApplicationService {
         );
         String hash = passwordEncoder.encode(request.password());
         long id = userRepository.insert(operatorUserId, draft, hash);
+        userOrgRepository.replaceUserOrgs(operatorUserId, tenantId, id,
+                List.of(new UserOrgAssignment(primaryOrgId, true, 100, null, null)));
+        userOrgRepository.updateUserPrimaryOrg(operatorUserId, tenantId, id, primaryOrgId);
         return userRepository.findById(tenantId, id)
-                .map(UserResponse::from)
+                .map(user -> UserResponse.from(user, userOrgRepository.findByUserId(tenantId, id)))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.INTERNAL_ERROR, "Inserted user could not be reloaded"));
     }
 

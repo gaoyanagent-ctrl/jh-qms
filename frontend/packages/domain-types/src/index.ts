@@ -274,6 +274,7 @@ export interface UserCreateRequest {
   displayName: string;
   mobile?: string | null;
   email?: string | null;
+  primaryOrgId: number;
 }
 
 export interface UserUpdateRequest {

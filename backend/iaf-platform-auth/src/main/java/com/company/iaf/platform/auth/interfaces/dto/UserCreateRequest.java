@@ -3,6 +3,7 @@ package com.company.iaf.platform.auth.interfaces.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
 
 /**
  * Request body for {@code POST /api/platform/users}. The caller
@@ -27,6 +28,12 @@ public record UserCreateRequest(
 
         @Email
         @Size(max = 128)
-        String email
+        String email,
+
+        @Positive
+        Long primaryOrgId
 ) {
+    public UserCreateRequest(String username, String password, String displayName, String mobile, String email) {
+        this(username, password, displayName, mobile, email, 1L);
+    }
 }
