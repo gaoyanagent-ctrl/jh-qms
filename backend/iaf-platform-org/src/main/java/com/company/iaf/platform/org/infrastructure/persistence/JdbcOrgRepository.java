@@ -105,7 +105,8 @@ public class JdbcOrgRepository implements OrgRepository {
                  where tenant_id = ?
                    and id = ?
                    and version = ?
-                   and """ + DELETED_FALSE,
+                   and deleted = false
+                """,
                 org.parentId(),
                 org.orgCode(),
                 org.orgName(),

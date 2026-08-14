@@ -17,8 +17,6 @@ import java.util.stream.Collectors;
 @Repository
 public class JdbcPlatformUserRepository implements PlatformUserRepository {
 
-    private static final String DELETED_FALSE = "deleted = false";
-
     private final JdbcTemplate jdbcTemplate;
 
     public JdbcPlatformUserRepository(JdbcTemplate jdbcTemplate) {
@@ -108,7 +106,7 @@ public class JdbcPlatformUserRepository implements PlatformUserRepository {
                          or display_name ilike ?
                          or coalesce(mobile, '') ilike ?
                          or coalesce(email, '') ilike ? )
-                   and """ + DELETED_FALSE + """
+                   and deleted = false
                    and exists (
                          select 1
                            from sys_user_org uo
@@ -167,7 +165,8 @@ public class JdbcPlatformUserRepository implements PlatformUserRepository {
                  where tenant_id = ?
                    and id = ?
                    and version = ?
-                   and """ + DELETED_FALSE,
+                   and deleted = false
+                """,
                 user.displayName(),
                 user.mobile(),
                 user.email(),
@@ -193,7 +192,8 @@ public class JdbcPlatformUserRepository implements PlatformUserRepository {
                  where tenant_id = ?
                    and id = ?
                    and version = ?
-                   and """ + DELETED_FALSE,
+                   and deleted = false
+                """,
                 status.name(),
                 operatorUserId,
                 tenantId,
@@ -214,7 +214,8 @@ public class JdbcPlatformUserRepository implements PlatformUserRepository {
                        updated_at = current_timestamp
                  where tenant_id = ?
                    and id = ?
-                   and """ + DELETED_FALSE,
+                   and deleted = false
+                """,
                 passwordHash,
                 operatorUserId,
                 tenantId,
