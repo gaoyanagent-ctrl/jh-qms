@@ -184,7 +184,18 @@ class QmsEngineeringPostgresIntegrationTest {
         var finalStandard = standards.generate(1, 10, revisionId);
         assertThat(finalStandard.items()).hasSize(1);
         jdbc.update("update qms_inspection_standard set status='RELEASED',approval_status='APPROVED' where id=?", finalStandard.id());
-        jdbc.update("update qms_inspection_standard_item set category='PERFORMANCE',supplier_batch_sampling='每批',supplier_annual_sampling='每年一次',review_status='CONFIRMED' where id=?", finalStandard.items().getFirst().id());
+        var performance = characteristics.createManual(3, 1, 10, revisionId, "PERFORMANCE", "耐久性能",
+                null, null, null, null, null, false, false, false, false, false, false, false, "manual performance");
+        assertThat(characteristics.review(3, 1, 10, revisionId, performance.id(), performance.version(),
+                "CONFIRMED", null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, "confirmed performance")).isTrue();
+        finalStandard = standards.generate(1, 10, revisionId);
+        assertThat(finalStandard.documentVersion()).isEqualTo(2);
+        assertThat(finalStandard.items()).filteredOn(item -> item.category().equals("PERFORMANCE"))
+                .singleElement().extracting(com.company.iaf.qms.engineering.interfaces.dto.InspectionStandardResponse.Item::itemName)
+                .isEqualTo("耐久性能");
+        jdbc.update("update qms_inspection_standard set status='RELEASED',approval_status='APPROVED' where id=?", finalStandard.id());
+        jdbc.update("update qms_inspection_standard_item set supplier_batch_sampling='每批',supplier_annual_sampling='每年一次',review_status='CONFIRMED' where inspection_standard_id=? and category='PERFORMANCE'", finalStandard.id());
         var validationPlans = new ValidationPlanService(jdbc, audit,
                 new com.company.iaf.platform.statemachine.application.DefaultStateMachineService(), approvalService);
         var validationPlan = validationPlans.generate(1, 10, finalStandard.id());

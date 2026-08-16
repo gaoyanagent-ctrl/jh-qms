@@ -37,14 +37,21 @@ public class InspectionStandardService {
     public InspectionStandardResponse generate(long t,long o,long r){
         requireRevision(t,o,r);var src=eligible(t,o,r);if(src.isEmpty())throw error(QmsEngineeringErrorCode.INSPECTION_STANDARD_NO_ELIGIBLE_SOURCE);
         long actor=actor();var old=find(t,o,r);if(old.isPresent()){
-            var current=old.get();if(!List.of(InspectionStandardStatus.AI_GENERATED,InspectionStandardStatus.DRAFT,InspectionStandardStatus.REJECTED).contains(status(current)))throw error(QmsEngineeringErrorCode.INSPECTION_STANDARD_INVALID_STATE);
+            var current=old.get();
+            if(status(current)==InspectionStandardStatus.RELEASED){
+                var first=src.getFirst();int nextVersion=current.documentVersion()+1;
+                Long id=jdbc.queryForObject("insert into qms_inspection_standard(tenant_id,org_id,standard_no,part_id,drawing_revision_id,document_version,created_by,updated_by) values(?,?,?,?,?,?,?,?) returning id",Long.class,t,o,"IS-"+first.get("drawing_no")+"-"+nextVersion,first.get("part_id"),r,nextVersion,actor,actor);
+                syncItems(t,o,id,src,actor);
+                return audited(t,actor,"INSPECTION_STANDARD_VERSION_CREATED",id,find(t,o,r).orElseThrow());
+            }
+            if(!List.of(InspectionStandardStatus.AI_GENERATED,InspectionStandardStatus.DRAFT,InspectionStandardStatus.REJECTED).contains(status(current)))throw error(QmsEngineeringErrorCode.INSPECTION_STANDARD_INVALID_STATE);
             syncItems(t,o,current.id(),src,actor);jdbc.update("update qms_inspection_standard set status='DRAFT',approval_status='NOT_SUBMITTED',updated_by=?,updated_at=current_timestamp,version=version+1 where tenant_id=? and org_id=? and id=? and deleted=false",actor,t,o,current.id());
             return audited(t,actor,"INSPECTION_STANDARD_DRAFT_SYNCHRONIZED",current.id(),find(t,o,r).orElseThrow());
         }
         var first=src.getFirst();Long id=jdbc.queryForObject("insert into qms_inspection_standard(tenant_id,org_id,standard_no,part_id,drawing_revision_id,created_by,updated_by) values(?,?,?,?,?,?,?) returning id",Long.class,t,o,"IS-"+first.get("drawing_no")+"-1",first.get("part_id"),r,actor,actor);syncItems(t,o,id,src,actor);return audited(t,actor,"INSPECTION_STANDARD_DRAFT_GENERATED",id,find(t,o,r).orElseThrow());
     }
 
-    private List<Map<String,Object>> eligible(long t,long o,long r){return jdbc.queryForList("select q.*,d.drawing_no from qms_quality_characteristic q join qms_drawing_revision v on v.tenant_id=q.tenant_id and v.id=q.drawing_revision_id join qms_drawing d on d.tenant_id=v.tenant_id and d.id=v.drawing_id where q.tenant_id=? and q.org_id=? and q.drawing_revision_id=? and q.review_status='CONFIRMED' and q.deleted=false and (q.inspection_dimension or q.mandatory_inspection) and not q.reference_dimension and not q.ideal_dimension order by q.id",t,o,r);}
+    private List<Map<String,Object>> eligible(long t,long o,long r){return jdbc.queryForList("select q.*,d.drawing_no from qms_quality_characteristic q join qms_drawing_revision v on v.tenant_id=q.tenant_id and v.id=q.drawing_revision_id join qms_drawing d on d.tenant_id=v.tenant_id and d.id=v.drawing_id where q.tenant_id=? and q.org_id=? and q.drawing_revision_id=? and q.review_status='CONFIRMED' and q.deleted=false and (q.characteristic_type='PERFORMANCE' or q.inspection_dimension or q.mandatory_inspection) and not q.reference_dimension and not q.ideal_dimension order by q.id",t,o,r);}
     private void syncItems(long t,long o,long id,List<Map<String,Object>> src,long actor){
         var eligibleIds=new HashSet<>(src.stream().map(x->((Number)x.get("id")).longValue()).toList());
         jdbc.update("update qms_inspection_standard_item set sequence_no=-id,updated_by=?,updated_at=current_timestamp where tenant_id=? and org_id=? and inspection_standard_id=? and deleted=false",actor,t,o,id);
