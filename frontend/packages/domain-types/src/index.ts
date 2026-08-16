@@ -327,7 +327,7 @@ export interface OrgUpdateRequest extends OrgCreateRequest {
   status: OrgStatus;
 }
 
-export type RoleStatus = 'ACTIVE' | 'DISABLED';
+export type RoleStatus = 'ACTIVE' | 'ENABLED' | 'DISABLED';
 
 export interface PlatformRole {
   id: number;

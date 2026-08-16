@@ -411,7 +411,7 @@ export const UserListPage = () => {
               showSearch
               loading={rolesQuery.isLoading || userRolesQuery.isLoading}
               options={(rolesQuery.data?.records ?? [])
-                .filter((role) => role.status === 'ACTIVE')
+                .filter((role) => role.status !== 'DISABLED')
                 .map((role) => ({ label: `${role.roleName} (${role.roleCode})`, value: role.id }))}
               optionFilterProp="label"
             />

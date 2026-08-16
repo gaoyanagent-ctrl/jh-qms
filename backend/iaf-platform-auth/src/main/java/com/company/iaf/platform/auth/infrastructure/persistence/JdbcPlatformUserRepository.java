@@ -246,7 +246,7 @@ public class JdbcPlatformUserRepository implements PlatformUserRepository {
         params.add(tenantId);
         params.addAll(roleIds);
         Integer count = jdbcTemplate.queryForObject(
-                "select count(*) from sys_role where tenant_id = ? and id in (" + placeholders + ") and deleted = false and status = 'ACTIVE'",
+                "select count(*) from sys_role where tenant_id = ? and id in (" + placeholders + ") and deleted = false and status = 'ENABLED'",
                 Integer.class, params.toArray());
         return count != null && count == roleIds.size();
     }
