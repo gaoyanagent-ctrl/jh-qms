@@ -6,6 +6,7 @@ import com.company.iaf.platform.auth.domain.model.UserStatus;
 import com.company.iaf.platform.auth.interfaces.dto.UserCreateRequest;
 import com.company.iaf.platform.auth.interfaces.dto.UserOrganizationsResponse;
 import com.company.iaf.platform.auth.interfaces.dto.UserResponse;
+import com.company.iaf.platform.auth.interfaces.dto.UserRolesResponse;
 import com.company.iaf.platform.auth.interfaces.dto.UserUpdateRequest;
 import com.company.iaf.platform.core.security.PermissionChecker;
 import com.company.iaf.platform.core.security.RequiresPermissionAspect;
@@ -155,6 +156,24 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.primaryOrgId").value(1));
+    }
+
+    @Test
+    void getAndReplaceUserRolesReturnAssignments() throws Exception {
+        when(userApplicationService.getUserRoles(1L, 1L))
+                .thenReturn(new UserRolesResponse(1L, List.of(2L)));
+        when(userApplicationService.replaceUserRoles(eq(1L), eq(1L), any()))
+                .thenReturn(new UserRolesResponse(1L, List.of(2L, 3L)));
+
+        mockMvc.perform(get("/api/platform/users/1/roles"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.roleIds[0]").value(2));
+
+        mockMvc.perform(put("/api/platform/users/1/roles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roleIds\":[2,3]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.roleIds.length()").value(2));
     }
 
     @Test

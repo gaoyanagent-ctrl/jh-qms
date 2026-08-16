@@ -6,6 +6,8 @@ import type {
   UserOrgAssignRequest,
   UserOrgContextSwitchRequest,
   UserOrganizationsResponse,
+  UserRoleAssignRequest,
+  UserRolesResponse,
   UserUpdateRequest
 } from '@iaf/domain-types';
 import { apiClient } from '../../../api/client';
@@ -21,6 +23,10 @@ export const usersApi = {
     apiClient.get<UserOrganizationsResponse>(`/api/platform/users/${id}/orgs`),
   assignUserOrganizations: (id: number, request: UserOrgAssignRequest) =>
     apiClient.put<UserOrganizationsResponse>(`/api/platform/users/${id}/orgs`, request),
+  getUserRoles: (id: number) =>
+    apiClient.get<UserRolesResponse>(`/api/platform/users/${id}/roles`),
+  assignUserRoles: (id: number, request: UserRoleAssignRequest) =>
+    apiClient.put<UserRolesResponse>(`/api/platform/users/${id}/roles`, request),
   switchUserOrgContext: (id: number, request: UserOrgContextSwitchRequest) =>
     apiClient.patch<PlatformUser>(`/api/platform/users/${id}/org-context`, request),
   disableUser: (id: number) =>

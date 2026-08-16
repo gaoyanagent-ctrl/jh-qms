@@ -7,6 +7,8 @@ import com.company.iaf.platform.auth.interfaces.dto.UserOrgAssignRequest;
 import com.company.iaf.platform.auth.interfaces.dto.UserOrgContextSwitchRequest;
 import com.company.iaf.platform.auth.interfaces.dto.UserOrganizationsResponse;
 import com.company.iaf.platform.auth.interfaces.dto.UserResponse;
+import com.company.iaf.platform.auth.interfaces.dto.UserRoleAssignRequest;
+import com.company.iaf.platform.auth.interfaces.dto.UserRolesResponse;
 import com.company.iaf.platform.auth.interfaces.dto.UserUpdateRequest;
 import com.company.iaf.shared.exception.BusinessException;
 import com.company.iaf.shared.exception.CommonErrorCode;
@@ -77,6 +79,19 @@ public class UserController {
             @Valid @RequestBody UserOrgAssignRequest request
     ) {
         return Result.ok(userApplicationService.replaceUserOrganizations(currentTenantId(), id, request));
+    }
+
+    @GetMapping("/{id}/roles")
+    public Result<UserRolesResponse> getRoles(@PathVariable("id") long id) {
+        return Result.ok(userApplicationService.getUserRoles(currentTenantId(), id));
+    }
+
+    @PutMapping("/{id}/roles")
+    public Result<UserRolesResponse> replaceRoles(
+            @PathVariable("id") long id,
+            @Valid @RequestBody UserRoleAssignRequest request
+    ) {
+        return Result.ok(userApplicationService.replaceUserRoles(currentTenantId(), id, request));
     }
 
     @PatchMapping("/{id}/org-context")

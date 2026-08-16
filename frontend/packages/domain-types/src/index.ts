@@ -254,6 +254,15 @@ export interface UserOrganizationsResponse {
   organizations: PlatformUserOrg[];
 }
 
+export interface UserRolesResponse {
+  userId: number;
+  roleIds: number[];
+}
+
+export interface UserRoleAssignRequest {
+  roleIds: number[];
+}
+
 export interface UserOrgAssignRequest {
   organizations: Array<{
     orgId: number;

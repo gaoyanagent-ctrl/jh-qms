@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from './api';
-import type { UserCreateRequest, UserOrgAssignRequest, UserUpdateRequest } from '@iaf/domain-types';
+import type { UserCreateRequest, UserOrgAssignRequest, UserRoleAssignRequest, UserUpdateRequest } from '@iaf/domain-types';
 
 export const useUsersQuery = (params: { keyword?: string; pageNo: number; pageSize: number }) => {
   return useQuery({
@@ -50,6 +50,23 @@ export const useAssignUserOrganizationsMutation = (options?: { onSuccess?: () =>
         queryClient.invalidateQueries({ queryKey: ['platform-users'] }),
         queryClient.invalidateQueries({ queryKey: ['platform-user-orgs', variables.id] })
       ]);
+      options?.onSuccess?.();
+    }
+  });
+};
+
+export const useUserRolesQuery = (userId?: number) => useQuery({
+  queryKey: ['platform-user-roles', userId],
+  queryFn: () => usersApi.getUserRoles(userId!),
+  enabled: Boolean(userId)
+});
+
+export const useAssignUserRolesMutation = (options?: { onSuccess?: () => void }) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, values }: { id: number; values: UserRoleAssignRequest }) => usersApi.assignUserRoles(id, values),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ['platform-user-roles', variables.id] });
       options?.onSuccess?.();
     }
   });

@@ -12,6 +12,8 @@ import com.company.iaf.platform.auth.interfaces.dto.UserCreateRequest;
 import com.company.iaf.platform.auth.interfaces.dto.UserOrgAssignRequest;
 import com.company.iaf.platform.auth.interfaces.dto.UserOrganizationsResponse;
 import com.company.iaf.platform.auth.interfaces.dto.UserResponse;
+import com.company.iaf.platform.auth.interfaces.dto.UserRoleAssignRequest;
+import com.company.iaf.platform.auth.interfaces.dto.UserRolesResponse;
 import com.company.iaf.platform.auth.interfaces.dto.UserUpdateRequest;
 import com.company.iaf.platform.core.security.RequiresPermission;
 import com.company.iaf.shared.exception.BusinessException;
@@ -237,6 +239,26 @@ public class UserApplicationService {
         userOrgRepository.replaceUserOrgs(operatorUserId, tenantId, userId, assignments);
         userOrgRepository.updateUserPrimaryOrg(operatorUserId, tenantId, userId, primaryOrgId);
         return UserOrganizationsResponse.from(userId, userOrgRepository.findByUserId(tenantId, userId));
+    }
+
+    @RequiresPermission("platform:user:view")
+    @Transactional(readOnly = true)
+    public UserRolesResponse getUserRoles(long tenantId, long userId) {
+        ensureUserExists(tenantId, userId);
+        return new UserRolesResponse(userId, userRepository.findRoleIds(tenantId, userId));
+    }
+
+    @RequiresPermission("platform:user:update")
+    @Transactional
+    public UserRolesResponse replaceUserRoles(long tenantId, long userId, UserRoleAssignRequest request) {
+        ensureTenantWritable(tenantId);
+        ensureUserExists(tenantId, userId);
+        List<Long> roleIds = request == null ? List.of() : request.safeRoleIds();
+        if (!userRepository.allRolesExist(tenantId, roleIds)) {
+            throw new BusinessException(CommonErrorCode.VALIDATION_FAILED, "One or more roles are invalid or disabled");
+        }
+        userRepository.replaceRoles(SecurityContext.getUserId().orElse(0L), tenantId, userId, roleIds);
+        return new UserRolesResponse(userId, userRepository.findRoleIds(tenantId, userId));
     }
 
     @RequiresPermission("platform:auth:me")

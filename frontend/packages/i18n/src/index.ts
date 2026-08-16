@@ -500,6 +500,8 @@ export const resources = {
         organizations: '组织归属',
         primaryOrganization: '主组织',
         assignOrganizations: '分配组织',
+        roles: '角色',
+        assignRoles: '分配角色',
         primaryOrgMustBeAssigned: '主组织必须在组织归属中',
         password: '初始密码',
         newPassword: '新密码'
@@ -1182,6 +1184,8 @@ export const resources = {
         organizations: 'Organizations',
         primaryOrganization: 'Primary organization',
         assignOrganizations: 'Assign organizations',
+        roles: 'Roles',
+        assignRoles: 'Assign roles',
         primaryOrgMustBeAssigned: 'Primary organization must be assigned',
         password: 'Initial password',
         newPassword: 'New password'

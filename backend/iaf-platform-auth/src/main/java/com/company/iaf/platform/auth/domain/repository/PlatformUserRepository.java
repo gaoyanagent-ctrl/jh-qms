@@ -84,4 +84,16 @@ public interface PlatformUserRepository {
      * {@code updated_by}.
      */
     boolean updatePassword(long operatorUserId, long tenantId, long id, String passwordHash);
+
+    default List<Long> findRoleIds(long tenantId, long userId) {
+        return List.of();
+    }
+
+    default boolean allRolesExist(long tenantId, List<Long> roleIds) {
+        return roleIds.isEmpty();
+    }
+
+    default void replaceRoles(long operatorUserId, long tenantId, long userId, List<Long> roleIds) {
+        throw new UnsupportedOperationException("User role assignment is not supported");
+    }
 }

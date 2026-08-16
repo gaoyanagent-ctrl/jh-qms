@@ -6,3 +6,7 @@ export interface UserOrgFormValues {
   orgIds: number[];
   primaryOrgId?: number;
 }
+
+export interface UserRoleFormValues {
+  roleIds: number[];
+}

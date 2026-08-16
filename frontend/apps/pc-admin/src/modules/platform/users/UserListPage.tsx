@@ -15,9 +15,12 @@ import {
   useDisableUserMutation,
   useResetPasswordMutation,
   useUserOrganizationsQuery,
-  useAssignUserOrganizationsMutation
+  useAssignUserOrganizationsMutation,
+  useUserRolesQuery,
+  useAssignUserRolesMutation
 } from './hooks';
-import type { UserFormValues, UserOrgFormValues } from './types';
+import { useRolesQuery } from '../roles/hooks';
+import type { UserFormValues, UserOrgFormValues, UserRoleFormValues } from './types';
 
 const flattenOrgTree = (items: PlatformOrg[]): PlatformOrg[] =>
   items.flatMap((item) => [item, ...flattenOrgTree(item.children ?? [])]);
@@ -31,9 +34,11 @@ export const UserListPage = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [resetTarget, setResetTarget] = useState<PlatformUser | null>(null);
   const [orgTarget, setOrgTarget] = useState<PlatformUser | null>(null);
+  const [roleTarget, setRoleTarget] = useState<PlatformUser | null>(null);
   const [form] = Form.useForm<UserFormValues>();
   const [resetForm] = Form.useForm<{ newPassword: string }>();
   const [orgForm] = Form.useForm<UserOrgFormValues>();
+  const [roleForm] = Form.useForm<UserRoleFormValues>();
   const selectedOrgIds = Form.useWatch('orgIds', orgForm) ?? [];
 
   // Register dirty state when create/edit form is open
@@ -43,6 +48,8 @@ export const UserListPage = () => {
   const usersQuery = useUsersQuery({ keyword, pageNo, pageSize: 10 });
   const orgTreeQuery = useOrgTreeQuery();
   const userOrganizationsQuery = useUserOrganizationsQuery(orgTarget?.id);
+  const userRolesQuery = useUserRolesQuery(roleTarget?.id);
+  const rolesQuery = useRolesQuery({ pageNo: 1, pageSize: 200 });
   const orgOptions = useMemo(() => {
     return flattenOrgTree(orgTreeQuery.data ?? []).map((org) => ({
       label: `${org.orgName} (${org.orgCode})`,
@@ -87,6 +94,13 @@ export const UserListPage = () => {
       orgForm.resetFields();
     }
   });
+  const assignRoleMutation = useAssignUserRolesMutation({
+    onSuccess: () => {
+      message.success(t('common.feedback.operationSucceeded'));
+      setRoleTarget(null);
+      roleForm.resetFields();
+    }
+  });
 
   useEffect(() => {
     if (!orgTarget || !userOrganizationsQuery.data) {
@@ -97,6 +111,12 @@ export const UserListPage = () => {
       primaryOrgId: userOrganizationsQuery.data.primaryOrgId ?? undefined
     });
   }, [orgForm, orgTarget, userOrganizationsQuery.data]);
+
+  useEffect(() => {
+    if (roleTarget && userRolesQuery.data) {
+      roleForm.setFieldsValue({ roleIds: userRolesQuery.data.roleIds });
+    }
+  }, [roleForm, roleTarget, userRolesQuery.data]);
 
   const openEdit = (record: PlatformUser) => {
     setEditing(record);
@@ -220,6 +240,12 @@ export const UserListPage = () => {
         labelKey: 'users.assignOrganizations',
         requirePermission: PLATFORM_PERMISSIONS.userUpdate,
         onClick: (record) => setOrgTarget(record)
+      },
+      {
+        key: 'assignRoles',
+        labelKey: 'users.assignRoles',
+        requirePermission: PLATFORM_PERMISSIONS.userUpdate,
+        onClick: (record) => setRoleTarget(record)
       },
       {
         key: 'disable',
@@ -357,6 +383,36 @@ export const UserListPage = () => {
               showSearch
               loading={orgTreeQuery.isLoading || userOrganizationsQuery.isLoading}
               options={orgOptions.filter((option) => selectedOrgIds.includes(option.value))}
+              optionFilterProp="label"
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        open={Boolean(roleTarget)}
+        title={roleTarget ? `${t('users.assignRoles')} · ${roleTarget.username}` : t('users.assignRoles')}
+        onCancel={() => {
+          setRoleTarget(null);
+          roleForm.resetFields();
+        }}
+        onOk={() => roleForm.submit()}
+        confirmLoading={assignRoleMutation.isPending}
+      >
+        <Form<UserRoleFormValues>
+          layout="vertical"
+          form={roleForm}
+          onFinish={(values) => roleTarget && assignRoleMutation.mutate({ id: roleTarget.id, values })}
+        >
+          <Form.Item name="roleIds" label={t('users.roles')} initialValue={[]}>
+            <Select
+              mode="multiple"
+              allowClear
+              showSearch
+              loading={rolesQuery.isLoading || userRolesQuery.isLoading}
+              options={(rolesQuery.data?.records ?? [])
+                .filter((role) => role.status === 'ACTIVE')
+                .map((role) => ({ label: `${role.roleName} (${role.roleCode})`, value: role.id }))}
               optionFilterProp="label"
             />
           </Form.Item>

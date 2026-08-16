@@ -224,6 +224,45 @@ public class JdbcPlatformUserRepository implements PlatformUserRepository {
         return rows > 0;
     }
 
+    @Override
+    public List<Long> findRoleIds(long tenantId, long userId) {
+        return jdbcTemplate.queryForList("""
+                select ur.role_id
+                  from sys_user_role ur
+                  join sys_role r on r.tenant_id = ur.tenant_id and r.id = ur.role_id
+                 where ur.tenant_id = ? and ur.user_id = ?
+                   and ur.deleted = false and r.deleted = false
+                 order by r.role_code
+                """, Long.class, tenantId, userId);
+    }
+
+    @Override
+    public boolean allRolesExist(long tenantId, List<Long> roleIds) {
+        if (roleIds.isEmpty()) {
+            return true;
+        }
+        String placeholders = roleIds.stream().map(ignored -> "?").collect(Collectors.joining(", "));
+        List<Object> params = new java.util.ArrayList<>();
+        params.add(tenantId);
+        params.addAll(roleIds);
+        Integer count = jdbcTemplate.queryForObject(
+                "select count(*) from sys_role where tenant_id = ? and id in (" + placeholders + ") and deleted = false and status = 'ACTIVE'",
+                Integer.class, params.toArray());
+        return count != null && count == roleIds.size();
+    }
+
+    @Override
+    public void replaceRoles(long operatorUserId, long tenantId, long userId, List<Long> roleIds) {
+        jdbcTemplate.update("delete from sys_user_role where tenant_id = ? and user_id = ?", tenantId, userId);
+        for (Long roleId : roleIds) {
+            jdbcTemplate.update("""
+                    insert into sys_user_role
+                        (tenant_id, user_id, role_id, created_by, created_at, updated_by, updated_at, deleted, version)
+                    values (?, ?, ?, ?, current_timestamp, ?, current_timestamp, false, 0)
+                    """, tenantId, userId, roleId, operatorUserId, operatorUserId);
+        }
+    }
+
     private PlatformUser mapUser(java.sql.ResultSet resultSet, int rowNum) throws java.sql.SQLException {
         return new PlatformUser(
                 resultSet.getLong("id"),
