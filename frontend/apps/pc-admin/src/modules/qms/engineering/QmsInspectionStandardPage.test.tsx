@@ -31,6 +31,18 @@ describe('QmsInspectionStandardPage',()=>{
     expect(await screen.findByText('尺寸 2')).toBeInTheDocument();
   });
 
+  it('creates a new version instead of modifying a released standard',async()=>{
+    const released={...standard(),status:'RELEASED',approvalStatus:'APPROVED'} as QmsInspectionStandard;
+    const nextVersion={...standard(2),id:9,documentVersion:2};
+    vi.mocked(qmsEngineeringApi.getInspectionStandard).mockReset().mockResolvedValueOnce(released).mockResolvedValue(nextVersion);
+    vi.mocked(qmsEngineeringApi.generateInspectionStandard).mockResolvedValue(nextVersion);
+    renderPage();
+    expect(await screen.findByText('当前版本已发布并保持只读。如需纳入新增质量特性，请创建新版本。')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button',{name:'创建新版本'}));
+    await waitFor(()=>expect(qmsEngineeringApi.generateInspectionStandard).toHaveBeenCalledWith(5));
+    expect(await screen.findByText('尺寸 2')).toBeInTheDocument();
+  });
+
   it('saves the current draft before submitting it for approval',async()=>{
     const saved={...standard(),version:2,items:standard().items.map(item=>({...item,reviewStatus:'CONFIRMED'}))};
     const submitted={...saved,status:'APPROVING',approvalStatus:'PENDING'};
