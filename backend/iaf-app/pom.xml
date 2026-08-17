@@ -60,6 +60,11 @@
         </dependency>
         <dependency>
             <groupId>com.company.iaf</groupId>
+            <artifactId>iaf-mdm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.company.iaf</groupId>
             <artifactId>iaf-qms-engineering</artifactId>
             <version>${project.version}</version>
         </dependency>

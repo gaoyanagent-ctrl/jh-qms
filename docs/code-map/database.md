@@ -1,5 +1,15 @@
 # Database Code Map
 
+## MDM (`V0801__mdm_metadata_and_dynamic_records.sql`)
+
+- `mdm_data_domain`: tenant-scoped domain catalog.
+- `mdm_model`: published model configuration and UI Schema.
+- `mdm_model_field`: typed dynamic field definitions.
+- `mdm_master_record`: UUID-based common columns plus JSONB attributes and optimistic version.
+- `mdm_master_record_version`: immutable full snapshots per business version.
+- Seeds the manufacturing/material model, MDM permissions and MDM menu entries for existing tenants.
+- `V0802__mdm_model_designer.sql` adds `mdm_model_version` immutable snapshots and model create/update/publish permissions.
+
 ## Local Database Stack (ADR-0002)
 
 - Image: `postgres:18` (full Debian-based image).

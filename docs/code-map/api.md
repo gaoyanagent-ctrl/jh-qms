@@ -1,5 +1,17 @@
 # API Code Map
 
+## MDM
+
+- `GET /api/mdm/models` (`mdm:model:view`): list models with field/UI schema.
+- `GET /api/mdm/models/{modelCode}/schema` (`mdm:model:view`): resolve one model definition.
+- `GET /api/mdm/models/{modelCode}/records` (`mdm:record:view`): tenant-scoped dynamic record page.
+- `POST /api/mdm/models/{modelCode}/records` (`mdm:record:create`): unified metadata validation and versioned create.
+- `PUT /api/mdm/models/{modelCode}/records/{id}` (`mdm:record:update`): optimistic-lock update using `expectedVersion`.
+- `POST /api/mdm/models` (`mdm:model:create`): create a model draft in an enabled data domain.
+- `PUT /api/mdm/models/{modelCode}/draft` (`mdm:model:update`): validate and replace draft fields and UI Schema.
+- `POST /api/mdm/models/{modelCode}/validate` (`mdm:model:update`): report definition errors and warnings.
+- `POST /api/mdm/models/{modelCode}/publish` (`mdm:model:publish`): publish an immutable model-version snapshot.
+
 All backend APIs must use:
 
 - Path format: `/api/{module}/{resources}`

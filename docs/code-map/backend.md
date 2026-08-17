@@ -26,6 +26,18 @@ Cross-module calls must not reach into another module's `infrastructure`, entity
 
 ## Maven Modules
 
+### `iaf-mdm`
+
+- `ModelDefinitionValidator` checks field codes, duplicates, data types, enum options and design warnings before publish.
+
+- Owner module: cross-application master data authority.
+- Layers: `interfaces`, `application`, `domain`, `infrastructure`.
+- `MdmController`: model/schema and dynamic record REST entrypoint.
+- `MdmApplicationService`: tenant-scoped unified validation, create/update, version snapshot and optimistic-lock transaction boundary.
+- `DynamicRecordValidator`: metadata-driven required/type/enum validation.
+- `MdmRepository` / `JdbcMdmRepository`: metadata, JSONB record and immutable version persistence.
+- Depends on: `iaf-platform-core`, Spring JDBC, Jackson. It does not depend on QMS/WMS infrastructure.
+
 ### `iaf-app`
 
 - Owner module: application bootstrap and HTTP entrypoint.

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PermissionRoute, PLATFORM_PERMISSIONS, QMS_PERMISSIONS } from '@iaf/permissions';
+import { MDM_PERMISSIONS, PermissionRoute, PLATFORM_PERMISSIONS, QMS_PERMISSIONS } from '@iaf/permissions';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { LoginPage } from './pages/LoginPage';
@@ -18,6 +18,9 @@ import { QmsDrawingReviewWorkbenchPage } from './modules/qms/engineering/QmsDraw
 import { QmsDrawingLegendConfigPage } from './modules/qms/engineering/QmsDrawingLegendConfigPage';
 import { QmsInspectionStandardPage } from './modules/qms/engineering/QmsInspectionStandardPage';
 import { QmsValidationPlanPage } from './modules/qms/engineering/QmsValidationPlanPage';
+import { MdmModelCenterPage } from './modules/mdm/MdmModelCenterPage';
+import { MdmRecordWorkspacePage } from './modules/mdm/MdmRecordWorkspacePage';
+import { MdmModelDesignerPage } from './modules/mdm/MdmModelDesignerPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +68,13 @@ export const App = () => (
             </Route>
             <Route element={<PermissionRoute require={QMS_PERMISSIONS.drawingLegendManage} fallbackPath="/" />}>
               <Route path="/qms/engineering/drawing-legend" element={<QmsDrawingLegendConfigPage />} />
+            </Route>
+            <Route element={<PermissionRoute require={MDM_PERMISSIONS.modelView} fallbackPath="/" />}>
+              <Route path="/mdm/models" element={<MdmModelCenterPage />} />
+              <Route path="/mdm/models/:modelCode/design" element={<MdmModelDesignerPage />} />
+            </Route>
+            <Route element={<PermissionRoute require={MDM_PERMISSIONS.recordView} fallbackPath="/" />}>
+              <Route path="/mdm/models/:modelCode/records" element={<MdmRecordWorkspacePage />} />
             </Route>
           </Route>
         </Route>

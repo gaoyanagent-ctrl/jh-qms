@@ -1,5 +1,13 @@
 # Frontend Code Map
 
+## MDM PC Admin
+
+- `/mdm/models` → `MdmModelCenterPage`: model cards, status, schema summary and workspace navigation; permission `mdm:model:view`.
+- `/mdm/models/:modelCode/design` → `MdmModelDesignerPage`: draft field/UI Schema editor and controlled publish action.
+- `/mdm/models/:modelCode/records` → `MdmRecordWorkspacePage`: metadata-driven configurable list and dynamic create/edit form; permissions `mdm:record:view/create/update`.
+- `modules/mdm/api.ts` and `hooks.ts`: API-client-only HTTP boundary and TanStack Query state.
+- `modules/mdm/pageContext.tsx`: explicit page/AI-safe visible field and action context.
+
 ## Current State
 
 The frontend workspace has been initialized as a pnpm monorepo.
