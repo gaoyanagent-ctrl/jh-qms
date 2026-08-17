@@ -11,7 +11,7 @@ public interface MdmRepository {
     List<MdmModels.Model> findModels(long tenantId);
     Optional<MdmModels.Model> findModel(long tenantId, String modelCode);
     MdmModels.Model insertModel(long tenantId, long actorId, MdmDtos.CreateModelRequest request);
-    void replaceDraft(long tenantId, long actorId, long modelId, List<MdmDtos.FieldDraft> fields, Map<String,Object> uiSchema);
+    void replaceDraft(long tenantId, long actorId, long modelId, boolean approvalRequired, List<MdmDtos.FieldDraft> fields, Map<String,Object> uiSchema);
     void publishModel(long tenantId, long actorId, MdmModels.Model model);
     List<MdmModels.Record> findRecords(long tenantId, long modelId, String keyword, long offset, int size);
     long countRecords(long tenantId, long modelId, String keyword);

@@ -13,5 +13,5 @@ export interface MdmImportPreview { taskId:string; status:string; fileName:strin
 export interface MdmImportTask { id:string; tenantId:number; modelId:number; fileName:string; status:'QUEUED'|'VALIDATING'|'FAILED'|'PRECHECK_FAILED'|'READY'|'COMMITTING'|'COMMITTED'; totalRows:number; validRows:number; invalidRows:number; importedRows:number; sourceFileAvailable:boolean; errorMessage:string|null; createdBy:number; createdByName:string; createdAt:string; committedAt:string|null }
 export interface MdmPage<T> { records:T[]; total:number; pageNo:number; pageSize:number }
 export interface CreateMdmModel { domainCode:string; code:string; name:string; recordType:string; versionEnabled:boolean; effectiveDateEnabled:boolean; organizationScopeEnabled:boolean; approvalRequired:boolean }
-export interface SaveMdmModelDraft { fields:Array<Omit<MdmField,'id'|'length'>&{maxLength:number|null}>; uiSchema:Record<string,unknown> }
+export interface SaveMdmModelDraft { approvalRequired:boolean; fields:Array<Omit<MdmField,'id'|'length'>&{maxLength:number|null}>; uiSchema:Record<string,unknown> }
 export interface MdmModelValidation { valid:boolean; errors:string[]; warnings:string[] }
