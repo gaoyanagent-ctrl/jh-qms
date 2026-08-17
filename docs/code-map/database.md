@@ -9,6 +9,7 @@
 - `mdm_master_record_version`: immutable full snapshots per business version.
 - Seeds the manufacturing/material model, MDM permissions and MDM menu entries for existing tenants.
 - `V0802__mdm_model_designer.sql` adds `mdm_model_version` immutable snapshots and model create/update/publish permissions.
+- `V0803__mdm_import_task.sql` adds tenant/model-scoped Excel import task metadata, record payload snapshots, row validation results and commit audit state.
 
 ## Local Database Stack (ADR-0002)
 

@@ -11,6 +11,8 @@ public enum MdmErrorCode implements ErrorCode {
     VALIDATION_FAILED("MDM_VALIDATION_FAILED", "Master data validation failed"),
     BUSINESS_CODE_EXISTS("MDM_BUSINESS_CODE_EXISTS", "Business code already exists"),
     IMPORT_FILE_INVALID("MDM_IMPORT_FILE_INVALID", "The import file is invalid"),
+    IMPORT_TASK_NOT_FOUND("MDM_IMPORT_TASK_NOT_FOUND", "The import task was not found"),
+    IMPORT_TASK_NOT_READY("MDM_IMPORT_TASK_NOT_READY", "The import task is not ready to commit"),
     OPTIMISTIC_LOCK_CONFLICT("MDM_OPTIMISTIC_LOCK_CONFLICT", "The record was changed by another user");
     private final String code; private final String message;
     MdmErrorCode(String code, String message) { this.code = code; this.message = message; }
