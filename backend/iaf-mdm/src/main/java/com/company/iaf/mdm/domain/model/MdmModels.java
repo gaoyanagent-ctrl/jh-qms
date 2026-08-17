@@ -45,4 +45,7 @@ public final class MdmModels {
 
     public record RecordAction(long id, UUID recordId, String action, String fromStatus, String toStatus,
                                String comment, long actorId, String actorName, OffsetDateTime createdAt) {}
+    public record ApprovalTask(UUID recordId, String modelCode, String modelName, String businessCode,
+                               String recordName, String lifecycleStatus, long submittedBy,
+                               String submittedByName, OffsetDateTime submittedAt) {}
 }

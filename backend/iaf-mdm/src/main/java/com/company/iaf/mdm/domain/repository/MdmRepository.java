@@ -50,4 +50,7 @@ public interface MdmRepository {
     boolean transitionRecord(long tenantId,long modelId,UUID recordId,List<String> fromStatuses,String toStatus,long actorId);
     void insertRecordAction(long tenantId,long actorId,UUID recordId,String action,String fromStatus,String toStatus,String comment);
     List<MdmModels.RecordAction> findRecordActions(long tenantId,long modelId,UUID recordId);
+    boolean roleExists(long tenantId,long roleId);
+    boolean userHasRole(long tenantId,long userId,long roleId);
+    List<MdmModels.ApprovalTask> findApprovalTasks(long tenantId,long actorId,String scope);
 }
