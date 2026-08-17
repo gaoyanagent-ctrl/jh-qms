@@ -18,6 +18,8 @@
 - `GET /api/mdm/models/{modelCode}/imports` (`mdm:record:view`): list the latest 100 persisted import tasks.
 - `GET /api/mdm/models/{modelCode}/imports/{taskId}/errors` (`mdm:record:view`): return the stored row-level precheck result.
 - `POST /api/mdm/models/{modelCode}/imports/{taskId}/commit` (`mdm:record:create`): revalidate, atomically claim and commit a ready task through the unified record pipeline.
+- `GET /api/mdm/models/{modelCode}/imports/{taskId}/source` (`mdm:record:view`): download the archived original workbook.
+- `GET /api/mdm/models/{modelCode}/imports/{taskId}/result` (`mdm:record:view`): generate and download an Excel row-validation report from the task snapshot.
 
 All backend APIs must use:
 

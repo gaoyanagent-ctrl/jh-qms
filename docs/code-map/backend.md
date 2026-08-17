@@ -30,6 +30,7 @@ Cross-module calls must not reach into another module's `infrastructure`, entity
 
 - `ModelDefinitionValidator` checks field codes, duplicates, data types, enum options and design warnings before publish.
 - `MdmExcelImportService` generates model-version-aware Excel templates, persists workbook precheck tasks, revalidates on commit and uses atomic task claiming before the unified batch write (synchronous limit: 1,000 rows).
+- `MdmImportObjectStorage` is the MDM-owned object-storage port; `MinioMdmImportObjectStorage` archives source workbooks under tenant-isolated keys without depending on QMS infrastructure.
 
 - Owner module: cross-application master data authority.
 - Layers: `interfaces`, `application`, `domain`, `infrastructure`.

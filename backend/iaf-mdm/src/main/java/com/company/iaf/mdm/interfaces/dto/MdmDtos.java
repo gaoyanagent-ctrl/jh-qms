@@ -29,4 +29,5 @@ public final class MdmDtos {
     public record BatchValidationResult(boolean valid, int total, List<BatchRowValidation> rows) {}
     public record ImportPreview(java.util.UUID taskId, String status, String fileName, List<SaveRecordRequest> records,
                                 BatchValidationResult validation) {}
+    public record ImportDownload(byte[] content, String fileName, String mediaType) {}
 }
