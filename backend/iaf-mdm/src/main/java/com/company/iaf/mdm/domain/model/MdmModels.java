@@ -29,5 +29,8 @@ public final class MdmModels {
 
     public record ImportTask(UUID id, long modelId, String modelCode, String fileName, String status,
                              int totalRows, int validRows, int invalidRows, int importedRows,
-                             long createdBy, String createdByName, OffsetDateTime createdAt, OffsetDateTime committedAt) {}
+                             boolean sourceFileAvailable, long createdBy, String createdByName,
+                             OffsetDateTime createdAt, OffsetDateTime committedAt) {}
+
+    public record ImportArtifact(String objectKey, String fileName, String mediaType, long size) {}
 }

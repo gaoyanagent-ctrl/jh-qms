@@ -13,6 +13,8 @@ public enum MdmErrorCode implements ErrorCode {
     IMPORT_FILE_INVALID("MDM_IMPORT_FILE_INVALID", "The import file is invalid"),
     IMPORT_TASK_NOT_FOUND("MDM_IMPORT_TASK_NOT_FOUND", "The import task was not found"),
     IMPORT_TASK_NOT_READY("MDM_IMPORT_TASK_NOT_READY", "The import task is not ready to commit"),
+    IMPORT_STORAGE_FAILED("MDM_IMPORT_STORAGE_FAILED", "The import file storage operation failed"),
+    IMPORT_ARTIFACT_NOT_FOUND("MDM_IMPORT_ARTIFACT_NOT_FOUND", "The import artifact was not found"),
     OPTIMISTIC_LOCK_CONFLICT("MDM_OPTIMISTIC_LOCK_CONFLICT", "The record was changed by another user");
     private final String code; private final String message;
     MdmErrorCode(String code, String message) { this.code = code; this.message = message; }

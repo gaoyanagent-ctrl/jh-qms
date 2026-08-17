@@ -2,6 +2,7 @@ package com.company.iaf.mdm.application;
 
 import com.company.iaf.mdm.domain.model.MdmModels;
 import com.company.iaf.mdm.domain.repository.MdmRepository;
+import com.company.iaf.mdm.domain.repository.MdmImportObjectStorage;
 import com.company.iaf.mdm.interfaces.dto.MdmDtos;
 import com.company.iaf.platform.core.security.RequiresPermission;
 import com.company.iaf.shared.exception.BusinessException;
@@ -24,10 +25,12 @@ import java.util.*;
 @ConditionalOnProperty(name = "iaf.mdm.enabled", havingValue = "true", matchIfMissing = true)
 public class MdmExcelImportService {
     private static final int MAX_ROWS = 1000;
+    private static final long MAX_FILE_SIZE = 20L * 1024 * 1024;
     private final MdmApplicationService mdm;
     private final MdmRepository repository;
+    private final MdmImportObjectStorage storage;
 
-    public MdmExcelImportService(MdmApplicationService mdm, MdmRepository repository) { this.mdm = mdm; this.repository = repository; }
+    public MdmExcelImportService(MdmApplicationService mdm, MdmRepository repository, MdmImportObjectStorage storage) { this.mdm = mdm; this.repository = repository; this.storage = storage; }
 
     @RequiresPermission("mdm:record:view")
     public byte[] template(long tenantId, String modelCode) {
@@ -76,11 +79,19 @@ public class MdmExcelImportService {
                 rows.add(new MdmDtos.BatchRowValidation(parsed.rowNumbers().get(i), row.businessCode(), row.valid(), row.errors()));
             }
             var validation = new MdmDtos.BatchValidationResult(checked.valid(), checked.total(), rows);
-            var task = repository.insertImportTask(tenantId, actorId, model.id(), model.code(), file.getOriginalFilename(), parsed.records(), validation);
+            var task = persistTask(tenantId, actorId, model, file, parsed.records(), validation);
             return new MdmDtos.ImportPreview(task.id(), task.status(), file.getOriginalFilename(), parsed.records(), validation);
         } catch (BusinessException failure) { throw failure;
         } catch (Exception failure) { throw invalid("无法读取 Excel 文件，请使用系统模板并确认文件未损坏"); }
     }
+
+    @RequiresPermission("mdm:record:view")
+    @Transactional(readOnly = true)
+    public MdmDtos.ImportDownload sourceFile(long tenantId,String modelCode,UUID taskId){var model=mdm.schema(tenantId,modelCode);requireTask(tenantId,model.id(),taskId);var artifact=repository.findImportArtifact(tenantId,model.id(),taskId).orElseThrow(()->new BusinessException(MdmErrorCode.IMPORT_ARTIFACT_NOT_FOUND));try(var input=storage.get(artifact.objectKey())){return new MdmDtos.ImportDownload(input.readAllBytes(),artifact.fileName(),artifact.mediaType());}catch(BusinessException failure){throw failure;}catch(Exception failure){throw new BusinessException(MdmErrorCode.IMPORT_STORAGE_FAILED);}}
+
+    @RequiresPermission("mdm:record:view")
+    @Transactional(readOnly = true)
+    public MdmDtos.ImportDownload resultFile(long tenantId,String modelCode,UUID taskId){var model=mdm.schema(tenantId,modelCode);var task=requireTask(tenantId,model.id(),taskId);var validation=repository.findImportTaskValidation(tenantId,model.id(),taskId);try(var workbook=new XSSFWorkbook();var output=new ByteArrayOutputStream()){var sheet=workbook.createSheet("校验结果");var header=sheet.createRow(0);List.of("Excel 行","业务编码","结果","错误信息").forEach(value->header.createCell(header.getLastCellNum()<0?0:header.getLastCellNum()).setCellValue(value));for(int index=0;index<validation.rows().size();index++){var item=validation.rows().get(index);var row=sheet.createRow(index+1);row.createCell(0).setCellValue(item.rowNo());row.createCell(1).setCellValue(item.businessCode());row.createCell(2).setCellValue(item.valid()?"通过":"错误");row.createCell(3).setCellValue(String.join("；",item.errors()));}for(int i=0;i<4;i++)sheet.autoSizeColumn(i);workbook.write(output);return new MdmDtos.ImportDownload(output.toByteArray(),stripExtension(task.fileName())+"-校验结果.xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");}catch(Exception failure){throw new BusinessException(MdmErrorCode.IMPORT_FILE_INVALID,"Unable to generate import result");}}
 
     @RequiresPermission("mdm:record:view")
     @Transactional(readOnly = true)
@@ -147,6 +158,7 @@ public class MdmExcelImportService {
 
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) throw invalid("请选择 Excel 文件");
+        if (file.getSize() > MAX_FILE_SIZE) throw invalid("Excel 文件不能超过 20 MB");
         String name = Optional.ofNullable(file.getOriginalFilename()).orElse("").toLowerCase(Locale.ROOT);
         if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) throw invalid("仅支持 .xlsx 或 .xls 文件");
     }
@@ -165,6 +177,8 @@ public class MdmExcelImportService {
     private String text(Row row, int index, DataFormatter formatter, FormulaEvaluator evaluator) { Cell cell = row.getCell(index); return cell == null ? "" : formatter.formatCellValue(cell, evaluator).trim(); }
     private Integer index(Map<String,Integer> indexes, String... names) { for (String name : names) if (indexes.containsKey(name)) return indexes.get(name); return null; }
     private BusinessException invalid(String message) { return new BusinessException(MdmErrorCode.IMPORT_FILE_INVALID, message); }
+    private MdmModels.ImportTask persistTask(long tenantId,long actorId,MdmModels.Model model,MultipartFile file,List<MdmDtos.SaveRecordRequest> records,MdmDtos.BatchValidationResult validation){String original=Optional.ofNullable(file.getOriginalFilename()).orElse("import.xlsx");String extension=original.toLowerCase(Locale.ROOT).endsWith(".xls")?"xls":"xlsx";String key=tenantId+"/mdm-imports/"+UUID.randomUUID()+"/source."+extension;String media=extension.equals("xls")?"application/vnd.ms-excel":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";try(var input=file.getInputStream()){storage.put(key,input,file.getSize(),media);try{return repository.insertImportTask(tenantId,actorId,model.id(),model.code(),original,records,validation,key,media,file.getSize());}catch(RuntimeException failure){storage.delete(key);throw failure;}}catch(BusinessException failure){throw failure;}catch(Exception failure){storage.delete(key);throw new BusinessException(MdmErrorCode.IMPORT_STORAGE_FAILED);}}
+    private String stripExtension(String name){int position=name.lastIndexOf('.');return position>0?name.substring(0,position):name;}
     private record Column(String name, String code, String type, boolean required, List<String> options, String help) {}
     private record ParsedRows(List<MdmDtos.SaveRecordRequest> records, List<Integer> rowNumbers) {}
 }

@@ -26,11 +26,13 @@ public interface MdmRepository {
     List<MdmModels.RecordVersion> findRecordVersions(long tenantId, long modelId, UUID recordId);
     MdmModels.ImportTask insertImportTask(long tenantId, long actorId, long modelId, String modelCode,
                                           String fileName, List<MdmDtos.SaveRecordRequest> records,
-                                          MdmDtos.BatchValidationResult validation);
+                                          MdmDtos.BatchValidationResult validation, String sourceObjectKey,
+                                          String sourceMediaType, long sourceSize);
     Optional<MdmModels.ImportTask> findImportTask(long tenantId, long modelId, UUID taskId);
     List<MdmModels.ImportTask> findImportTasks(long tenantId, long modelId);
     List<MdmDtos.SaveRecordRequest> findImportTaskRecords(long tenantId, long modelId, UUID taskId);
     MdmDtos.BatchValidationResult findImportTaskValidation(long tenantId, long modelId, UUID taskId);
+    Optional<MdmModels.ImportArtifact> findImportArtifact(long tenantId, long modelId, UUID taskId);
     boolean claimImportTask(long tenantId, long modelId, UUID taskId, long actorId);
     void refreshImportTaskValidation(long tenantId, long modelId, UUID taskId, long actorId,
                                      MdmDtos.BatchValidationResult validation);

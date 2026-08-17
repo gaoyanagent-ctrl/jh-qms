@@ -17,5 +17,7 @@ export const mdmApi = {
   importTasks: (code:string) => apiClient.get<MdmImportTask[]>(`/api/mdm/models/${code}/imports`),
   importErrors: (code:string,taskId:string) => apiClient.get<MdmBatchValidation>(`/api/mdm/models/${code}/imports/${taskId}/errors`),
   commitImport: (code:string,taskId:string) => apiClient.post<MdmImportTask>(`/api/mdm/models/${code}/imports/${taskId}/commit`,{}),
+  importSource: (code:string,taskId:string) => apiClient.getBlob(`/api/mdm/models/${code}/imports/${taskId}/source`),
+  importResult: (code:string,taskId:string) => apiClient.getBlob(`/api/mdm/models/${code}/imports/${taskId}/result`),
   update: (code:string,id:string,request:SaveMdmRecord) => apiClient.put<MdmRecord>(`/api/mdm/models/${code}/records/${id}`,request)
 };
