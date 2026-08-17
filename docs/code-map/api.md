@@ -11,6 +11,8 @@
 - `PUT /api/mdm/models/{modelCode}/draft` (`mdm:model:update`): validate and replace draft fields and UI Schema.
 - `POST /api/mdm/models/{modelCode}/validate` (`mdm:model:update`): report definition errors and warnings.
 - `POST /api/mdm/models/{modelCode}/publish` (`mdm:model:publish`): publish an immutable model-version snapshot.
+- `GET /api/mdm/models/{modelCode}/validation-rules` (`mdm:model:view`): list model save-time validation rules.
+- `PUT /api/mdm/models/{modelCode}/validation-rules` (`mdm:model:update`): atomically replace model validation-rule configuration.
 - `POST /api/mdm/models/{modelCode}/records/batch-validate` (`mdm:record:create`): return row-level validation for pasted or imported records.
 - `POST /api/mdm/models/{modelCode}/records/batch` (`mdm:record:create`): atomically create a validated batch through the normal record/version pipeline.
 - `GET /api/mdm/models/{modelCode}/import-template` (`mdm:record:view`): download a dynamic `.xlsx` template with field descriptions and enum constraints.

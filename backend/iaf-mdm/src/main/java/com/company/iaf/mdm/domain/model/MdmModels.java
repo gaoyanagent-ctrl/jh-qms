@@ -33,4 +33,9 @@ public final class MdmModels {
                              OffsetDateTime createdAt, OffsetDateTime committedAt) {}
 
     public record ImportArtifact(String objectKey, String fileName, String mediaType, long size) {}
+
+    public record ValidationRule(long id, long modelId, String code, String name, String triggerPoint,
+                                 String ruleType, String fieldCode, String severity, String message,
+                                 Map<String, Object> condition, Map<String, Object> assertion,
+                                 boolean enabled, int sortNo) {}
 }

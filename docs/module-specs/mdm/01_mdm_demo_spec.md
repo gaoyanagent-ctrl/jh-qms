@@ -36,4 +36,13 @@ MDM 负责数据域、模型、字段、UI Schema、动态主数据记录及不�
 - 每次上传持久化导入任务和预检查快照，状态为 `PRECHECK_FAILED`、`READY`、`COMMITTING` 或 `COMMITTED`。
 - 提交任务前重新执行服务端校验，并使用原子状态抢占防止重复提交。
 - 上传原文件按租户隔离归档到对象存储；任务列表支持下载原文件和由校验快照生成的 Excel 结果报告。
+
+> Demo 优先级调整：后台分批提交、断点恢复和部分成功暂缓，标记为待完成。
+
+## 可配置校验与跨模型引用
+
+- 模型校验规则按租户和模型存储，保存和批量预检查共用同一执行管线。
+- JSON Logic 仅允许变量、布尔、比较和成员操作，不允许 Java、Groovy、SpEL 或任意脚本。
+- `REFERENCE_EXISTS` 通过参数化查询校验目标模型主数据，可将源字段映射到目标通用列或 JSONB 属性。
+- Demo 预置 `bomItem` 模型，父项和组件物料必须引用 `material` 模型中状态为 `ACTIVE` 的记录，用量必须大于 0。
 - 大文件可进入 `QUEUED → VALIDATING → READY/PRECHECK_FAILED/FAILED` 后台预检查状态流，最多处理 1 万数据行。

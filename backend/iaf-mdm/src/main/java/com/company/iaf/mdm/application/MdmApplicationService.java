@@ -20,9 +20,10 @@ import java.util.ArrayList;
 @ConditionalOnProperty(name = "iaf.mdm.enabled", havingValue = "true", matchIfMissing = true)
 public class MdmApplicationService {
     private final MdmRepository repository;
+    private final ConfiguredRuleValidator configuredRuleValidator;
     private final DynamicRecordValidator validator = new DynamicRecordValidator();
     private final ModelDefinitionValidator modelValidator = new ModelDefinitionValidator();
-    public MdmApplicationService(MdmRepository repository) { this.repository = repository; }
+    public MdmApplicationService(MdmRepository repository, ConfiguredRuleValidator configuredRuleValidator) { this.repository = repository; this.configuredRuleValidator = configuredRuleValidator; }
 
     @RequiresPermission("mdm:model:view") @Transactional(readOnly = true)
     public List<MdmModels.Model> listModels(long tenantId) { return repository.findModels(tenantId); }
@@ -54,6 +55,15 @@ public class MdmApplicationService {
         if (!result.valid()) throw new BusinessException(MdmErrorCode.VALIDATION_FAILED, String.join("; ", result.errors()));
         repository.publishModel(tenantId, actorId, model); return requireModel(tenantId, code);
     }
+    @RequiresPermission("mdm:model:view") @Transactional(readOnly = true)
+    public List<MdmModels.ValidationRule> validationRules(long tenantId, String code) {
+        MdmModels.Model model=requireModel(tenantId,code); return repository.findValidationRules(tenantId,model.id(),null);
+    }
+    @RequiresPermission("mdm:model:update") @Transactional
+    public List<MdmModels.ValidationRule> saveValidationRules(long tenantId,long actorId,String code,MdmDtos.SaveValidationRulesRequest request){
+        MdmModels.Model model=requireModel(tenantId,code); repository.replaceValidationRules(tenantId,actorId,model.id(),request.rules());
+        return repository.findValidationRules(tenantId,model.id(),null);
+    }
     @RequiresPermission("mdm:record:view") @Transactional(readOnly = true)
     public PageResult<MdmModels.Record> records(long tenantId, String code, String keyword, int pageNo, int pageSize) {
         MdmModels.Model model = requireModel(tenantId, code); String q = keyword == null || keyword.isBlank() ? null : keyword.trim();
@@ -67,7 +77,7 @@ public class MdmApplicationService {
     }
     @RequiresPermission("mdm:record:create") @Transactional
     public MdmModels.Record create(long tenantId, long actorId, String code, MdmDtos.SaveRecordRequest request) {
-        MdmModels.Model model = requireModel(tenantId, code); validate(model, request);
+        MdmModels.Model model = requireModel(tenantId, code); validate(tenantId, model, request);
         if (repository.businessCodeExists(tenantId, model.id(), request.businessCode().trim(), null)) throw new BusinessException(MdmErrorCode.BUSINESS_CODE_EXISTS);
         MdmModels.Record saved = repository.insertRecord(tenantId, actorId, model, request.businessCode().trim(), request.name().trim(), status(request), scope(request), request.scopeIds(), request.effectiveFrom(), request.effectiveTo(), request.attributes());
         repository.insertVersion(tenantId, actorId, saved, "CREATE", request.changeReason()); return saved;
@@ -84,6 +94,7 @@ public class MdmApplicationService {
             if(item.name()==null||item.name().isBlank()) errors.add("name: required");
             if(item.attributes()==null) errors.add("attributes: required");
             errors.addAll(validator.validate(model,item.attributes()==null?java.util.Map.of():item.attributes()));
+            if(item.attributes()!=null) errors.addAll(configuredRuleValidator.validate(tenantId,model,item));
             if(!businessCode.isBlank()&&!seen.add(businessCode)) errors.add("businessCode: duplicated in batch");
             if(!businessCode.isBlank()&&repository.businessCodeExists(tenantId,model.id(),businessCode,null)) errors.add("businessCode: already exists");
             rows.add(new MdmDtos.BatchRowValidation(index+2,businessCode,errors.isEmpty(),errors));
@@ -97,7 +108,7 @@ public class MdmApplicationService {
     }
     @RequiresPermission("mdm:record:update") @Transactional
     public MdmModels.Record update(long tenantId, long actorId, String code, UUID id, MdmDtos.SaveRecordRequest request) {
-        MdmModels.Model model = requireModel(tenantId, code); validate(model, request);
+        MdmModels.Model model = requireModel(tenantId, code); validate(tenantId, model, request);
         if (request.expectedVersion() == null) throw new BusinessException(MdmErrorCode.VALIDATION_FAILED, "expectedVersion is required");
         if (repository.businessCodeExists(tenantId, model.id(), request.businessCode().trim(), id)) throw new BusinessException(MdmErrorCode.BUSINESS_CODE_EXISTS);
         MdmModels.Record current = repository.findRecord(tenantId, model.id(), id).orElseThrow(() -> new BusinessException(MdmErrorCode.RECORD_NOT_FOUND));
@@ -105,7 +116,7 @@ public class MdmApplicationService {
         if (!repository.updateRecord(tenantId, actorId, changed, request.expectedVersion())) throw new BusinessException(MdmErrorCode.OPTIMISTIC_LOCK_CONFLICT);
         MdmModels.Record saved = repository.findRecord(tenantId, model.id(), id).orElseThrow(); repository.insertVersion(tenantId, actorId, saved, "UPDATE", request.changeReason()); return saved;
     }
-    private void validate(MdmModels.Model model, MdmDtos.SaveRecordRequest request) { var errors = validator.validate(model, request.attributes()); if (!errors.isEmpty()) throw new BusinessException(MdmErrorCode.VALIDATION_FAILED, String.join("; ", errors)); }
+    private void validate(long tenantId,MdmModels.Model model,MdmDtos.SaveRecordRequest request){var errors=new ArrayList<>(validator.validate(model,request.attributes()));errors.addAll(configuredRuleValidator.validate(tenantId,model,request));if(!errors.isEmpty())throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,String.join("; ",errors));}
     private MdmModels.Model requireModel(long tenantId, String code) { return repository.findModel(tenantId, code).orElseThrow(() -> new BusinessException(MdmErrorCode.MODEL_NOT_FOUND)); }
     private String status(MdmDtos.SaveRecordRequest r) { return r.lifecycleStatus() == null ? "DRAFT" : r.lifecycleStatus(); }
     private String scope(MdmDtos.SaveRecordRequest r) { return r.scopeType() == null ? "GROUP" : r.scopeType(); }

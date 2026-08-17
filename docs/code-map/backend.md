@@ -32,13 +32,15 @@ Cross-module calls must not reach into another module's `infrastructure`, entity
 - `MdmExcelImportService` generates model-version-aware Excel templates, persists workbook precheck tasks, revalidates on commit and uses atomic task claiming before the unified batch write (synchronous limit: 1,000 rows).
 - `MdmImportObjectStorage` is the MDM-owned object-storage port; `MinioMdmImportObjectStorage` archives source workbooks under tenant-isolated keys without depending on QMS infrastructure.
 - `MdmImportTaskDispatcher` claims queued tasks on a scheduled worker, parses archived workbooks and persists validation results for up to 10,000 rows.
+- `ConfiguredRuleValidator` executes tenant/model-scoped save rules through an allow-listed JSON Logic subset and generic cross-model reference lookups.
+- `JsonLogicEvaluator` supports safe variable lookup, boolean, comparison and membership operators without script execution.
 
 - Owner module: cross-application master data authority.
 - Layers: `interfaces`, `application`, `domain`, `infrastructure`.
 - `MdmController`: model/schema and dynamic record REST entrypoint.
 - `MdmApplicationService`: tenant-scoped unified validation, create/update, version snapshot and optimistic-lock transaction boundary.
 - `DynamicRecordValidator`: metadata-driven required/type/enum validation.
-- `MdmRepository` / `JdbcMdmRepository`: metadata, JSONB record and immutable version persistence.
+- `MdmRepository` / `JdbcMdmRepository`: metadata, JSONB record, validation-rule/reference lookup and immutable version persistence.
 - Depends on: `iaf-platform-core`, Spring JDBC, Jackson. It does not depend on QMS/WMS infrastructure.
 
 ### `iaf-app`

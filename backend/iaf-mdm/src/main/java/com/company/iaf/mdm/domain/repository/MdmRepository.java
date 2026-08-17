@@ -44,4 +44,7 @@ public interface MdmRepository {
     void refreshImportTaskValidation(long tenantId, long modelId, UUID taskId, long actorId,
                                      MdmDtos.BatchValidationResult validation);
     void completeImportTask(long tenantId, long modelId, UUID taskId, long actorId, int importedRows);
+    List<MdmModels.ValidationRule> findValidationRules(long tenantId, long modelId, String triggerPoint);
+    void replaceValidationRules(long tenantId, long actorId, long modelId, List<MdmDtos.ValidationRuleDraft> rules);
+    boolean referenceExists(long tenantId, String targetModelCode, List<MdmDtos.ReferenceCondition> conditions);
 }

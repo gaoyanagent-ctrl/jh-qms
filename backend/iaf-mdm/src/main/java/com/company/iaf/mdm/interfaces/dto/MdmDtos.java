@@ -30,4 +30,10 @@ public final class MdmDtos {
     public record ImportPreview(java.util.UUID taskId, String status, String fileName, List<SaveRecordRequest> records,
                                 BatchValidationResult validation) {}
     public record ImportDownload(byte[] content, String fileName, String mediaType) {}
+    public record ValidationRuleDraft(@NotBlank String code, @NotBlank String name, @NotBlank String triggerPoint,
+                                      @NotBlank String ruleType, String fieldCode, @NotBlank String severity,
+                                      @NotBlank String message, @NotNull Map<String, Object> condition,
+                                      @NotNull Map<String, Object> assertion, boolean enabled, int sortNo) {}
+    public record SaveValidationRulesRequest(@NotNull List<@Valid ValidationRuleDraft> rules) {}
+    public record ReferenceCondition(String targetField, Object value) {}
 }
