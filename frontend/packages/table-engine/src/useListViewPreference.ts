@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ColumnPreference, UserListViewPreference } from './UserListViewPreference';
 
 const getStorage = () => (typeof window === 'undefined' ? null : window.localStorage);
@@ -44,6 +44,16 @@ export const useListViewPreference = (tableId: string, defaultColumns: ColumnPre
       columns
     });
   };
+
+  useEffect(() => {
+    setPref((current) => {
+      const missing = defaultColumns.filter((column) => !current.columns.some((saved) => saved.key === column.key));
+      if (missing.length === 0) return current;
+      const next = { ...current, columns: [...current.columns, ...missing] };
+      getStorage()?.setItem(`iaf.table.pref.${tableId}`, JSON.stringify(next));
+      return next;
+    });
+  }, [defaultColumns, tableId]);
 
   return {
     pref,

@@ -2,7 +2,7 @@ import { MDM_PERMISSIONS } from '@iaf/permissions';
 import { ConfigurableListPage, type ColumnDefinition, type ListViewDefinition } from '@iaf/table-engine';
 import { AppPageContainer, FormInteractionSurface, StatusTag } from '@iaf/ui-core';
 import { useIafTheme, iafSurfaceWidths } from '@iaf/theme';
-import { Alert, App, Button, DatePicker, Drawer, Empty, Form, Input, InputNumber, Select, Space, Switch, Timeline, Typography } from 'antd';
+import { Alert, App, Button, DatePicker, Drawer, Empty, Form, Input, InputNumber, Select, Space, Switch, Table, Tag, Timeline, Typography } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,10 +10,24 @@ import { useParams } from 'react-router-dom';
 import { useRegisterDirty } from '../../workspace/DirtyStateRegistry';
 import { useMdmRecords, useMdmRecordVersions, useMdmSchema, useSaveMdmRecord } from './hooks';
 import { MdmPageContextProvider } from './pageContext';
-import type { MdmField, MdmRecord, SaveMdmRecord } from './types';
+import type { MdmField, MdmRecord, MdmRecordVersion, SaveMdmRecord } from './types';
 
 type AttributeValue = string | number | boolean | null | undefined;
 type FormValues = { businessCode:string; name:string; lifecycleStatus:string; effectiveFrom?:Dayjs; effectiveTo?:Dayjs; attributes:Record<string,AttributeValue> };
+export type MdmVersionDiff = { key:string; before:unknown; after:unknown };
+
+const comparableSnapshot = (snapshot:Record<string,unknown>) => {
+  const attributes = snapshot.attributes && typeof snapshot.attributes === 'object' ? snapshot.attributes as Record<string,unknown> : {};
+  const { attributes:_attributes,id:_id,modelId:_modelId,modelCode:_modelCode,currentVersionNo:_currentVersionNo,modelVersionNo:_modelVersionNo,version:_version,createdAt:_createdAt,updatedAt:_updatedAt,...business } = snapshot;
+  return {...business,...attributes};
+};
+
+export const buildMdmVersionDiff = (current:MdmRecordVersion, previous?:MdmRecordVersion):MdmVersionDiff[] => {
+  const after=comparableSnapshot(current.snapshot); const before=previous?comparableSnapshot(previous.snapshot):{};
+  return [...new Set([...Object.keys(before),...Object.keys(after)])].filter(key=>JSON.stringify(before[key])!==JSON.stringify(after[key])).map(key=>({key,before:before[key],after:after[key]}));
+};
+
+const displayValue=(value:unknown)=>value===undefined||value===null||value===''?'—':typeof value==='boolean'?(value?'是':'否'):typeof value==='object'?JSON.stringify(value):String(value);
 
 export const buildMdmDynamicColumns = (fields: MdmField[]): ColumnDefinition<MdmRecord>[] => fields.map((field) => ({
   key:field.code, titleKey:field.name, width:150, defaultVisible:field.listVisible,
@@ -79,8 +93,8 @@ export const MdmRecordWorkspacePage = () => {
         {schema.data?.fields.map((field) => <Form.Item key={field.code} name={['attributes',field.code]} label={field.name} extra={field.helpText} valuePropName={field.dataType === 'BOOLEAN' ? 'checked' : 'value'} rules={[{required:field.required,message:t('common.validation.required')}]}>{fieldControl(field)}</Form.Item>)}
       </Form>
     </FormInteractionSurface>
-    <Drawer open={Boolean(historyRecord)} onClose={()=>setHistoryRecord(undefined)} title={`${historyRecord?.businessCode??''} · ${t('mdm.actions.versionHistory')}`} width={640} destroyOnHidden>
-      {versions.isError?<Alert type="error" showIcon message={t('mdm.feedback.loadFailed')}/>:versions.isLoading?<Typography.Text type="secondary">{t('common.feedback.loading')}</Typography.Text>:versions.data?.length?<Timeline items={versions.data.map(version=>({children:<Space direction="vertical" size={4} style={{width:'100%'}}><Typography.Text strong>v{version.versionNo} · {version.changeType}</Typography.Text><Typography.Text type="secondary">{version.createdAt} · 用户 #{version.createdBy}</Typography.Text>{version.changeReason&&<Typography.Text>{version.changeReason}</Typography.Text>}<Typography.Text code copyable={{text:JSON.stringify(version.snapshot,null,2)}}><pre style={{whiteSpace:'pre-wrap',maxHeight:240,overflow:'auto',margin:0}}>{JSON.stringify(version.snapshot,null,2)}</pre></Typography.Text></Space>}))}/>:<Empty description="暂无版本历史"/>}
+    <Drawer open={Boolean(historyRecord)} onClose={()=>setHistoryRecord(undefined)} title={`${historyRecord?.businessCode??''} · ${t('mdm.actions.versionHistory')}`} width={760} destroyOnHidden>
+      {versions.isError?<Alert type="error" showIcon message={t('mdm.feedback.loadFailed')}/>:versions.isLoading?<Typography.Text type="secondary">{t('common.feedback.loading')}</Typography.Text>:versions.data?.length?<Timeline items={versions.data.map((version,index)=>{const changes=buildMdmVersionDiff(version,versions.data?.[index+1]);return {children:<Space direction="vertical" size={8} style={{width:'100%'}}><Space wrap><Typography.Text strong>v{version.versionNo}</Typography.Text><Tag color={version.changeType==='CREATE'?'green':'blue'}>{version.changeType}</Tag><Typography.Text>{version.createdByName}</Typography.Text><Typography.Text type="secondary">{dayjs(version.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Typography.Text></Space>{version.changeReason&&<Typography.Text type="secondary">变更原因：{version.changeReason}</Typography.Text>}<Table size="small" pagination={false} rowKey="key" dataSource={changes} columns={[{title:'变更字段',dataIndex:'key',width:180,render:(key:string)=>schema.data?.fields.find(field=>field.code===key)?.name??t(`mdm.fields.${key}`,{defaultValue:key})},{title:'变更前',dataIndex:'before',render:displayValue},{title:'变更后',dataIndex:'after',render:displayValue}]}/></Space>};})}/>:<Empty description="暂无版本历史"/>}
     </Drawer>
   </MdmPageContextProvider>;
 };

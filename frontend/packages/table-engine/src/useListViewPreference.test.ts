@@ -62,4 +62,10 @@ describe('useListViewPreference', () => {
     expect(result.current.pref.columns).toHaveLength(2);
     expect(result.current.pref.columns.some((c) => c.key === 'col3')).toBe(true);
   });
+
+  it('merges columns that arrive after an asynchronous schema load', () => {
+    const { result, rerender } = renderHook(({ columns }) => useListViewPreference(tableId, columns), { initialProps: { columns: [defaultCols[0]] } });
+    rerender({ columns: defaultCols });
+    expect(result.current.pref.columns.map((column) => column.key)).toEqual(['col1','col2']);
+  });
 });
