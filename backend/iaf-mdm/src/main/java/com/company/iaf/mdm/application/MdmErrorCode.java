@@ -10,6 +10,7 @@ public enum MdmErrorCode implements ErrorCode {
     RECORD_NOT_FOUND("MDM_RECORD_NOT_FOUND", "Master data record was not found"),
     VALIDATION_FAILED("MDM_VALIDATION_FAILED", "Master data validation failed"),
     BUSINESS_CODE_EXISTS("MDM_BUSINESS_CODE_EXISTS", "Business code already exists"),
+    IMPORT_FILE_INVALID("MDM_IMPORT_FILE_INVALID", "The import file is invalid"),
     OPTIMISTIC_LOCK_CONFLICT("MDM_OPTIMISTIC_LOCK_CONFLICT", "The record was changed by another user");
     private final String code; private final String message;
     MdmErrorCode(String code, String message) { this.code = code; this.message = message; }

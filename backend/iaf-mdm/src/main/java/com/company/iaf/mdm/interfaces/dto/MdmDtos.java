@@ -27,4 +27,6 @@ public final class MdmDtos {
     public record BatchRecordRequest(@NotNull @Size(min=1,max=1000) List<SaveRecordRequest> records) {}
     public record BatchRowValidation(int rowNo, String businessCode, boolean valid, List<String> errors) {}
     public record BatchValidationResult(boolean valid, int total, List<BatchRowValidation> rows) {}
+    public record ImportPreview(String fileName, List<SaveRecordRequest> records,
+                                BatchValidationResult validation) {}
 }

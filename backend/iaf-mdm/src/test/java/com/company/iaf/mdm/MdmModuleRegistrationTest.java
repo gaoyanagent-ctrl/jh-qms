@@ -1,6 +1,7 @@
 package com.company.iaf.mdm;
 
 import com.company.iaf.mdm.application.MdmApplicationService;
+import com.company.iaf.mdm.application.MdmExcelImportService;
 import com.company.iaf.mdm.infrastructure.persistence.JdbcMdmRepository;
 import com.company.iaf.mdm.interfaces.controller.MdmController;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +17,7 @@ class MdmModuleRegistrationTest {
             .withBean(DataSource.class, () -> mock(DataSource.class))
             .withBean(JdbcTemplate.class, () -> mock(JdbcTemplate.class))
             .withBean(ObjectMapper.class, ObjectMapper::new)
-            .withUserConfiguration(JdbcMdmRepository.class, MdmApplicationService.class, MdmController.class);
+            .withUserConfiguration(JdbcMdmRepository.class, MdmApplicationService.class, MdmExcelImportService.class, MdmController.class);
 
     @Test void registersMdmHttpChainByDefault() {
         runner.run(context -> assertThat(context).hasSingleBean(MdmController.class));
