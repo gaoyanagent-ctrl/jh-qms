@@ -33,6 +33,13 @@ public interface MdmRepository {
     List<MdmDtos.SaveRecordRequest> findImportTaskRecords(long tenantId, long modelId, UUID taskId);
     MdmDtos.BatchValidationResult findImportTaskValidation(long tenantId, long modelId, UUID taskId);
     Optional<MdmModels.ImportArtifact> findImportArtifact(long tenantId, long modelId, UUID taskId);
+    MdmModels.ImportTask insertQueuedImportTask(long tenantId,long actorId,long modelId,String modelCode,
+                                                String fileName,String sourceObjectKey,String mediaType,long size);
+    List<MdmModels.ImportTask> findQueuedImportTasks(int limit);
+    boolean claimImportPrecheck(long tenantId,long modelId,UUID taskId);
+    void completeImportPrecheck(long tenantId,long modelId,UUID taskId,List<MdmDtos.SaveRecordRequest> records,
+                                MdmDtos.BatchValidationResult validation);
+    void failImportPrecheck(long tenantId,long modelId,UUID taskId,String message);
     boolean claimImportTask(long tenantId, long modelId, UUID taskId, long actorId);
     void refreshImportTaskValidation(long tenantId, long modelId, UUID taskId, long actorId,
                                      MdmDtos.BatchValidationResult validation);

@@ -29,7 +29,7 @@ class MdmExcelImportServiceTest {
             MdmDtos.BatchRecordRequest request=invocation.getArgument(2);
             return new MdmDtos.BatchValidationResult(true,request.records().size(),List.of());
         });
-        when(repository.insertImportTask(eq(1L),eq(9L),eq(7L),eq("material"),eq("material.xlsx"),any(),any(),anyString(),anyString(),anyLong())).thenReturn(new MdmModels.ImportTask(taskId,7,"material","material.xlsx","READY",1,1,0,0,true,9,"测试用户",null,null));
+        when(repository.insertImportTask(eq(1L),eq(9L),eq(7L),eq("material"),eq("material.xlsx"),any(),any(),anyString(),anyString(),anyLong())).thenReturn(new MdmModels.ImportTask(taskId,1,7,"material","material.xlsx","READY",1,1,0,0,true,null,9,"测试用户",null,null));
         var service = new MdmExcelImportService(mdm,repository,storage);
         byte[] template = service.template(1,"material");
         byte[] populated;
@@ -51,8 +51,8 @@ class MdmExcelImportServiceTest {
     @Test void commitRevalidatesClaimsAndCompletesPersistedTask() {
         var mdm=mock(MdmApplicationService.class); var repository=mock(MdmRepository.class); var taskId=UUID.randomUUID();
         var model=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of());
-        var ready=new MdmModels.ImportTask(taskId,7,"material","material.xlsx","READY",1,1,0,0,true,9,"测试用户",null,null);
-        var committed=new MdmModels.ImportTask(taskId,7,"material","material.xlsx","COMMITTED",1,1,0,1,true,9,"测试用户",null,null);
+        var ready=new MdmModels.ImportTask(taskId,1,7,"material","material.xlsx","READY",1,1,0,0,true,null,9,"测试用户",null,null);
+        var committed=new MdmModels.ImportTask(taskId,1,7,"material","material.xlsx","COMMITTED",1,1,0,1,true,null,9,"测试用户",null,null);
         var record=new MdmDtos.SaveRecordRequest("M-1","物料","DRAFT","GROUP",List.of(),null,null,Map.of(),null,"导入");
         var validation=new MdmDtos.BatchValidationResult(true,1,List.of(new MdmDtos.BatchRowValidation(2,"M-1",true,List.of())));
         when(mdm.schema(1,"material")).thenReturn(model); when(repository.findImportTask(1,7,taskId)).thenReturn(java.util.Optional.of(ready),java.util.Optional.of(committed));
@@ -68,7 +68,7 @@ class MdmExcelImportServiceTest {
     @Test void downloadsArchivedSourceAndGeneratesReadableResultWorkbook() throws Exception {
         var mdm=mock(MdmApplicationService.class);var repository=mock(MdmRepository.class);var storage=mock(MdmImportObjectStorage.class);var taskId=UUID.randomUUID();
         var model=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of());
-        var task=new MdmModels.ImportTask(taskId,7,"material","material.xlsx","PRECHECK_FAILED",1,0,1,0,true,9,"测试用户",null,null);
+        var task=new MdmModels.ImportTask(taskId,1,7,"material","material.xlsx","PRECHECK_FAILED",1,0,1,0,true,null,9,"测试用户",null,null);
         var validation=new MdmDtos.BatchValidationResult(false,1,List.of(new MdmDtos.BatchRowValidation(2,"M-1",false,List.of("materialType: invalid option"))));
         when(mdm.schema(1,"material")).thenReturn(model);when(repository.findImportTask(1,7,taskId)).thenReturn(java.util.Optional.of(task));
         when(repository.findImportArtifact(1,7,taskId)).thenReturn(java.util.Optional.of(new MdmModels.ImportArtifact("1/mdm-imports/source.xlsx","material.xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",3)));
@@ -78,5 +78,20 @@ class MdmExcelImportServiceTest {
         assertThat(service.sourceFile(1,"material",taskId).content()).containsExactly(1,2,3);
         var report=service.resultFile(1,"material",taskId);
         try(var workbook=WorkbookFactory.create(new ByteArrayInputStream(report.content()))){assertThat(workbook.getSheet("校验结果").getRow(1).getCell(3).getStringCellValue()).contains("invalid option");}
+    }
+
+    @Test void queuedWorkbookIsClaimedParsedAndCompletedInBackground() throws Exception {
+        var mdm=mock(MdmApplicationService.class);var repository=mock(MdmRepository.class);var storage=mock(MdmImportObjectStorage.class);var taskId=UUID.randomUUID();
+        var model=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of());
+        var task=new MdmModels.ImportTask(taskId,1,7,"material","large.xlsx","QUEUED",0,0,0,0,true,null,9,"测试用户",null,null);
+        byte[] workbookBytes;try(var workbook=new org.apache.poi.xssf.usermodel.XSSFWorkbook();var output=new ByteArrayOutputStream()){var sheet=workbook.createSheet("导入数据");var header=sheet.createRow(0);header.createCell(0).setCellValue("业务编码");header.createCell(1).setCellValue("名称");var row=sheet.createRow(1);row.createCell(0).setCellValue("M-1");row.createCell(1).setCellValue("物料");workbook.write(output);workbookBytes=output.toByteArray();}
+        when(repository.claimImportPrecheck(1,7,taskId)).thenReturn(true);when(repository.findModel(1,"material")).thenReturn(java.util.Optional.of(model));
+        when(repository.findImportArtifact(1,7,taskId)).thenReturn(java.util.Optional.of(new MdmModels.ImportArtifact("source","large.xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",workbookBytes.length)));
+        when(storage.get("source")).thenReturn(new ByteArrayInputStream(workbookBytes));when(mdm.validateBatchInternal(eq(1L),eq("material"),any())).thenReturn(new MdmDtos.BatchValidationResult(true,1,List.of(new MdmDtos.BatchRowValidation(2,"M-1",true,List.of()))));
+
+        new MdmExcelImportService(mdm,repository,storage).processQueued(task);
+
+        verify(repository).completeImportPrecheck(eq(1L),eq(7L),eq(taskId),argThat(records->records.size()==1),argThat(MdmDtos.BatchValidationResult::valid));
+        verify(repository,never()).failImportPrecheck(anyLong(),anyLong(),any(),any());
     }
 }
