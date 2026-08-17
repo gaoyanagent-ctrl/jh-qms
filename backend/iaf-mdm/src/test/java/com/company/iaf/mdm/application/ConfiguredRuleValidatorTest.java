@@ -27,4 +27,16 @@ class ConfiguredRuleValidatorTest {
         assertThat(new ConfiguredRuleValidator(repository).validate(1,model,request)).containsExactly("componentMaterialCode: 引用物料无效");
         verify(repository).referenceExists(1,"material",List.of(new MdmDtos.ReferenceCondition("businessCode","M-1"),new MdmDtos.ReferenceCondition("lifecycleStatus","ACTIVE")));
     }
+    @Test void blurValidationReturnsWarningsWithoutBlocking(){
+        var repository=mock(MdmRepository.class);var model=new MdmModels.Model(8,"manufacturing","bomItem","BOM","MASTER",true,true,false,false,"PUBLISHED",1,Map.of(),List.of());
+        var assertion=Map.<String,Object>of("targetModel","material","conditions",List.of(Map.of("targetField","businessCode","sourceField","componentMaterialCode")));
+        when(repository.findValidationRules(1,8,"BLUR")).thenReturn(List.of(new MdmModels.ValidationRule(1,8,"component-warning","component","BLUR","REFERENCE_EXISTS","componentMaterialCode","WARNING","物料尚未生效",Map.of(),assertion,true,1)));
+        var request=new MdmDtos.SaveRecordRequest("B-1","BOM","DRAFT","GROUP",List.of(),null,null,Map.of("componentMaterialCode","M-1"),null,null);
+
+        var outcome=new ConfiguredRuleValidator(repository).validateDetailed(1,model,request,"componentMaterialCode");
+
+        assertThat(outcome.valid()).isTrue();
+        assertThat(outcome.errors()).isEmpty();
+        assertThat(outcome.warnings()).extracting(MdmDtos.ValidationIssue::message).containsExactly("物料尚未生效");
+    }
 }

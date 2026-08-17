@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.HashSet;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @ConditionalOnProperty(name = "iaf.mdm.enabled", havingValue = "true", matchIfMissing = true)
@@ -79,8 +81,14 @@ public class MdmApplicationService {
     }
     @RequiresPermission("mdm:model:update") @Transactional
     public List<MdmModels.ValidationRule> saveValidationRules(long tenantId,long actorId,String code,MdmDtos.SaveValidationRulesRequest request){
-        MdmModels.Model model=requireModel(tenantId,code); repository.replaceValidationRules(tenantId,actorId,model.id(),request.rules());
+        MdmModels.Model model=requireModel(tenantId,code);
+        if (!"DRAFT".equals(model.status())) throw new BusinessException(MdmErrorCode.MODEL_NOT_EDITABLE);
+        validateRuleDrafts(tenantId,model,request.rules());repository.replaceValidationRules(tenantId,actorId,model.id(),request.rules());
         return repository.findValidationRules(tenantId,model.id(),null);
+    }
+    @RequiresPermission("mdm:record:view") @Transactional(readOnly=true)
+    public MdmDtos.ValidationOutcome validateField(long tenantId,String code,MdmDtos.FieldValidationRequest request){
+        var model=requireModel(tenantId,code);return configuredRuleValidator.validateDetailed(tenantId,model,request.record(),request.fieldCode());
     }
     @RequiresPermission("mdm:record:view") @Transactional(readOnly = true)
     public PageResult<MdmModels.Record> records(long tenantId, String code, String keyword, int pageNo, int pageSize) {
@@ -173,4 +181,13 @@ public class MdmApplicationService {
     private void requireModelApprover(long tenantId,long actorId,MdmModels.Model model){if(model.modelApprovalRoleId()==null||!repository.userHasRole(tenantId,actorId,model.modelApprovalRoleId()))throw new BusinessException(MdmErrorCode.MODEL_APPROVAL_FORBIDDEN);}
     private MdmModels.Record transition(long tenantId,long actorId,MdmModels.Model model,MdmModels.Record current,List<String> from,String target,String action,String comment){if(!repository.transitionRecord(tenantId,model.id(),current.id(),from,target,actorId))throw new BusinessException(MdmErrorCode.RECORD_STATE_CONFLICT);repository.insertRecordAction(tenantId,actorId,current.id(),action,current.lifecycleStatus(),target,comment);var saved=requireRecord(tenantId,model,current.id());repository.insertVersion(tenantId,actorId,saved,action,comment);return saved;}
     private List<String> validateReferenceTargets(long tenantId,List<MdmDtos.FieldDraft> fields){var errors=new ArrayList<String>();var common=java.util.Set.of("businessCode","name","lifecycleStatus");for(var field:fields){if(!"REFERENCE".equals(field.dataType())||field.referenceConfig()==null)continue;var config=field.referenceConfig();var target=repository.findModel(tenantId,config.targetModelCode());if(target.isEmpty()){errors.add(field.code()+": reference target model does not exist");continue;}var codes=new HashSet<>(common);target.get().fields().forEach(item->codes.add(item.code()));if(!codes.contains(config.valueFieldCode()))errors.add(field.code()+": reference value field does not exist");if(!codes.contains(config.displayFieldCode()))errors.add(field.code()+": reference display field does not exist");if(config.statusFieldCode()!=null&&!config.statusFieldCode().isBlank()&&!codes.contains(config.statusFieldCode()))errors.add(field.code()+": reference status field does not exist");}return errors;}
+    private void validateRuleDrafts(long tenantId,MdmModels.Model model,List<MdmDtos.ValidationRuleDraft> rules){
+        var sourceFields=new HashSet<>(Set.of("businessCode","name","lifecycleStatus"));model.fields().forEach(field->sourceFields.add(field.code()));var codes=new HashSet<String>();
+        for(var rule:rules){
+            if(!codes.add(rule.code())||!Set.of("SAVE","BLUR").contains(rule.triggerPoint())||!"REFERENCE_EXISTS".equals(rule.ruleType())||!Set.of("BLOCK","WARNING").contains(rule.severity())||!sourceFields.contains(rule.fieldCode()))throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,"Invalid validation rule: "+rule.code());
+            String targetCode=String.valueOf(rule.assertion().get("targetModel"));var target=repository.findModel(tenantId,targetCode).orElseThrow(()->new BusinessException(MdmErrorCode.VALIDATION_FAILED,"Validation target model does not exist"));var targetFields=new HashSet<>(Set.of("businessCode","name","lifecycleStatus"));target.fields().forEach(field->targetFields.add(field.code()));Object raw=rule.assertion().get("conditions");
+            if(!(raw instanceof List<?> conditions)||conditions.isEmpty())throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,"Validation conditions are required");
+            for(var item:conditions){if(!(item instanceof Map<?,?> condition)||!targetFields.contains(String.valueOf(condition.get("targetField")))||(!condition.containsKey("value")&&!sourceFields.contains(String.valueOf(condition.get("sourceField")))))throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,"Invalid validation condition");}
+        }
+    }
 }

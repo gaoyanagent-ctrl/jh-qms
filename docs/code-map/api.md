@@ -17,6 +17,7 @@
 - `GET /api/mdm/models/model-approval-tasks` (`mdm:model:view`): list role-filtered model publication tasks for TODO, DONE, or STARTED scope.
 - `GET /api/mdm/models/{modelCode}/validation-rules` (`mdm:model:view`): list model save-time validation rules.
 - `PUT /api/mdm/models/{modelCode}/validation-rules` (`mdm:model:update`): atomically replace model validation-rule configuration.
+- `POST /api/mdm/models/{modelCode}/records/validate-field` (`mdm:record:view`): evaluate enabled BLUR rules for one field and return separated blocking errors and non-blocking warnings without persistence.
 - `POST /api/mdm/models/{modelCode}/records/batch-validate` (`mdm:record:create`): return row-level validation for pasted or imported records.
 - `POST /api/mdm/models/{modelCode}/records/batch` (`mdm:record:create`): atomically create a validated batch through the normal record/version pipeline.
 - `GET /api/mdm/models/{modelCode}/import-template` (`mdm:record:view`): download a dynamic `.xlsx` template with field descriptions and enum constraints.

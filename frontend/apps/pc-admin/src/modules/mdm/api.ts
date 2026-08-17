@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client';
-import type { CreateMdmModel, MdmApprovalTask, MdmApprovalTaskScope, MdmBatchDeleteItem, MdmBatchUpdateItem, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelApprovalTask, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
+import type { CreateMdmModel, MdmApprovalTask, MdmApprovalTaskScope, MdmBatchDeleteItem, MdmBatchUpdateItem, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelApprovalTask, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, MdmValidationOutcome, MdmValidationRule, SaveMdmModelDraft, SaveMdmRecord } from './types';
 export const mdmApi = {
   models: () => apiClient.get<MdmModel[]>('/api/mdm/models'),
   approvalTasks: (scope:MdmApprovalTaskScope) => apiClient.get<MdmApprovalTask[]>('/api/mdm/models/approval-tasks',{query:{scope}}),
@@ -10,6 +10,9 @@ export const mdmApi = {
   validateModel: (code:string) => apiClient.post<MdmModelValidation>(`/api/mdm/models/${code}/validate`,{}),
   publishModel: (code:string) => apiClient.post<MdmModel>(`/api/mdm/models/${code}/publish`,{}),
   modelPublishAction: (code:string,action:'APPROVE'|'REJECT',comment:string) => apiClient.post<MdmModel>(`/api/mdm/models/${code}/publish/${action.toLowerCase()}`,{comment}),
+  validationRules:(code:string)=>apiClient.get<MdmValidationRule[]>(`/api/mdm/models/${code}/validation-rules`),
+  saveValidationRules:(code:string,rules:MdmValidationRule[])=>apiClient.put<MdmValidationRule[]>(`/api/mdm/models/${code}/validation-rules`,{rules}),
+  validateField:(code:string,fieldCode:string,record:SaveMdmRecord)=>apiClient.post<MdmValidationOutcome>(`/api/mdm/models/${code}/records/validate-field`,{fieldCode,record}),
   records: (code:string, params:{keyword?:string;pageNo:number;pageSize:number}) => apiClient.get<MdmPage<MdmRecord>>(`/api/mdm/models/${code}/records`,{query:params}),
   recordVersions: (code:string,id:string) => apiClient.get<MdmRecordVersion[]>(`/api/mdm/models/${code}/records/${id}/versions`),
   recordActions: (code:string,id:string) => apiClient.get<MdmRecordAction[]>(`/api/mdm/models/${code}/records/${id}/actions`),
