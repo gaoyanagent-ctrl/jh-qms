@@ -16,6 +16,15 @@ public class ConfiguredRuleValidator {
     public List<String> validate(long tenantId,MdmModels.Model model,MdmDtos.SaveRecordRequest request){
         Map<String,Object> data=new LinkedHashMap<>(request.attributes());data.put("businessCode",request.businessCode());data.put("name",request.name());data.put("lifecycleStatus",request.lifecycleStatus());
         var errors=new ArrayList<String>();
+        for(var field:model.fields()){
+            var config=field.referenceConfig();Object source=data.get(field.code());
+            if(!"REFERENCE".equals(field.dataType())||config==null||source==null||String.valueOf(source).isBlank())continue;
+            var base=new ArrayList<MdmDtos.ReferenceCondition>();base.add(new MdmDtos.ReferenceCondition(config.valueFieldCode(),source));
+            boolean exists;
+            if(config.statusFieldCode()!=null&&!config.statusFieldCode().isBlank()&&config.allowedStatuses()!=null&&!config.allowedStatuses().isEmpty()) exists=config.allowedStatuses().stream().anyMatch(status->{var conditions=new ArrayList<>(base);conditions.add(new MdmDtos.ReferenceCondition(config.statusFieldCode(),status));return repository.referenceExists(tenantId,config.targetModelCode(),conditions);});
+            else exists=repository.referenceExists(tenantId,config.targetModelCode(),base);
+            if(!exists)errors.add(field.code()+": 引用的主数据不存在或状态不允许");
+        }
         for(var rule:repository.findValidationRules(tenantId,model.id(),"SAVE")){
             if(!rule.enabled()||!jsonLogic.matches(rule.condition(),data))continue;
             boolean passed=switch(rule.ruleType()){case "REFERENCE_EXISTS"->referenceExists(tenantId,rule,data);case "EXPRESSION"->jsonLogic.matches(rule.assertion(),data);default->true;};

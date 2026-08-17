@@ -5,6 +5,7 @@ import { useIafTheme, iafSurfaceWidths } from '@iaf/theme';
 import { Alert, App, Button, DatePicker, Drawer, Empty, Form, Input, InputNumber, Select, Space, Switch, Table, Tag, Timeline, Typography } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useRegisterDirty } from '../../workspace/DirtyStateRegistry';
@@ -13,6 +14,7 @@ import { MdmPageContextProvider } from './pageContext';
 import { MdmExcelPasteModal } from './MdmExcelPasteModal';
 import { MdmExcelFileImportModal } from './MdmExcelFileImportModal';
 import type { MdmField, MdmRecord, MdmRecordVersion, SaveMdmRecord } from './types';
+import { mdmApi } from './api';
 
 type AttributeValue = string | number | boolean | null | undefined;
 type FormValues = { businessCode:string; name:string; lifecycleStatus:string; effectiveFrom?:Dayjs; effectiveTo?:Dayjs; attributes:Record<string,AttributeValue> };
@@ -36,11 +38,22 @@ export const buildMdmDynamicColumns = (fields: MdmField[]): ColumnDefinition<Mdm
   render:(_value, record) => String(record.attributes[field.code] ?? '')
 }));
 
+const recordFieldValue=(record:MdmRecord,fieldCode:string):unknown=>fieldCode==='businessCode'?record.businessCode:fieldCode==='name'?record.name:fieldCode==='lifecycleStatus'?record.lifecycleStatus:record.attributes[fieldCode];
+
+const ReferenceSelect=({field}:{field:MdmField})=>{
+  const {t}=useTranslation();
+  const config=field.referenceConfig;const [keyword,setKeyword]=useState('');
+  const query=useQuery({queryKey:['mdm-reference-options',config?.targetModelCode,keyword],queryFn:()=>mdmApi.records(config!.targetModelCode,{keyword,pageNo:1,pageSize:100}),enabled:Boolean(config?.targetModelCode)});
+  const options=(query.data?.records??[]).filter(record=>!config?.statusFieldCode||!config.allowedStatuses?.length||config.allowedStatuses.includes(String(recordFieldValue(record,config.statusFieldCode)))).map(record=>{const value=recordFieldValue(record,config?.valueFieldCode??'businessCode');const display=recordFieldValue(record,config?.displayFieldCode??'name');return {value:String(value??''),label:`${String(display??value??'')} (${String(value??'')})`};});
+  return <Select showSearch allowClear filterOption={false} onSearch={setKeyword} loading={query.isFetching} options={options} placeholder={config?.targetModelCode?t('mdm.reference.search',{model:config.targetModelCode}):t('mdm.reference.incomplete')} disabled={!config?.targetModelCode} notFoundContent={query.isFetching?t('common.feedback.loading'):t('mdm.reference.empty')} />;
+};
+
 const fieldControl = (field: MdmField) => {
   if (field.dataType === 'BOOLEAN') return <Switch />;
   if (field.dataType === 'ENUM') return <Select options={field.enumOptions.map((value) => ({ value, label: value }))} />;
   if (field.dataType === 'INTEGER' || field.dataType === 'DECIMAL') return <InputNumber style={{ width: '100%' }} />;
   if (field.dataType === 'DATE') return <DatePicker style={{ width: '100%' }} />;
+  if (field.dataType === 'REFERENCE') return <ReferenceSelect field={field}/>;
   return field.dataType === 'TEXT' ? <Input.TextArea rows={3} /> : <Input />;
 };
 

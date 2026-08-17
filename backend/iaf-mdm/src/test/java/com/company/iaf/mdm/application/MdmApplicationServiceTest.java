@@ -18,7 +18,7 @@ class MdmApplicationServiceTest {
         var published=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of());
         var draft=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"DRAFT",1,Map.of(),List.of());
         when(repository.findModel(1,"material")).thenReturn(Optional.of(published),Optional.of(draft));
-        var field=new MdmDtos.FieldDraft("materialType","物料类型","ENUM",true,false,false,true,true,true,32,List.of("RAW","FINISHED"),null,10);
+        var field=new MdmDtos.FieldDraft("materialType","物料类型","ENUM",true,false,false,true,true,true,32,List.of("RAW","FINISHED"),null,10,null);
         var request=new MdmDtos.SaveModelDraftRequest(List.of(field),Map.of());
 
         new MdmApplicationService(repository, rules(repository)).saveDraft(1,9,"material",request);
@@ -41,7 +41,7 @@ class MdmApplicationServiceTest {
 
     @Test void batchPrecheckReturnsRowLevelDuplicateAndModelErrors() {
         var repository=mock(MdmRepository.class);
-        var requiredField=new MdmModels.Field(1,"materialType","物料类型","ENUM",true,false,false,true,true,true,32,List.of("RAW"),null,10);
+        var requiredField=new MdmModels.Field(1,"materialType","物料类型","ENUM",true,false,false,true,true,true,32,List.of("RAW"),null,10,null);
         var model=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of(requiredField));
         when(repository.findModel(1,"material")).thenReturn(Optional.of(model));
         var first=new MdmDtos.SaveRecordRequest("M-1","物料1","DRAFT","GROUP",List.of(),null,null,Map.of("materialType","BAD"),null,"导入");

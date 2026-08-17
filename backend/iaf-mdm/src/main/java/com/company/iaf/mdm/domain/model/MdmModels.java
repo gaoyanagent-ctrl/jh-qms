@@ -11,7 +11,11 @@ public final class MdmModels {
 
     public record Field(long id, String code, String name, String dataType, boolean required,
                         boolean unique, boolean readonly, boolean searchable, boolean sortable,
-                        boolean listVisible, Integer length, List<String> enumOptions, String helpText, int sortNo) {}
+                        boolean listVisible, Integer length, List<String> enumOptions, String helpText, int sortNo,
+                        ReferenceConfig referenceConfig) {}
+
+    public record ReferenceConfig(String targetModelCode, String valueFieldCode, String displayFieldCode,
+                                  String statusFieldCode, List<String> allowedStatuses) {}
 
     public record Model(long id, String domainCode, String code, String name, String recordType,
                         boolean versionEnabled, boolean effectiveDateEnabled, boolean organizationScopeEnabled,

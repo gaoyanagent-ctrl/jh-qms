@@ -22,7 +22,7 @@ class MdmExcelImportServiceTest {
     @Test void generatedTemplateCanBeUploadedAndPrechecked() {
         var mdm = mock(MdmApplicationService.class);
         var repository=mock(MdmRepository.class); var storage=mock(MdmImportObjectStorage.class); var taskId=UUID.randomUUID();
-        var field = new MdmModels.Field(1,"materialType","物料类型","ENUM",true,false,false,true,true,true,32,List.of("RAW","FINISHED"),"物料分类",10);
+        var field = new MdmModels.Field(1,"materialType","物料类型","ENUM",true,false,false,true,true,true,32,List.of("RAW","FINISHED"),"物料分类",10,null);
         var model = new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of(field));
         when(mdm.schema(1,"material")).thenReturn(model);
         when(mdm.validateBatch(eq(1L),eq("material"),any())).thenAnswer(invocation -> {
