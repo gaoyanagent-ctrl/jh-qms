@@ -227,7 +227,7 @@ export const resources = {
         models: { title: '主数据模型中心' },
         records: { title: '主数据工作台', description: '表格和表单共用模型定义、校验与版本保存管道。' },
         sections: { basic: '基本信息' },
-        actions: { openWorkspace: '打开数据工作台', createModel: '新建模型', designModel: '模型设计' },
+        actions: { openWorkspace: '打开数据工作台', createModel: '新建模型', designModel: '模型设计', versionHistory: '版本历史' },
         search: { keyword: '关键词', placeholder: '搜索业务编码或名称' },
         feedback: { loadFailed: '主数据加载失败，请重试。', loadSchemaFailed: '模型定义加载失败。' },
         fields: { modelCode: '模型编码', domain: '数据域', modelVersion: '模型版本', fieldCount: '字段数', businessCode: '业务编码', name: '名称', dataVersion: '数据版本', effectiveFrom: '生效日期', effectiveTo: '失效日期' },
@@ -927,7 +927,7 @@ export const resources = {
       mdm: {
         models: { title: 'Master Data Model Center' },
         records: { title: 'Master Data Workspace', description: 'Grid and form share one model, validation, and version pipeline.' },
-        sections: { basic: 'Basic Information' }, actions: { openWorkspace: 'Open Data Workspace', createModel: 'Create Model', designModel: 'Model Designer' },
+        sections: { basic: 'Basic Information' }, actions: { openWorkspace: 'Open Data Workspace', createModel: 'Create Model', designModel: 'Model Designer', versionHistory: 'Version History' },
         search: { keyword: 'Keyword', placeholder: 'Search business code or name' },
         feedback: { loadFailed: 'Failed to load master data.', loadSchemaFailed: 'Failed to load model schema.' },
         fields: { modelCode: 'Model code', domain: 'Data domain', modelVersion: 'Model version', fieldCount: 'Fields', businessCode: 'Business code', name: 'Name', dataVersion: 'Data version', effectiveFrom: 'Effective from', effectiveTo: 'Effective to' },

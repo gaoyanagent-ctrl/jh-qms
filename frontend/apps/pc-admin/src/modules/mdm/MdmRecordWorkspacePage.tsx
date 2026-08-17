@@ -2,13 +2,13 @@ import { MDM_PERMISSIONS } from '@iaf/permissions';
 import { ConfigurableListPage, type ColumnDefinition, type ListViewDefinition } from '@iaf/table-engine';
 import { AppPageContainer, FormInteractionSurface, StatusTag } from '@iaf/ui-core';
 import { useIafTheme, iafSurfaceWidths } from '@iaf/theme';
-import { Alert, App, Button, DatePicker, Form, Input, InputNumber, Select, Switch } from 'antd';
+import { Alert, App, Button, DatePicker, Drawer, Empty, Form, Input, InputNumber, Select, Space, Switch, Timeline, Typography } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useRegisterDirty } from '../../workspace/DirtyStateRegistry';
-import { useMdmRecords, useMdmSchema, useSaveMdmRecord } from './hooks';
+import { useMdmRecords, useMdmRecordVersions, useMdmSchema, useSaveMdmRecord } from './hooks';
 import { MdmPageContextProvider } from './pageContext';
 import type { MdmField, MdmRecord, SaveMdmRecord } from './types';
 
@@ -33,6 +33,7 @@ export const MdmRecordWorkspacePage = () => {
   const code = useParams().modelCode ?? 'material'; const { formInteractionMode, surfaceWidth } = useIafTheme();
   const [form] = Form.useForm<FormValues>(); const [params, setParams] = useState({ keyword:'', pageNo:1, pageSize:20 });
   const [open, setOpen] = useState(false); const [editing, setEditing] = useState<MdmRecord>(); const [dirty, setDirty] = useState(false);
+  const [historyRecord,setHistoryRecord]=useState<MdmRecord>(); const versions=useMdmRecordVersions(code,historyRecord?.id);
   useRegisterDirty(open && dirty); const schema = useMdmSchema(code); const records = useMdmRecords(code, params);
   const close = () => { setOpen(false); setEditing(undefined); setDirty(false); form.resetFields(); };
   const save = useSaveMdmRecord(code, () => { message.success(t('common.feedback.operationSucceeded')); close(); });
@@ -52,7 +53,7 @@ export const MdmRecordWorkspacePage = () => {
       { key:'currentVersionNo', dataIndex:'currentVersionNo', titleKey:'mdm.fields.dataVersion', width:100 }
     ], searchFields:[{ key:'keyword', labelKey:'mdm.search.keyword', type:'text', placeholderKey:'mdm.search.placeholder' }],
     toolbarActions:[{ key:'create', labelKey:'common.actions.create', type:'primary', requirePermission:MDM_PERMISSIONS.recordCreate, onClick:() => setOpen(true) }],
-    rowActions:[{ key:'edit', labelKey:'common.actions.edit', requirePermission:MDM_PERMISSIONS.recordUpdate, onClick:edit }] };
+    rowActions:[{ key:'edit', labelKey:'common.actions.edit', requirePermission:MDM_PERMISSIONS.recordUpdate, onClick:edit },{key:'history',labelKey:'mdm.actions.versionHistory',requirePermission:MDM_PERMISSIONS.recordView,onClick:setHistoryRecord}] };
   }, [code, schema.data?.fields, t]);
   const submit = (values:FormValues) => {
     const request:SaveMdmRecord = { businessCode:values.businessCode, name:values.name, lifecycleStatus:values.lifecycleStatus ?? 'DRAFT',
@@ -78,5 +79,8 @@ export const MdmRecordWorkspacePage = () => {
         {schema.data?.fields.map((field) => <Form.Item key={field.code} name={['attributes',field.code]} label={field.name} extra={field.helpText} valuePropName={field.dataType === 'BOOLEAN' ? 'checked' : 'value'} rules={[{required:field.required,message:t('common.validation.required')}]}>{fieldControl(field)}</Form.Item>)}
       </Form>
     </FormInteractionSurface>
+    <Drawer open={Boolean(historyRecord)} onClose={()=>setHistoryRecord(undefined)} title={`${historyRecord?.businessCode??''} · ${t('mdm.actions.versionHistory')}`} width={640} destroyOnHidden>
+      {versions.isError?<Alert type="error" showIcon message={t('mdm.feedback.loadFailed')}/>:versions.isLoading?<Typography.Text type="secondary">{t('common.feedback.loading')}</Typography.Text>:versions.data?.length?<Timeline items={versions.data.map(version=>({children:<Space direction="vertical" size={4} style={{width:'100%'}}><Typography.Text strong>v{version.versionNo} · {version.changeType}</Typography.Text><Typography.Text type="secondary">{version.createdAt} · 用户 #{version.createdBy}</Typography.Text>{version.changeReason&&<Typography.Text>{version.changeReason}</Typography.Text>}<Typography.Text code copyable={{text:JSON.stringify(version.snapshot,null,2)}}><pre style={{whiteSpace:'pre-wrap',maxHeight:240,overflow:'auto',margin:0}}>{JSON.stringify(version.snapshot,null,2)}</pre></Typography.Text></Space>}))}/>:<Empty description="暂无版本历史"/>}
+    </Drawer>
   </MdmPageContextProvider>;
 };

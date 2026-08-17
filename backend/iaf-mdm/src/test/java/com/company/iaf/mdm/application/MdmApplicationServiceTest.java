@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 
@@ -23,5 +24,18 @@ class MdmApplicationServiceTest {
         new MdmApplicationService(repository).saveDraft(1,9,"material",request);
 
         verify(repository).replaceDraft(1,9,7,List.of(field),Map.of());
+    }
+
+    @Test void returnsImmutableHistoryForRecordInRequestedModel() {
+        var repository=mock(MdmRepository.class); var recordId=UUID.randomUUID();
+        var model=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of());
+        var record=new MdmModels.Record(recordId,7,"material","M-1","物料", "ACTIVE",2,1,"GROUP",List.of(),null,null,Map.of(),1,null,null);
+        when(repository.findModel(1,"material")).thenReturn(Optional.of(model));
+        when(repository.findRecord(1,7,recordId)).thenReturn(Optional.of(record));
+        when(repository.findRecordVersions(1,7,recordId)).thenReturn(List.of());
+
+        new MdmApplicationService(repository).recordVersions(1,"material",recordId);
+
+        verify(repository).findRecordVersions(1,7,recordId);
     }
 }

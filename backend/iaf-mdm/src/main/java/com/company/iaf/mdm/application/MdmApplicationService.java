@@ -57,6 +57,12 @@ public class MdmApplicationService {
         MdmModels.Model model = requireModel(tenantId, code); String q = keyword == null || keyword.isBlank() ? null : keyword.trim();
         return new PageResult<>(repository.findRecords(tenantId, model.id(), q, (long)(pageNo - 1) * pageSize, pageSize), repository.countRecords(tenantId, model.id(), q), pageNo, pageSize);
     }
+    @RequiresPermission("mdm:record:view") @Transactional(readOnly = true)
+    public List<MdmModels.RecordVersion> recordVersions(long tenantId, String code, UUID id) {
+        MdmModels.Model model = requireModel(tenantId, code);
+        if (repository.findRecord(tenantId, model.id(), id).isEmpty()) throw new BusinessException(MdmErrorCode.RECORD_NOT_FOUND);
+        return repository.findRecordVersions(tenantId, model.id(), id);
+    }
     @RequiresPermission("mdm:record:create") @Transactional
     public MdmModels.Record create(long tenantId, long actorId, String code, MdmDtos.SaveRecordRequest request) {
         MdmModels.Model model = requireModel(tenantId, code); validate(model, request);
