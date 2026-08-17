@@ -11,6 +11,7 @@
 - `V0802__mdm_model_designer.sql` adds `mdm_model_version` immutable snapshots and model create/update/publish permissions.
 - `V0803__mdm_import_task.sql` adds tenant/model-scoped Excel import task metadata, record payload snapshots, row validation results and commit audit state.
 - `V0804__mdm_import_artifacts.sql` adds archived source-object metadata to import tasks; workbook bytes remain in object storage.
+- `V0805__mdm_async_precheck.sql` adds queued/validating failure diagnostics and queue lookup support for background workbook prechecks.
 
 ## Local Database Stack (ADR-0002)
 

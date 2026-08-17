@@ -20,6 +20,7 @@
 - `POST /api/mdm/models/{modelCode}/imports/{taskId}/commit` (`mdm:record:create`): revalidate, atomically claim and commit a ready task through the unified record pipeline.
 - `GET /api/mdm/models/{modelCode}/imports/{taskId}/source` (`mdm:record:view`): download the archived original workbook.
 - `GET /api/mdm/models/{modelCode}/imports/{taskId}/result` (`mdm:record:view`): generate and download an Excel row-validation report from the task snapshot.
+- `POST /api/mdm/models/{modelCode}/imports/async` (`mdm:record:create`): archive and queue a workbook for background precheck (up to 10,000 data rows).
 
 All backend APIs must use:
 

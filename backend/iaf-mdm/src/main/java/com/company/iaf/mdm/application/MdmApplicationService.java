@@ -74,6 +74,9 @@ public class MdmApplicationService {
     }
     @RequiresPermission("mdm:record:create") @Transactional(readOnly = true)
     public MdmDtos.BatchValidationResult validateBatch(long tenantId, String code, MdmDtos.BatchRecordRequest request) {
+        return validateBatchInternal(tenantId,code,request);
+    }
+    public MdmDtos.BatchValidationResult validateBatchInternal(long tenantId, String code, MdmDtos.BatchRecordRequest request) {
         MdmModels.Model model=requireModel(tenantId,code); var seen=new HashSet<String>(); var rows=new ArrayList<MdmDtos.BatchRowValidation>();
         for(int index=0;index<request.records().size();index++){
             var item=request.records().get(index); var errors=new ArrayList<String>(); String businessCode=item.businessCode()==null?"":item.businessCode().trim();

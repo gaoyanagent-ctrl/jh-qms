@@ -14,6 +14,7 @@ export const mdmApi = {
   createBatch: (code:string,records:SaveMdmRecord[]) => apiClient.post<MdmRecord[]>(`/api/mdm/models/${code}/records/batch`,{records}),
   importTemplate: (code:string) => apiClient.getBlob(`/api/mdm/models/${code}/import-template`),
   previewImport: (code:string,file:File) => { const body=new FormData(); body.append('file',file); return apiClient.post<MdmImportPreview>(`/api/mdm/models/${code}/imports`,body); },
+  queueImport: (code:string,file:File) => { const body=new FormData(); body.append('file',file); return apiClient.post<MdmImportTask>(`/api/mdm/models/${code}/imports/async`,body); },
   importTasks: (code:string) => apiClient.get<MdmImportTask[]>(`/api/mdm/models/${code}/imports`),
   importErrors: (code:string,taskId:string) => apiClient.get<MdmBatchValidation>(`/api/mdm/models/${code}/imports/${taskId}/errors`),
   commitImport: (code:string,taskId:string) => apiClient.post<MdmImportTask>(`/api/mdm/models/${code}/imports/${taskId}/commit`,{}),
