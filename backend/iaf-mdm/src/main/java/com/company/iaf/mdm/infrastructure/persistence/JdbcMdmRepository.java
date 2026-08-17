@@ -36,7 +36,7 @@ public class JdbcMdmRepository implements MdmRepository {
     public void replaceDraft(long tenantId,long actorId,long modelId,List<MdmDtos.FieldDraft> fields,Map<String,Object> uiSchema) {
         jdbc.update("delete from mdm_model_field where tenant_id=? and model_id=?",tenantId,modelId);
         for(var f:fields) jdbc.update("insert into mdm_model_field(tenant_id,model_id,code,name,data_type,required,unique_value,readonly,searchable,sortable,list_visible,max_length,enum_options,help_text,sort_no,created_by,updated_by) values (?,?,?,?,?,?,?,?,?,?,?,?,?::jsonb,?,?,?,?)",tenantId,modelId,f.code(),f.name(),f.dataType(),f.required(),f.unique(),f.readonly(),f.searchable(),f.sortable(),f.listVisible(),f.maxLength(),write(f.enumOptions()==null?List.of():f.enumOptions()),f.helpText(),f.sortNo(),actorId,actorId);
-        jdbc.update("update mdm_model set ui_schema=?::jsonb,updated_by=?,updated_at=now(),version=version+1 where tenant_id=? and id=? and status='DRAFT'",write(uiSchema),actorId,tenantId,modelId);
+        jdbc.update("update mdm_model set ui_schema=?::jsonb,status='DRAFT',updated_by=?,updated_at=now(),version=version+1 where tenant_id=? and id=? and status in ('DRAFT','PUBLISHED')",write(uiSchema),actorId,tenantId,modelId);
     }
     public void publishModel(long tenantId,long actorId,MdmModels.Model model) {
         int next=model.currentModelVersion()+1;
