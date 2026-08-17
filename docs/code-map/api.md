@@ -14,7 +14,10 @@
 - `POST /api/mdm/models/{modelCode}/records/batch-validate` (`mdm:record:create`): return row-level validation for pasted or imported records.
 - `POST /api/mdm/models/{modelCode}/records/batch` (`mdm:record:create`): atomically create a validated batch through the normal record/version pipeline.
 - `GET /api/mdm/models/{modelCode}/import-template` (`mdm:record:view`): download a dynamic `.xlsx` template with field descriptions and enum constraints.
-- `POST /api/mdm/models/{modelCode}/imports` (`mdm:record:create`): upload `.xlsx`/`.xls`, parse at most 1,000 rows and return a precheck preview; this stage does not persist records.
+- `POST /api/mdm/models/{modelCode}/imports` (`mdm:record:create`): upload `.xlsx`/`.xls`, parse at most 1,000 rows, persist the task snapshot and return a precheck preview without creating master records.
+- `GET /api/mdm/models/{modelCode}/imports` (`mdm:record:view`): list the latest 100 persisted import tasks.
+- `GET /api/mdm/models/{modelCode}/imports/{taskId}/errors` (`mdm:record:view`): return the stored row-level precheck result.
+- `POST /api/mdm/models/{modelCode}/imports/{taskId}/commit` (`mdm:record:create`): revalidate, atomically claim and commit a ready task through the unified record pipeline.
 
 All backend APIs must use:
 

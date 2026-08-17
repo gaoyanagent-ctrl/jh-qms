@@ -1,6 +1,7 @@
 package com.company.iaf.mdm.application;
 
 import com.company.iaf.mdm.domain.model.MdmModels;
+import com.company.iaf.mdm.domain.repository.MdmRepository;
 import com.company.iaf.mdm.interfaces.dto.MdmDtos;
 import com.company.iaf.platform.core.security.RequiresPermission;
 import com.company.iaf.shared.exception.BusinessException;
@@ -12,6 +13,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
@@ -23,8 +25,9 @@ import java.util.*;
 public class MdmExcelImportService {
     private static final int MAX_ROWS = 1000;
     private final MdmApplicationService mdm;
+    private final MdmRepository repository;
 
-    public MdmExcelImportService(MdmApplicationService mdm) { this.mdm = mdm; }
+    public MdmExcelImportService(MdmApplicationService mdm, MdmRepository repository) { this.mdm = mdm; this.repository = repository; }
 
     @RequiresPermission("mdm:record:view")
     public byte[] template(long tenantId, String modelCode) {
@@ -56,7 +59,8 @@ public class MdmExcelImportService {
     }
 
     @RequiresPermission("mdm:record:create")
-    public MdmDtos.ImportPreview preview(long tenantId, String modelCode, MultipartFile file) {
+    @Transactional
+    public MdmDtos.ImportPreview preview(long tenantId, long actorId, String modelCode, MultipartFile file) {
         validateFile(file);
         MdmModels.Model model = mdm.schema(tenantId, modelCode);
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
@@ -71,10 +75,40 @@ public class MdmExcelImportService {
                 var row = checked.rows().get(i);
                 rows.add(new MdmDtos.BatchRowValidation(parsed.rowNumbers().get(i), row.businessCode(), row.valid(), row.errors()));
             }
-            return new MdmDtos.ImportPreview(file.getOriginalFilename(), parsed.records(), new MdmDtos.BatchValidationResult(checked.valid(), checked.total(), rows));
+            var validation = new MdmDtos.BatchValidationResult(checked.valid(), checked.total(), rows);
+            var task = repository.insertImportTask(tenantId, actorId, model.id(), model.code(), file.getOriginalFilename(), parsed.records(), validation);
+            return new MdmDtos.ImportPreview(task.id(), task.status(), file.getOriginalFilename(), parsed.records(), validation);
         } catch (BusinessException failure) { throw failure;
         } catch (Exception failure) { throw invalid("无法读取 Excel 文件，请使用系统模板并确认文件未损坏"); }
     }
+
+    @RequiresPermission("mdm:record:view")
+    @Transactional(readOnly = true)
+    public List<MdmModels.ImportTask> tasks(long tenantId, String modelCode) {
+        var model=mdm.schema(tenantId,modelCode); return repository.findImportTasks(tenantId,model.id());
+    }
+
+    @RequiresPermission("mdm:record:view")
+    @Transactional(readOnly = true)
+    public MdmDtos.BatchValidationResult errors(long tenantId, String modelCode, UUID taskId) {
+        var model=mdm.schema(tenantId,modelCode); requireTask(tenantId,model.id(),taskId); return repository.findImportTaskValidation(tenantId,model.id(),taskId);
+    }
+
+    @RequiresPermission("mdm:record:create")
+    @Transactional
+    public MdmModels.ImportTask commit(long tenantId,long actorId,String modelCode,UUID taskId) {
+        var model=mdm.schema(tenantId,modelCode); var task=requireTask(tenantId,model.id(),taskId);
+        if("COMMITTED".equals(task.status())) return task;
+        if(!"READY".equals(task.status())) throw new BusinessException(MdmErrorCode.IMPORT_TASK_NOT_READY);
+        var records=repository.findImportTaskRecords(tenantId,model.id(),taskId);
+        var validation=mdm.validateBatch(tenantId,modelCode,new MdmDtos.BatchRecordRequest(records));
+        if(!validation.valid()) { repository.refreshImportTaskValidation(tenantId,model.id(),taskId,actorId,validation); return requireTask(tenantId,model.id(),taskId); }
+        if(!repository.claimImportTask(tenantId,model.id(),taskId,actorId)) throw new BusinessException(MdmErrorCode.IMPORT_TASK_NOT_READY);
+        var created=mdm.createBatch(tenantId,actorId,modelCode,new MdmDtos.BatchRecordRequest(records));
+        repository.completeImportTask(tenantId,model.id(),taskId,actorId,created.size()); return requireTask(tenantId,model.id(),taskId);
+    }
+
+    private MdmModels.ImportTask requireTask(long tenantId,long modelId,UUID taskId){return repository.findImportTask(tenantId,modelId,taskId).orElseThrow(()->new BusinessException(MdmErrorCode.IMPORT_TASK_NOT_FOUND));}
 
     private ParsedRows parse(Sheet sheet, MdmModels.Model model) {
         Row header = sheet.getRow(sheet.getFirstRowNum()); if (header == null) throw invalid("缺少表头");

@@ -24,4 +24,15 @@ public interface MdmRepository {
     boolean updateRecord(long tenantId, long actorId, MdmModels.Record record, int expectedVersion);
     void insertVersion(long tenantId, long actorId, MdmModels.Record record, String changeType, String reason);
     List<MdmModels.RecordVersion> findRecordVersions(long tenantId, long modelId, UUID recordId);
+    MdmModels.ImportTask insertImportTask(long tenantId, long actorId, long modelId, String modelCode,
+                                          String fileName, List<MdmDtos.SaveRecordRequest> records,
+                                          MdmDtos.BatchValidationResult validation);
+    Optional<MdmModels.ImportTask> findImportTask(long tenantId, long modelId, UUID taskId);
+    List<MdmModels.ImportTask> findImportTasks(long tenantId, long modelId);
+    List<MdmDtos.SaveRecordRequest> findImportTaskRecords(long tenantId, long modelId, UUID taskId);
+    MdmDtos.BatchValidationResult findImportTaskValidation(long tenantId, long modelId, UUID taskId);
+    boolean claimImportTask(long tenantId, long modelId, UUID taskId, long actorId);
+    void refreshImportTaskValidation(long tenantId, long modelId, UUID taskId, long actorId,
+                                     MdmDtos.BatchValidationResult validation);
+    void completeImportTask(long tenantId, long modelId, UUID taskId, long actorId, int importedRows);
 }

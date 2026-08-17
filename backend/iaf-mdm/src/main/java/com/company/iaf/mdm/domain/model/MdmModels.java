@@ -26,4 +26,8 @@ public final class MdmModels {
     public record RecordVersion(long id, UUID recordId, int versionNo, Map<String, Object> snapshot,
                                 String changeType, String changeReason, LocalDate effectiveFrom,
                                 LocalDate effectiveTo, long createdBy, String createdByName, OffsetDateTime createdAt) {}
+
+    public record ImportTask(UUID id, long modelId, String modelCode, String fileName, String status,
+                             int totalRows, int validRows, int invalidRows, int importedRows,
+                             long createdBy, String createdByName, OffsetDateTime createdAt, OffsetDateTime committedAt) {}
 }
