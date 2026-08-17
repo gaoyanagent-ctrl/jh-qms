@@ -34,7 +34,7 @@ public class MdmApplicationService {
     @RequiresPermission("mdm:model:update") @Transactional
     public MdmModels.Model saveDraft(long tenantId, long actorId, String code, MdmDtos.SaveModelDraftRequest request) {
         MdmModels.Model model = requireModel(tenantId, code);
-        if (!"DRAFT".equals(model.status())) throw new BusinessException(MdmErrorCode.MODEL_NOT_EDITABLE);
+        if (!"DRAFT".equals(model.status()) && !"PUBLISHED".equals(model.status())) throw new BusinessException(MdmErrorCode.MODEL_NOT_EDITABLE);
         var result = modelValidator.validate(request.fields());
         if (!result.valid()) throw new BusinessException(MdmErrorCode.VALIDATION_FAILED, String.join("; ", result.errors()));
         repository.replaceDraft(tenantId, actorId, model.id(), request.fields(), request.uiSchema());
