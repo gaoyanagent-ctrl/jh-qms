@@ -25,5 +25,5 @@ public final class MdmModels {
 
     public record RecordVersion(long id, UUID recordId, int versionNo, Map<String, Object> snapshot,
                                 String changeType, String changeReason, LocalDate effectiveFrom,
-                                LocalDate effectiveTo, long createdBy, OffsetDateTime createdAt) {}
+                                LocalDate effectiveTo, long createdBy, String createdByName, OffsetDateTime createdAt) {}
 }
