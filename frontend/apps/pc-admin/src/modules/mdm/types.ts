@@ -4,6 +4,8 @@ export interface MdmModel { id:number; domainCode:string; code:string; name:stri
 export interface MdmRecord { id:string; modelId:number; businessCode:string; name:string; lifecycleStatus:string; currentVersionNo:number; modelVersionNo:number; scopeType:string; scopeIds:number[]; effectiveFrom:string|null; effectiveTo:string|null; attributes:Record<string,unknown>; version:number; createdAt:string; updatedAt:string }
 export interface MdmRecordVersion { id:number; recordId:string; versionNo:number; snapshot:Record<string,unknown>; changeType:string; changeReason:string|null; effectiveFrom:string|null; effectiveTo:string|null; createdBy:number; createdByName:string; createdAt:string }
 export interface SaveMdmRecord { businessCode:string; name:string; lifecycleStatus:string; scopeType:string; scopeIds:number[]; effectiveFrom?:string|null; effectiveTo?:string|null; attributes:Record<string,unknown>; expectedVersion?:number; changeReason?:string }
+export interface MdmBatchRowValidation { rowNo:number; businessCode:string; valid:boolean; errors:string[] }
+export interface MdmBatchValidation { valid:boolean; total:number; rows:MdmBatchRowValidation[] }
 export interface MdmPage<T> { records:T[]; total:number; pageNo:number; pageSize:number }
 export interface CreateMdmModel { domainCode:string; code:string; name:string; recordType:string; versionEnabled:boolean; effectiveDateEnabled:boolean; organizationScopeEnabled:boolean; approvalRequired:boolean }
 export interface SaveMdmModelDraft { fields:Array<Omit<MdmField,'id'|'length'>&{maxLength:number|null}>; uiSchema:Record<string,unknown> }

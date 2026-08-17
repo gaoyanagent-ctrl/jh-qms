@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class MdmControllerTest {
@@ -19,11 +20,13 @@ class MdmControllerTest {
         var service=mock(MdmApplicationService.class); TenantContext.setTenantId(1L);
         when(service.schema(1L,"material")).thenReturn(null);
         when(service.records(1L,"material",null,1,20)).thenReturn(new PageResult<>(List.of(),0,1,20));
+        when(service.validateBatch(eq(1L),eq("material"),any())).thenReturn(new com.company.iaf.mdm.interfaces.dto.MdmDtos.BatchValidationResult(true,1,List.of()));
         var recordId=UUID.randomUUID(); when(service.recordVersions(1L,"material",recordId)).thenReturn(List.of());
         var mvc=MockMvcBuilders.standaloneSetup(new MdmController(service)).build();
         mvc.perform(get("/api/mdm/models/material/schema")).andExpect(status().isOk());
         mvc.perform(get("/api/mdm/models/material/records").param("pageNo","1").param("pageSize","20")).andExpect(status().isOk());
         mvc.perform(get("/api/mdm/models/material/records/{id}/versions",recordId)).andExpect(status().isOk());
+        mvc.perform(post("/api/mdm/models/material/records/batch-validate").contentType("application/json").content("{\"records\":[{\"businessCode\":\"M-1\",\"name\":\"物料\",\"attributes\":{}}]}" )).andExpect(status().isOk());
         verify(service).schema(1L,"material"); verify(service).records(1L,"material",null,1,20); verify(service).recordVersions(1L,"material",recordId);
     }
 }
