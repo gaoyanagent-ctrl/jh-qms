@@ -1,5 +1,6 @@
 package com.company.iaf.mdm.interfaces.dto;
 
+import com.company.iaf.mdm.domain.model.MdmModels;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.Valid;
@@ -16,7 +17,8 @@ public final class MdmDtos {
     public record FieldDraft(@NotBlank String code, @NotBlank String name, @NotBlank String dataType,
                              boolean required, boolean unique, boolean readonly, boolean searchable,
                              boolean sortable, boolean listVisible, Integer maxLength,
-                             List<String> enumOptions, String helpText, int sortNo) {}
+                             List<String> enumOptions, String helpText, int sortNo,
+                             MdmModels.ReferenceConfig referenceConfig) {}
     public record SaveModelDraftRequest(@NotNull List<@Valid FieldDraft> fields,
                                         @NotNull Map<String, Object> uiSchema) {}
     public record ModelValidationResult(boolean valid, List<String> errors, List<String> warnings) {}

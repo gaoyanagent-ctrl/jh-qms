@@ -9,6 +9,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class ConfiguredRuleValidatorTest {
+    @Test void validatesReferenceMetadataWithoutBusinessSpecificRule(){
+        var repository=mock(MdmRepository.class);var config=new MdmModels.ReferenceConfig("material","businessCode","name","lifecycleStatus",List.of("ACTIVE"));
+        var field=new MdmModels.Field(2,"componentMaterialCode","组件物料","REFERENCE",true,false,false,true,true,true,128,List.of(),null,10,config);
+        var model=new MdmModels.Model(8,"manufacturing","bomItem","BOM","MASTER",true,true,false,false,"PUBLISHED",1,Map.of(),List.of(field));
+        when(repository.findValidationRules(1,8,"SAVE")).thenReturn(List.of());
+        var request=new MdmDtos.SaveRecordRequest("B-1","BOM","ACTIVE","GROUP",List.of(),null,null,Map.of("componentMaterialCode","M-404"),null,null);
+        assertThat(new ConfiguredRuleValidator(repository).validate(1,model,request)).containsExactly("componentMaterialCode: 引用的主数据不存在或状态不允许");
+        verify(repository).referenceExists(1,"material",List.of(new MdmDtos.ReferenceCondition("businessCode","M-404"),new MdmDtos.ReferenceCondition("lifecycleStatus","ACTIVE")));
+    }
     @Test void resolvesSourceFieldForGenericReferenceRule(){
         var repository=mock(MdmRepository.class);var model=new MdmModels.Model(8,"manufacturing","bomItem","BOM","MASTER",true,true,false,false,"PUBLISHED",1,Map.of(),List.of());
         var assertion=Map.<String,Object>of("targetModel","material","conditions",List.of(Map.of("targetField","businessCode","sourceField","componentMaterialCode"),Map.of("targetField","lifecycleStatus","value","ACTIVE")));

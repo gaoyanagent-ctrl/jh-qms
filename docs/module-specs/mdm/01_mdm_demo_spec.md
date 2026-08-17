@@ -45,4 +45,5 @@ MDM 负责数据域、模型、字段、UI Schema、动态主数据记录及不�
 - JSON Logic 仅允许变量、布尔、比较和成员操作，不允许 Java、Groovy、SpEL 或任意脚本。
 - `REFERENCE_EXISTS` 通过参数化查询校验目标模型主数据，可将源字段映射到目标通用列或 JSONB 属性。
 - Demo 预置 `bomItem` 模型，父项和组件物料必须引用 `material` 模型中状态为 `ACTIVE` 的记录，用量必须大于 0。
+- `REFERENCE` 字段保存目标模型编码、值字段编码、显示字段编码以及可选的状态限制；不保存会随租户、草稿重建和部署环境变化的数据库字段 ID。
 - 大文件可进入 `QUEUED → VALIDATING → READY/PRECHECK_FAILED/FAILED` 后台预检查状态流，最多处理 1 万数据行。

@@ -39,14 +39,16 @@ public class MdmApplicationService {
         MdmModels.Model model = requireModel(tenantId, code);
         if (!"DRAFT".equals(model.status()) && !"PUBLISHED".equals(model.status())) throw new BusinessException(MdmErrorCode.MODEL_NOT_EDITABLE);
         var result = modelValidator.validate(request.fields());
-        if (!result.valid()) throw new BusinessException(MdmErrorCode.VALIDATION_FAILED, String.join("; ", result.errors()));
+        var referenceErrors=validateReferenceTargets(tenantId,request.fields());
+        if (!result.valid()||!referenceErrors.isEmpty()) {var errors=new ArrayList<>(result.errors());errors.addAll(referenceErrors);throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,String.join("; ",errors));}
         repository.replaceDraft(tenantId, actorId, model.id(), request.fields(), request.uiSchema());
         return requireModel(tenantId, code);
     }
     @RequiresPermission("mdm:model:update") @Transactional(readOnly = true)
     public MdmDtos.ModelValidationResult validateModel(long tenantId, String code) {
         MdmModels.Model model = requireModel(tenantId, code);
-        return modelValidator.validate(model.fields().stream().map(f -> new MdmDtos.FieldDraft(f.code(), f.name(), f.dataType(), f.required(), f.unique(), f.readonly(), f.searchable(), f.sortable(), f.listVisible(), f.length(), f.enumOptions(), f.helpText(), f.sortNo())).toList());
+        var fields=model.fields().stream().map(f -> new MdmDtos.FieldDraft(f.code(), f.name(), f.dataType(), f.required(), f.unique(), f.readonly(), f.searchable(), f.sortable(), f.listVisible(), f.length(), f.enumOptions(), f.helpText(), f.sortNo(), f.referenceConfig())).toList();
+        var base=modelValidator.validate(fields);var errors=new ArrayList<>(base.errors());errors.addAll(validateReferenceTargets(tenantId,fields));return new MdmDtos.ModelValidationResult(errors.isEmpty(),errors,base.warnings());
     }
     @RequiresPermission("mdm:model:publish") @Transactional
     public MdmModels.Model publish(long tenantId, long actorId, String code) {
@@ -120,4 +122,5 @@ public class MdmApplicationService {
     private MdmModels.Model requireModel(long tenantId, String code) { return repository.findModel(tenantId, code).orElseThrow(() -> new BusinessException(MdmErrorCode.MODEL_NOT_FOUND)); }
     private String status(MdmDtos.SaveRecordRequest r) { return r.lifecycleStatus() == null ? "DRAFT" : r.lifecycleStatus(); }
     private String scope(MdmDtos.SaveRecordRequest r) { return r.scopeType() == null ? "GROUP" : r.scopeType(); }
+    private List<String> validateReferenceTargets(long tenantId,List<MdmDtos.FieldDraft> fields){var errors=new ArrayList<String>();var common=java.util.Set.of("businessCode","name","lifecycleStatus");for(var field:fields){if(!"REFERENCE".equals(field.dataType())||field.referenceConfig()==null)continue;var config=field.referenceConfig();var target=repository.findModel(tenantId,config.targetModelCode());if(target.isEmpty()){errors.add(field.code()+": reference target model does not exist");continue;}var codes=new HashSet<>(common);target.get().fields().forEach(item->codes.add(item.code()));if(!codes.contains(config.valueFieldCode()))errors.add(field.code()+": reference value field does not exist");if(!codes.contains(config.displayFieldCode()))errors.add(field.code()+": reference display field does not exist");if(config.statusFieldCode()!=null&&!config.statusFieldCode().isBlank()&&!codes.contains(config.statusFieldCode()))errors.add(field.code()+": reference status field does not exist");}return errors;}
 }

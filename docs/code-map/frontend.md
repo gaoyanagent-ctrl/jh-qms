@@ -4,7 +4,9 @@
 
 - `/mdm/models` → `MdmModelCenterPage`: model cards, status, schema summary and workspace navigation; permission `mdm:model:view`.
 - `/mdm/models/:modelCode/design` → `MdmModelDesignerPage`: draft field/UI Schema editor and controlled publish action.
+- Reference fields progressively reveal target model, stored value, display label and optional status-filter selectors; stable model/field codes are persisted instead of environment-specific row IDs.
 - `/mdm/models/:modelCode/records` → `MdmRecordWorkspacePage`: metadata-driven configurable list and dynamic create/edit form, Excel paste, dynamic template download and Excel file precheck/import; permissions `mdm:record:view/create/update`.
+- Dynamic record forms render Reference fields as searchable master-data selectors and store the configured value-field value while presenting the display-field label.
 - `modules/mdm/MdmExcelFileImportModal.tsx`: authenticated template download, drag/drop upload, row-level precheck results, guarded task commit, recent task history, original-file download and validation-report download.
 - `modules/mdm/api.ts` and `hooks.ts`: API-client-only HTTP boundary and TanStack Query state.
 - `modules/mdm/pageContext.tsx`: explicit page/AI-safe visible field and action context.
