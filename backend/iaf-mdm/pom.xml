@@ -5,6 +5,7 @@
   <artifactId>iaf-mdm</artifactId>
   <dependencies>
     <dependency><groupId>com.company.iaf</groupId><artifactId>iaf-platform-core</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.company.iaf</groupId><artifactId>iaf-platform-workflow</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>org.springframework</groupId><artifactId>spring-jdbc</artifactId></dependency>
     <dependency><groupId>org.springframework</groupId><artifactId>spring-tx</artifactId></dependency>
     <dependency><groupId>org.springframework</groupId><artifactId>spring-web</artifactId></dependency>

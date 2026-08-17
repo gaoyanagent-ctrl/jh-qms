@@ -18,6 +18,8 @@ public enum MdmErrorCode implements ErrorCode {
     OPTIMISTIC_LOCK_CONFLICT("MDM_OPTIMISTIC_LOCK_CONFLICT", "The record was changed by another user"),
     RECORD_STATE_CONFLICT("MDM_RECORD_STATE_CONFLICT", "The action is not allowed in the current record state"),
     APPROVAL_ROLE_REQUIRED("MDM_APPROVAL_ROLE_REQUIRED", "An approval role must be configured"),
+    MODEL_APPROVAL_INVALID_STATE("MDM_MODEL_APPROVAL_INVALID_STATE", "The model is not in the required publication approval state"),
+    MODEL_APPROVAL_FORBIDDEN("MDM_MODEL_APPROVAL_FORBIDDEN", "The user is not allowed to approve this model publication"),
     APPROVAL_FORBIDDEN("MDM_APPROVAL_FORBIDDEN", "The current user is not an approver for this model");
     private final String code; private final String message;
     MdmErrorCode(String code, String message) { this.code = code; this.message = message; }

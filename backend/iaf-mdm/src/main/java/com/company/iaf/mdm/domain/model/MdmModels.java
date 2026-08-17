@@ -20,7 +20,17 @@ public final class MdmModels {
     public record Model(long id, String domainCode, String code, String name, String recordType,
                         boolean versionEnabled, boolean effectiveDateEnabled, boolean organizationScopeEnabled,
                         boolean approvalRequired, String status, int currentModelVersion,
-                        Map<String, Object> uiSchema, List<Field> fields) {}
+                        Map<String, Object> uiSchema, List<Field> fields, Long modelApprovalRoleId,
+                        String publishApprovalStatus, Long publishApprovalOrgId) {
+        public Model(long id, String domainCode, String code, String name, String recordType,
+                     boolean versionEnabled, boolean effectiveDateEnabled, boolean organizationScopeEnabled,
+                     boolean approvalRequired, String status, int currentModelVersion,
+                     Map<String, Object> uiSchema, List<Field> fields) {
+            this(id, domainCode, code, name, recordType, versionEnabled, effectiveDateEnabled,
+                    organizationScopeEnabled, approvalRequired, status, currentModelVersion, uiSchema, fields,
+                    null, "NOT_SUBMITTED", null);
+        }
+    }
 
     public record Record(UUID id, long modelId, String modelCode, String businessCode, String name,
                          String lifecycleStatus, int currentVersionNo, int modelVersionNo,
@@ -48,4 +58,7 @@ public final class MdmModels {
     public record ApprovalTask(UUID recordId, String modelCode, String modelName, String businessCode,
                                String recordName, String lifecycleStatus, long submittedBy,
                                String submittedByName, OffsetDateTime submittedAt) {}
+    public record ModelApprovalTask(long modelId, String modelCode, String modelName, int targetVersion,
+                                    String approvalStatus, long submittedBy, String submittedByName,
+                                    OffsetDateTime submittedAt) {}
 }

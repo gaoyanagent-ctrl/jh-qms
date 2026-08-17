@@ -11,6 +11,9 @@ import com.company.iaf.shared.result.PageResult;
 import org.springframework.stereotype.Service;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.transaction.annotation.Transactional;
+import com.company.iaf.platform.workflow.application.ApprovalApplicationService;
+import com.company.iaf.platform.workflow.application.ApprovalStatus;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.HashSet;
@@ -19,11 +22,13 @@ import java.util.ArrayList;
 @Service
 @ConditionalOnProperty(name = "iaf.mdm.enabled", havingValue = "true", matchIfMissing = true)
 public class MdmApplicationService {
+    private static final String MODEL_PUBLISH_BUSINESS_TYPE="MDM_MODEL_PUBLISH";
     private final MdmRepository repository;
     private final ConfiguredRuleValidator configuredRuleValidator;
+    private final ApprovalApplicationService approvals;
     private final DynamicRecordValidator validator = new DynamicRecordValidator();
     private final ModelDefinitionValidator modelValidator = new ModelDefinitionValidator();
-    public MdmApplicationService(MdmRepository repository, ConfiguredRuleValidator configuredRuleValidator) { this.repository = repository; this.configuredRuleValidator = configuredRuleValidator; }
+    public MdmApplicationService(MdmRepository repository, ConfiguredRuleValidator configuredRuleValidator, ApprovalApplicationService approvals) { this.repository = repository; this.configuredRuleValidator = configuredRuleValidator; this.approvals=approvals; }
 
     @RequiresPermission("mdm:model:view") @Transactional(readOnly = true)
     public List<MdmModels.Model> listModels(long tenantId) { return repository.findModels(tenantId); }
@@ -41,8 +46,9 @@ public class MdmApplicationService {
         var result = modelValidator.validate(request.fields());
         var referenceErrors=validateReferenceTargets(tenantId,request.fields());
         if(request.approvalRequired()){Long roleId=approvalRoleId(request.uiSchema());if(roleId==null||!repository.roleExists(tenantId,roleId))referenceErrors.add("approval: a valid approver role is required");}
+        if(!repository.roleExists(tenantId,request.modelApprovalRoleId()))referenceErrors.add("modelApproval: a valid approver role is required");
         if (!result.valid()||!referenceErrors.isEmpty()) {var errors=new ArrayList<>(result.errors());errors.addAll(referenceErrors);throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,String.join("; ",errors));}
-        repository.replaceDraft(tenantId, actorId, model.id(), request.approvalRequired(), request.fields(), request.uiSchema());
+        repository.replaceDraft(tenantId, actorId, model.id(), request.approvalRequired(), request.modelApprovalRoleId(), request.fields(), request.uiSchema());
         return requireModel(tenantId, code);
     }
     @RequiresPermission("mdm:model:update") @Transactional(readOnly = true)
@@ -52,12 +58,21 @@ public class MdmApplicationService {
         var base=modelValidator.validate(fields);var errors=new ArrayList<>(base.errors());errors.addAll(validateReferenceTargets(tenantId,fields));return new MdmDtos.ModelValidationResult(errors.isEmpty(),errors,base.warnings());
     }
     @RequiresPermission("mdm:model:publish") @Transactional
-    public MdmModels.Model publish(long tenantId, long actorId, String code) {
+    public MdmModels.Model submitModelPublication(long tenantId,long orgId,long actorId,String code,String comment) {
         MdmModels.Model model = requireModel(tenantId, code); var result = validateModel(tenantId, code);
         if (!"DRAFT".equals(model.status())) throw new BusinessException(MdmErrorCode.MODEL_NOT_EDITABLE);
         if (!result.valid()) throw new BusinessException(MdmErrorCode.VALIDATION_FAILED, String.join("; ", result.errors()));
-        repository.publishModel(tenantId, actorId, model); return requireModel(tenantId, code);
+        if(model.modelApprovalRoleId()==null||!repository.roleExists(tenantId,model.modelApprovalRoleId()))throw new BusinessException(MdmErrorCode.APPROVAL_ROLE_REQUIRED);
+        if(!repository.submitModelApproval(tenantId,actorId,model.id(),orgId))throw new BusinessException(MdmErrorCode.MODEL_APPROVAL_INVALID_STATE);
+        try{approvals.submit(tenantId,orgId,MODEL_PUBLISH_BUSINESS_TYPE,model.id(),actorId,comment);}catch(IllegalStateException failure){throw new BusinessException(MdmErrorCode.MODEL_APPROVAL_INVALID_STATE);}
+        return requireModel(tenantId,code);
     }
+    @RequiresPermission("mdm:model:approve") @Transactional
+    public MdmModels.Model approveModelPublication(long tenantId,long actorId,String code,String comment){var model=requireModel(tenantId,code);requireModelApprover(tenantId,actorId,model);if(!"PENDING_APPROVAL".equals(model.status())||model.publishApprovalOrgId()==null)throw new BusinessException(MdmErrorCode.MODEL_APPROVAL_INVALID_STATE);try{approvals.approve(tenantId,model.publishApprovalOrgId(),MODEL_PUBLISH_BUSINESS_TYPE,model.id(),actorId,comment);}catch(IllegalStateException failure){throw new BusinessException(MdmErrorCode.MODEL_APPROVAL_INVALID_STATE,failure.getMessage());}repository.publishModel(tenantId,actorId,model);return requireModel(tenantId,code);}
+    @RequiresPermission("mdm:model:approve") @Transactional
+    public MdmModels.Model rejectModelPublication(long tenantId,long actorId,String code,String comment){var model=requireModel(tenantId,code);requireModelApprover(tenantId,actorId,model);if(!"PENDING_APPROVAL".equals(model.status())||model.publishApprovalOrgId()==null)throw new BusinessException(MdmErrorCode.MODEL_APPROVAL_INVALID_STATE);try{approvals.reject(tenantId,model.publishApprovalOrgId(),MODEL_PUBLISH_BUSINESS_TYPE,model.id(),actorId,comment);}catch(IllegalStateException failure){throw new BusinessException(MdmErrorCode.MODEL_APPROVAL_INVALID_STATE,failure.getMessage());}if(!repository.rejectModelApproval(tenantId,actorId,model.id()))throw new BusinessException(MdmErrorCode.MODEL_APPROVAL_INVALID_STATE);return requireModel(tenantId,code);}
+    @RequiresPermission("mdm:model:view") @Transactional(readOnly=true)
+    public List<MdmModels.ModelApprovalTask> modelApprovalTasks(long tenantId,long actorId,String scope){var models=repository.findModels(tenantId).stream().collect(java.util.stream.Collectors.toMap(MdmModels.Model::id,item->item));return approvals.findLatestByBusinessType(tenantId,MODEL_PUBLISH_BUSINESS_TYPE).stream().filter(item->{var model=models.get(item.businessId());if(model==null)return false;return switch(scope==null?"TODO":scope.toUpperCase()){case "STARTED"->item.submittedBy()==actorId;case "DONE"->item.decidedBy()!=null&&item.decidedBy()==actorId;default->item.status()==ApprovalStatus.PENDING&&model.modelApprovalRoleId()!=null&&repository.userHasRole(tenantId,actorId,model.modelApprovalRoleId());};}).map(item->{var model=models.get(item.businessId());return new MdmModels.ModelApprovalTask(model.id(),model.code(),model.name(),model.currentModelVersion()+1,item.status().name(),item.submittedBy(),repository.userDisplayName(tenantId,item.submittedBy()),item.submittedAt().atOffset(ZoneOffset.UTC));}).sorted(java.util.Comparator.comparing(MdmModels.ModelApprovalTask::submittedAt).reversed()).toList();}
     @RequiresPermission("mdm:model:view") @Transactional(readOnly = true)
     public List<MdmModels.ValidationRule> validationRules(long tenantId, String code) {
         MdmModels.Model model=requireModel(tenantId,code); return repository.findValidationRules(tenantId,model.id(),null);
@@ -138,6 +153,7 @@ public class MdmApplicationService {
     private MdmModels.Record requireRecord(long tenantId,MdmModels.Model model,UUID id){return repository.findRecord(tenantId,model.id(),id).orElseThrow(()->new BusinessException(MdmErrorCode.RECORD_NOT_FOUND));}
     private Long approvalRoleId(java.util.Map<String,Object> ui){if(ui==null)return null;Object approval=ui.get("approval");if(!(approval instanceof java.util.Map<?,?> map))return null;Object value=map.get("roleId");if(value instanceof Number number)return number.longValue();try{return value==null?null:Long.valueOf(String.valueOf(value));}catch(NumberFormatException ignored){return null;}}
     private void requireApprover(long tenantId,long actorId,MdmModels.Model model){Long roleId=approvalRoleId(model.uiSchema());if(roleId==null)throw new BusinessException(MdmErrorCode.APPROVAL_ROLE_REQUIRED);if(!repository.userHasRole(tenantId,actorId,roleId))throw new BusinessException(MdmErrorCode.APPROVAL_FORBIDDEN);}
+    private void requireModelApprover(long tenantId,long actorId,MdmModels.Model model){if(model.modelApprovalRoleId()==null||!repository.userHasRole(tenantId,actorId,model.modelApprovalRoleId()))throw new BusinessException(MdmErrorCode.MODEL_APPROVAL_FORBIDDEN);}
     private MdmModels.Record transition(long tenantId,long actorId,MdmModels.Model model,MdmModels.Record current,List<String> from,String target,String action,String comment){if(!repository.transitionRecord(tenantId,model.id(),current.id(),from,target,actorId))throw new BusinessException(MdmErrorCode.RECORD_STATE_CONFLICT);repository.insertRecordAction(tenantId,actorId,current.id(),action,current.lifecycleStatus(),target,comment);var saved=requireRecord(tenantId,model,current.id());repository.insertVersion(tenantId,actorId,saved,action,comment);return saved;}
     private List<String> validateReferenceTargets(long tenantId,List<MdmDtos.FieldDraft> fields){var errors=new ArrayList<String>();var common=java.util.Set.of("businessCode","name","lifecycleStatus");for(var field:fields){if(!"REFERENCE".equals(field.dataType())||field.referenceConfig()==null)continue;var config=field.referenceConfig();var target=repository.findModel(tenantId,config.targetModelCode());if(target.isEmpty()){errors.add(field.code()+": reference target model does not exist");continue;}var codes=new HashSet<>(common);target.get().fields().forEach(item->codes.add(item.code()));if(!codes.contains(config.valueFieldCode()))errors.add(field.code()+": reference value field does not exist");if(!codes.contains(config.displayFieldCode()))errors.add(field.code()+": reference display field does not exist");if(config.statusFieldCode()!=null&&!config.statusFieldCode().isBlank()&&!codes.contains(config.statusFieldCode()))errors.add(field.code()+": reference status field does not exist");}return errors;}
 }

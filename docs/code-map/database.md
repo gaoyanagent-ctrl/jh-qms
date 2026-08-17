@@ -14,6 +14,7 @@
 - `V0805__mdm_async_precheck.sql` adds queued/validating failure diagnostics and queue lookup support for background workbook prechecks.
 - `V0806__mdm_validation_rules_and_bom.sql` adds `mdm_validation_rule`, its execution index, and a seeded `bomItem` model with configurable active-material reference and positive-quantity rules.
 - `V0807__mdm_reference_field_config.sql` adds JSONB `mdm_model_field.reference_config`, backfills BOM material references and hands their existence/status checks to field metadata.
+- `V0811__mdm_model_publish_approval.sql` adds the model publication approver role, publication approval status/org context, lookup index, and `mdm:model:approve` permission.
 
 ## Local Database Stack (ADR-0002)
 

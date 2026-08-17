@@ -10,7 +10,9 @@
 - `POST /api/mdm/models` (`mdm:model:create`): create a model draft in an enabled data domain.
 - `PUT /api/mdm/models/{modelCode}/draft` (`mdm:model:update`): validate and replace draft fields and UI Schema.
 - `POST /api/mdm/models/{modelCode}/validate` (`mdm:model:update`): report definition errors and warnings.
-- `POST /api/mdm/models/{modelCode}/publish` (`mdm:model:publish`): publish an immutable model-version snapshot.
+- `POST /api/mdm/models/{modelCode}/publish` (`mdm:model:publish`): validate and submit a model draft for publication approval; no model version is created yet.
+- `POST /api/mdm/models/{modelCode}/publish/approve|reject` (`mdm:model:approve`): decide a model publication request; approval creates and publishes the immutable version, rejection returns the model to draft.
+- `GET /api/mdm/models/model-approval-tasks` (`mdm:model:view`): list role-filtered model publication tasks for TODO, DONE, or STARTED scope.
 - `GET /api/mdm/models/{modelCode}/validation-rules` (`mdm:model:view`): list model save-time validation rules.
 - `PUT /api/mdm/models/{modelCode}/validation-rules` (`mdm:model:update`): atomically replace model validation-rule configuration.
 - `POST /api/mdm/models/{modelCode}/records/batch-validate` (`mdm:record:create`): return row-level validation for pasted or imported records.

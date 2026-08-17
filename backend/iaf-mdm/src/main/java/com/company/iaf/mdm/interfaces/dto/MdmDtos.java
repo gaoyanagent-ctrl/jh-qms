@@ -19,7 +19,7 @@ public final class MdmDtos {
                              boolean sortable, boolean listVisible, Integer maxLength,
                              List<String> enumOptions, String helpText, int sortNo,
                              MdmModels.ReferenceConfig referenceConfig) {}
-    public record SaveModelDraftRequest(boolean approvalRequired,
+    public record SaveModelDraftRequest(boolean approvalRequired, @NotNull Long modelApprovalRoleId,
                                         @NotNull List<@Valid FieldDraft> fields,
                                         @NotNull Map<String, Object> uiSchema) {}
     public record ModelValidationResult(boolean valid, List<String> errors, List<String> warnings) {}
