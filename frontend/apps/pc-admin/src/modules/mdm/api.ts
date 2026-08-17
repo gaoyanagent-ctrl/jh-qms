@@ -1,7 +1,8 @@
 import { apiClient } from '../../api/client';
-import type { CreateMdmModel, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
+import type { CreateMdmModel, MdmApprovalTask, MdmApprovalTaskScope, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
 export const mdmApi = {
   models: () => apiClient.get<MdmModel[]>('/api/mdm/models'),
+  approvalTasks: (scope:MdmApprovalTaskScope) => apiClient.get<MdmApprovalTask[]>('/api/mdm/models/approval-tasks',{query:{scope}}),
   schema: (code:string) => apiClient.get<MdmModel>(`/api/mdm/models/${code}/schema`),
   createModel: (request:CreateMdmModel) => apiClient.post<MdmModel>('/api/mdm/models',request),
   saveDraft: (code:string,request:SaveMdmModelDraft) => apiClient.put<MdmModel>(`/api/mdm/models/${code}/draft`,request),

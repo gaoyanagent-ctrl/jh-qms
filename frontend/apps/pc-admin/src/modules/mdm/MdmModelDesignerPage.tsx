@@ -6,10 +6,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { mdmApi } from './api';
 import { useMdmModels, useMdmSchema, usePublishMdmModel, useSaveMdmModelDraft } from './hooks';
+import { useRolesQuery } from '../platform/roles/hooks';
 import type { MdmDataType, MdmReferenceConfig, SaveMdmModelDraft } from './types';
 
 const TYPES:MdmDataType[]=['STRING','TEXT','INTEGER','DECIMAL','BOOLEAN','DATE','DATETIME','ENUM','REFERENCE'];
-type DesignerValues={approvalRequired:boolean;fields:SaveMdmModelDraft['fields'];uiSchemaText:string};
+type DesignerValues={approvalRequired:boolean;approvalRoleId?:number;fields:SaveMdmModelDraft['fields'];uiSchemaText:string};
 
 export const MdmModelDesignerPage=()=>{
   const {t}=useTranslation();
@@ -17,11 +18,12 @@ export const MdmModelDesignerPage=()=>{
   const [referenceForm]=Form.useForm<MdmReferenceConfig>();const [referenceFieldIndex,setReferenceFieldIndex]=useState<number>();
   const referenceTarget=Form.useWatch('targetModelCode',referenceForm);
   const models=useMdmModels();
+  const roles=useRolesQuery({pageNo:1,pageSize:200});
   const [editingPublished,setEditingPublished]=useState(false);
   const save=useSaveMdmModelDraft(modelCode,()=>message.success('模型草稿已保存'));
   const publish=usePublishMdmModel(modelCode,()=>{message.success('模型已发布');navigate('/mdm/models');});
-  useEffect(()=>{if(query.data)form.setFieldsValue({approvalRequired:query.data.approvalRequired,fields:query.data.fields.map(({id:_,length,...field})=>({...field,maxLength:length})),uiSchemaText:JSON.stringify(query.data.uiSchema,null,2)});},[query.data,form]);
-  const submit=(values:DesignerValues)=>{let uiSchema:Record<string,unknown>;try{uiSchema=JSON.parse(values.uiSchemaText||'{}') as Record<string,unknown>;}catch{message.error('UI Schema 必须是有效 JSON');return;}save.mutate({approvalRequired:values.approvalRequired,fields:values.fields.map((field,index)=>({...field,sortNo:(index+1)*10,enumOptions:Array.isArray(field.enumOptions)?field.enumOptions:[]})),uiSchema});};
+  useEffect(()=>{if(query.data){const approval=query.data.uiSchema.approval as {roleId?:number}|undefined;const{approval:_approval,...visibleUi}=query.data.uiSchema;form.setFieldsValue({approvalRequired:query.data.approvalRequired,approvalRoleId:approval?.roleId,fields:query.data.fields.map(({id:_,length,...field})=>({...field,maxLength:length})),uiSchemaText:JSON.stringify(visibleUi,null,2)});}},[query.data,form]);
+  const submit=(values:DesignerValues)=>{let uiSchema:Record<string,unknown>;try{uiSchema=JSON.parse(values.uiSchemaText||'{}') as Record<string,unknown>;}catch{message.error('UI Schema 必须是有效 JSON');return;}if(values.approvalRequired)uiSchema.approval={roleId:values.approvalRoleId};save.mutate({approvalRequired:values.approvalRequired,fields:values.fields.map((field,index)=>({...field,sortNo:(index+1)*10,enumOptions:Array.isArray(field.enumOptions)?field.enumOptions:[]})),uiSchema});};
   if(query.isError)return <Alert type="error" showIcon message="模型定义加载失败"/>;
   const editable=query.data?.status==='DRAFT'||editingPublished;
   const modelOptions=(models.data??[]).map(model=>({value:model.code,label:`${model.name} (${model.code})`}));
@@ -36,6 +38,7 @@ export const MdmModelDesignerPage=()=>{
       <Card title={t('mdm.approval.settingsTitle')}>
         <Form.Item name="approvalRequired" valuePropName="checked" style={{marginBottom:8}}><Checkbox>{t('mdm.approval.requiredLabel')}</Checkbox></Form.Item>
         <Typography.Paragraph type="secondary" style={{marginBottom:0}}>{t('mdm.approval.requiredHelp')}</Typography.Paragraph>
+        <Form.Item noStyle shouldUpdate={(previous,current)=>previous.approvalRequired!==current.approvalRequired}>{({getFieldValue})=>getFieldValue('approvalRequired')?<Form.Item name="approvalRoleId" label={t('mdm.approval.roleLabel')} extra={t('mdm.approval.roleHelp')} rules={[{required:true,message:t('common.validation.required')}]} style={{maxWidth:520,marginTop:16,marginBottom:0}}><Select showSearch optionFilterProp="label" loading={roles.isLoading} options={(roles.data?.records??[]).filter(role=>role.status!=='DISABLED').map(role=>({value:role.id,label:`${role.roleName} (${role.roleCode})`}))}/></Form.Item>:null}</Form.Item>
       </Card>
       <Card title="字段定义" style={{marginTop:16}} extra={editable&&<Form.List name="fields">{(_,operations)=><Button onClick={()=>operations.add({code:'',name:'',dataType:'STRING',required:false,unique:false,readonly:false,searchable:true,sortable:false,listVisible:true,maxLength:null,enumOptions:[],helpText:'',sortNo:0})}>新增字段</Button>}</Form.List>}>
         <Form.List name="fields">{(fields,{remove})=><Table pagination={false} rowKey="key" dataSource={fields} columns={[
