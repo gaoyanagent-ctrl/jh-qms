@@ -13,6 +13,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
+import java.util.HashSet;
+import java.util.ArrayList;
 
 @Service
 @ConditionalOnProperty(name = "iaf.mdm.enabled", havingValue = "true", matchIfMissing = true)
@@ -69,6 +71,26 @@ public class MdmApplicationService {
         if (repository.businessCodeExists(tenantId, model.id(), request.businessCode().trim(), null)) throw new BusinessException(MdmErrorCode.BUSINESS_CODE_EXISTS);
         MdmModels.Record saved = repository.insertRecord(tenantId, actorId, model, request.businessCode().trim(), request.name().trim(), status(request), scope(request), request.scopeIds(), request.effectiveFrom(), request.effectiveTo(), request.attributes());
         repository.insertVersion(tenantId, actorId, saved, "CREATE", request.changeReason()); return saved;
+    }
+    @RequiresPermission("mdm:record:create") @Transactional(readOnly = true)
+    public MdmDtos.BatchValidationResult validateBatch(long tenantId, String code, MdmDtos.BatchRecordRequest request) {
+        MdmModels.Model model=requireModel(tenantId,code); var seen=new HashSet<String>(); var rows=new ArrayList<MdmDtos.BatchRowValidation>();
+        for(int index=0;index<request.records().size();index++){
+            var item=request.records().get(index); var errors=new ArrayList<String>(); String businessCode=item.businessCode()==null?"":item.businessCode().trim();
+            if(businessCode.isBlank()) errors.add("businessCode: required");
+            if(item.name()==null||item.name().isBlank()) errors.add("name: required");
+            if(item.attributes()==null) errors.add("attributes: required");
+            errors.addAll(validator.validate(model,item.attributes()==null?java.util.Map.of():item.attributes()));
+            if(!businessCode.isBlank()&&!seen.add(businessCode)) errors.add("businessCode: duplicated in batch");
+            if(!businessCode.isBlank()&&repository.businessCodeExists(tenantId,model.id(),businessCode,null)) errors.add("businessCode: already exists");
+            rows.add(new MdmDtos.BatchRowValidation(index+2,businessCode,errors.isEmpty(),errors));
+        }
+        return new MdmDtos.BatchValidationResult(rows.stream().allMatch(MdmDtos.BatchRowValidation::valid),rows.size(),rows);
+    }
+    @RequiresPermission("mdm:record:create") @Transactional
+    public List<MdmModels.Record> createBatch(long tenantId,long actorId,String code,MdmDtos.BatchRecordRequest request){
+        var validation=validateBatch(tenantId,code,request); if(!validation.valid()) throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,"Batch contains invalid rows");
+        return request.records().stream().map(item->create(tenantId,actorId,code,item)).toList();
     }
     @RequiresPermission("mdm:record:update") @Transactional
     public MdmModels.Record update(long tenantId, long actorId, String code, UUID id, MdmDtos.SaveRecordRequest request) {

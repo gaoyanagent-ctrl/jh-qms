@@ -38,4 +38,19 @@ class MdmApplicationServiceTest {
 
         verify(repository).findRecordVersions(1,7,recordId);
     }
+
+    @Test void batchPrecheckReturnsRowLevelDuplicateAndModelErrors() {
+        var repository=mock(MdmRepository.class);
+        var requiredField=new MdmModels.Field(1,"materialType","物料类型","ENUM",true,false,false,true,true,true,32,List.of("RAW"),null,10);
+        var model=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of(requiredField));
+        when(repository.findModel(1,"material")).thenReturn(Optional.of(model));
+        var first=new MdmDtos.SaveRecordRequest("M-1","物料1","DRAFT","GROUP",List.of(),null,null,Map.of("materialType","BAD"),null,"导入");
+        var second=new MdmDtos.SaveRecordRequest("M-1","物料2","DRAFT","GROUP",List.of(),null,null,Map.of("materialType","RAW"),null,"导入");
+
+        var result=new MdmApplicationService(repository).validateBatch(1,"material",new MdmDtos.BatchRecordRequest(List.of(first,second)));
+
+        org.assertj.core.api.Assertions.assertThat(result.valid()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(result.rows().get(0).errors()).contains("materialType: invalid option");
+        org.assertj.core.api.Assertions.assertThat(result.rows().get(1).errors()).contains("businessCode: duplicated in batch");
+    }
 }
