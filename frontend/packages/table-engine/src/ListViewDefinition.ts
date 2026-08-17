@@ -23,6 +23,7 @@ export interface RowActionDefinition<T> {
   key: string;
   labelKey: string;
   requirePermission?: string;
+  hidden?: (record: T) => boolean;
   disabled?: (record: T) => boolean;
   onClick: (record: T) => void;
   confirmTitleKey?: string; // If set, wraps with ConfirmAction/Popconfirm

@@ -47,4 +47,7 @@ public interface MdmRepository {
     List<MdmModels.ValidationRule> findValidationRules(long tenantId, long modelId, String triggerPoint);
     void replaceValidationRules(long tenantId, long actorId, long modelId, List<MdmDtos.ValidationRuleDraft> rules);
     boolean referenceExists(long tenantId, String targetModelCode, List<MdmDtos.ReferenceCondition> conditions);
+    boolean transitionRecord(long tenantId,long modelId,UUID recordId,List<String> fromStatuses,String toStatus,long actorId);
+    void insertRecordAction(long tenantId,long actorId,UUID recordId,String action,String fromStatus,String toStatus,String comment);
+    List<MdmModels.RecordAction> findRecordActions(long tenantId,long modelId,UUID recordId);
 }

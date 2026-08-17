@@ -67,7 +67,8 @@ export const QMS_PERMISSIONS = {
 export const MDM_PERMISSIONS = {
   modelView: 'mdm:model:view', recordView: 'mdm:record:view',
   modelCreate: 'mdm:model:create', modelUpdate: 'mdm:model:update', modelPublish: 'mdm:model:publish',
-  recordCreate: 'mdm:record:create', recordUpdate: 'mdm:record:update'
+  recordCreate: 'mdm:record:create', recordUpdate: 'mdm:record:update',
+  recordSubmit: 'mdm:record:submit', recordApprove: 'mdm:record:approve', recordDisable: 'mdm:record:disable'
 } as const;
 
 export type QmsPermissionCode = (typeof QMS_PERMISSIONS)[keyof typeof QMS_PERMISSIONS];

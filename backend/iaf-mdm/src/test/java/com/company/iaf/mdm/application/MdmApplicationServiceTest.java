@@ -13,6 +13,20 @@ import java.util.UUID;
 import static org.mockito.Mockito.*;
 
 class MdmApplicationServiceTest {
+    @Test void approvalRequiredRecordIsSubmittedAndAudited() {
+        var repository=mock(MdmRepository.class);var recordId=UUID.randomUUID();
+        var model=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,true,"PUBLISHED",1,Map.of(),List.of());
+        var draft=new MdmModels.Record(recordId,7,"material","M-1","物料","DRAFT",1,1,"GROUP",List.of(),null,null,Map.of(),0,null,null);
+        var pending=new MdmModels.Record(recordId,7,"material","M-1","物料","PENDING_APPROVAL",2,1,"GROUP",List.of(),null,null,Map.of(),1,null,null);
+        when(repository.findModel(1,"material")).thenReturn(Optional.of(model));
+        when(repository.findRecord(1,7,recordId)).thenReturn(Optional.of(draft),Optional.of(pending));
+        when(repository.transitionRecord(1,7,recordId,List.of("DRAFT","REJECTED"),"PENDING_APPROVAL",9)).thenReturn(true);
+
+        new MdmApplicationService(repository,rules(repository)).submit(1,9,"material",recordId,"请审批");
+
+        verify(repository).insertRecordAction(1,9,recordId,"SUBMIT","DRAFT","PENDING_APPROVAL","请审批");
+        verify(repository).insertVersion(1,9,pending,"SUBMIT","请审批");
+    }
     @Test void publishedModelCanBeSavedAsNextDraft() {
         var repository=mock(MdmRepository.class);
         var published=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of());

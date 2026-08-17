@@ -99,6 +99,7 @@ export function ConfigurableListPage<T extends { id: string | number }>({
         render: (_: any, record: T) => (
           <Space>
             {definition.rowActions!.map((action) => {
+              if (action.hidden?.(record)) return null;
               const label = t(action.labelKey);
               const disabled = action.disabled?.(record);
               const onClick = () => action.onClick(record);

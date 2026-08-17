@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client';
-import type { CreateMdmModel, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelValidation, MdmPage, MdmRecord, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
+import type { CreateMdmModel, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
 export const mdmApi = {
   models: () => apiClient.get<MdmModel[]>('/api/mdm/models'),
   schema: (code:string) => apiClient.get<MdmModel>(`/api/mdm/models/${code}/schema`),
@@ -9,6 +9,8 @@ export const mdmApi = {
   publishModel: (code:string) => apiClient.post<MdmModel>(`/api/mdm/models/${code}/publish`,{}),
   records: (code:string, params:{keyword?:string;pageNo:number;pageSize:number}) => apiClient.get<MdmPage<MdmRecord>>(`/api/mdm/models/${code}/records`,{query:params}),
   recordVersions: (code:string,id:string) => apiClient.get<MdmRecordVersion[]>(`/api/mdm/models/${code}/records/${id}/versions`),
+  recordActions: (code:string,id:string) => apiClient.get<MdmRecordAction[]>(`/api/mdm/models/${code}/records/${id}/actions`),
+  recordAction: (code:string,id:string,action:MdmRecordActionType,comment:string) => apiClient.post<MdmRecord>(`/api/mdm/models/${code}/records/${id}/${action === 'DEACTIVATE' ? 'deactivate' : action.toLowerCase()}`,{comment}),
   create: (code:string, request:SaveMdmRecord) => apiClient.post<MdmRecord>(`/api/mdm/models/${code}/records`,request),
   validateBatch: (code:string,records:SaveMdmRecord[]) => apiClient.post<MdmBatchValidation>(`/api/mdm/models/${code}/records/batch-validate`,{records}),
   createBatch: (code:string,records:SaveMdmRecord[]) => apiClient.post<MdmRecord[]>(`/api/mdm/models/${code}/records/batch`,{records}),
