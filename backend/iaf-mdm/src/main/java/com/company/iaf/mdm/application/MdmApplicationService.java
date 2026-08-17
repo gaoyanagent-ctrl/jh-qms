@@ -135,6 +135,23 @@ public class MdmApplicationService {
         if (!repository.updateRecord(tenantId, actorId, changed, request.expectedVersion())) throw new BusinessException(MdmErrorCode.OPTIMISTIC_LOCK_CONFLICT);
         MdmModels.Record saved = repository.findRecord(tenantId, model.id(), id).orElseThrow(); repository.insertVersion(tenantId, actorId, saved, "UPDATE", request.changeReason()); return saved;
     }
+    @RequiresPermission("mdm:record:update") @Transactional
+    public List<MdmModels.Record> updateBatch(long tenantId,long actorId,String code,MdmDtos.BatchUpdateRequest request){
+        var ids=new HashSet<UUID>();
+        for(var item:request.items())if(!ids.add(item.id()))throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,"Duplicate record in batch");
+        return request.items().stream().map(item->update(tenantId,actorId,code,item.id(),item.record())).toList();
+    }
+    @RequiresPermission("mdm:record:delete") @Transactional
+    public void deleteBatch(long tenantId,long actorId,String code,MdmDtos.BatchDeleteRequest request){
+        var model=requireModel(tenantId,code);var ids=new HashSet<UUID>();
+        for(var item:request.items()){
+            if(!ids.add(item.id()))throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,"Duplicate record in batch");
+            var current=requireRecord(tenantId,model,item.id());
+            if(!List.of("DRAFT","REJECTED").contains(current.lifecycleStatus()))throw new BusinessException(MdmErrorCode.RECORD_STATE_CONFLICT);
+            repository.insertVersion(tenantId,actorId,current,"DELETE","Grid batch delete");
+            if(!repository.deleteRecord(tenantId,actorId,model.id(),item.id(),item.expectedVersion()))throw new BusinessException(MdmErrorCode.OPTIMISTIC_LOCK_CONFLICT);
+        }
+    }
     @RequiresPermission("mdm:record:view") @Transactional(readOnly=true)
     public List<MdmModels.RecordAction> recordActions(long tenantId,String code,UUID id){var model=requireModel(tenantId,code);requireRecord(tenantId,model,id);return repository.findRecordActions(tenantId,model.id(),id);}
     @RequiresPermission("mdm:record:view") @Transactional(readOnly=true)

@@ -10,6 +10,8 @@ export type MdmApprovalTaskScope='TODO'|'DONE'|'STARTED';
 export interface MdmApprovalTask { recordId:string; modelCode:string; modelName:string; businessCode:string; recordName:string; lifecycleStatus:string; submittedBy:number; submittedByName:string; submittedAt:string }
 export interface MdmModelApprovalTask { modelId:number; modelCode:string; modelName:string; targetVersion:number; approvalStatus:string; submittedBy:number; submittedByName:string; submittedAt:string }
 export interface SaveMdmRecord { businessCode:string; name:string; lifecycleStatus:string; scopeType:string; scopeIds:number[]; effectiveFrom?:string|null; effectiveTo?:string|null; attributes:Record<string,unknown>; expectedVersion?:number; changeReason?:string }
+export interface MdmBatchUpdateItem { id:string; record:SaveMdmRecord }
+export interface MdmBatchDeleteItem { id:string; expectedVersion:number }
 export interface MdmBatchRowValidation { rowNo:number; businessCode:string; valid:boolean; errors:string[] }
 export interface MdmBatchValidation { valid:boolean; total:number; rows:MdmBatchRowValidation[] }
 export interface MdmImportPreview { taskId:string; status:string; fileName:string; records:SaveMdmRecord[]; validation:MdmBatchValidation }

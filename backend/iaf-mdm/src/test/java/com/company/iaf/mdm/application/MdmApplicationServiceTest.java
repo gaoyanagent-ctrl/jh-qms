@@ -110,6 +110,30 @@ class MdmApplicationServiceTest {
         org.assertj.core.api.Assertions.assertThat(result.rows().get(0).errors()).contains("materialType: invalid option");
         org.assertj.core.api.Assertions.assertThat(result.rows().get(1).errors()).contains("businessCode: duplicated in batch");
     }
+    @Test void batchDeleteOnlySoftDeletesEditableRecordsWithExpectedVersion() {
+        var repository=mock(MdmRepository.class);var id=UUID.randomUUID();
+        var model=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of());
+        var draft=new MdmModels.Record(id,7,"material","M-1","物料","DRAFT",1,1,"GROUP",List.of(),null,null,Map.of(),3,null,null);
+        when(repository.findModel(1,"material")).thenReturn(Optional.of(model));
+        when(repository.findRecord(1,7,id)).thenReturn(Optional.of(draft));
+        when(repository.deleteRecord(1,9,7,id,3)).thenReturn(true);
+
+        service(repository).deleteBatch(1,9,"material",new MdmDtos.BatchDeleteRequest(List.of(new MdmDtos.BatchDeleteItem(id,3))));
+
+        verify(repository).insertVersion(1,9,draft,"DELETE","Grid batch delete");
+        verify(repository).deleteRecord(1,9,7,id,3);
+    }
+    @Test void batchDeleteRejectsActiveRecords() {
+        var repository=mock(MdmRepository.class);var id=UUID.randomUUID();
+        var model=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"PUBLISHED",1,Map.of(),List.of());
+        var active=new MdmModels.Record(id,7,"material","M-1","物料","ACTIVE",2,1,"GROUP",List.of(),null,null,Map.of(),4,null,null);
+        when(repository.findModel(1,"material")).thenReturn(Optional.of(model));
+        when(repository.findRecord(1,7,id)).thenReturn(Optional.of(active));
+
+        assertThatThrownBy(()->service(repository).deleteBatch(1,9,"material",new MdmDtos.BatchDeleteRequest(List.of(new MdmDtos.BatchDeleteItem(id,4)))))
+                .isInstanceOf(com.company.iaf.shared.exception.BusinessException.class);
+        verify(repository,never()).deleteRecord(anyLong(),anyLong(),anyLong(),any(),anyInt());
+    }
     private ConfiguredRuleValidator rules(MdmRepository repository){return new ConfiguredRuleValidator(repository);}
     private MdmApplicationService service(MdmRepository repository){return new MdmApplicationService(repository,rules(repository),mock(ApprovalApplicationService.class));}
 }

@@ -7,6 +7,8 @@
 - `GET /api/mdm/models/{modelCode}/records` (`mdm:record:view`): tenant-scoped dynamic record page.
 - `POST /api/mdm/models/{modelCode}/records` (`mdm:record:create`): unified metadata validation and versioned create.
 - `PUT /api/mdm/models/{modelCode}/records/{id}` (`mdm:record:update`): optimistic-lock update using `expectedVersion`.
+- `PUT /api/mdm/models/{modelCode}/records/batch` (`mdm:record:update`): atomically validate and update up to 200 staged Grid/form edits with optimistic locking and immutable versions.
+- `DELETE /api/mdm/models/{modelCode}/records/batch` (`mdm:record:delete`): logically delete up to 200 draft/rejected records after state and version checks.
 - `POST /api/mdm/models` (`mdm:model:create`): create a model draft in an enabled data domain.
 - `PUT /api/mdm/models/{modelCode}/draft` (`mdm:model:update`): validate and replace draft fields and UI Schema.
 - `POST /api/mdm/models/{modelCode}/validate` (`mdm:model:update`): report definition errors and warnings.

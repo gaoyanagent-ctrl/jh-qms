@@ -28,6 +28,10 @@ public final class MdmDtos {
                                     LocalDate effectiveTo, @NotNull Map<String, Object> attributes,
                                     Integer expectedVersion, String changeReason) {}
     public record BatchRecordRequest(@NotNull @Size(min=1,max=1000) List<SaveRecordRequest> records) {}
+    public record BatchUpdateItem(@NotNull java.util.UUID id, @NotNull @Valid SaveRecordRequest record) {}
+    public record BatchUpdateRequest(@NotNull @Size(min=1,max=200) List<@Valid BatchUpdateItem> items) {}
+    public record BatchDeleteItem(@NotNull java.util.UUID id, @NotNull Integer expectedVersion) {}
+    public record BatchDeleteRequest(@NotNull @Size(min=1,max=200) List<@Valid BatchDeleteItem> items) {}
     public record BatchRowValidation(int rowNo, String businessCode, boolean valid, List<String> errors) {}
     public record BatchValidationResult(boolean valid, int total, List<BatchRowValidation> rows) {}
     public record ImportPreview(java.util.UUID taskId, String status, String fileName, List<SaveRecordRequest> records,
