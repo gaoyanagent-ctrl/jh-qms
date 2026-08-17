@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { buildMdmDynamicColumns, buildMdmVersionDiff } from './MdmRecordWorkspacePage';
+import { allowedMdmRecordActions, buildMdmDynamicColumns, buildMdmVersionDiff } from './MdmRecordWorkspacePage';
 import type { MdmField, MdmRecordVersion } from './types';
 
 const field = (code:string, listVisible:boolean):MdmField => ({ id:1, code, name:code, dataType:'STRING', required:false, unique:false, readonly:false, searchable:false, sortable:false, listVisible, length:null, enumOptions:[], helpText:null, sortNo:1 });
+
+describe('allowedMdmRecordActions',()=>{
+  it('only exposes legal lifecycle actions for each state',()=>{
+    expect(allowedMdmRecordActions('DRAFT')).toEqual(['SUBMIT']);
+    expect(allowedMdmRecordActions('REJECTED')).toEqual(['SUBMIT']);
+    expect(allowedMdmRecordActions('PENDING_APPROVAL')).toEqual(['APPROVE','REJECT']);
+    expect(allowedMdmRecordActions('ACTIVE')).toEqual(['DEACTIVATE']);
+    expect(allowedMdmRecordActions('INACTIVE')).toEqual([]);
+  });
+});
 
 describe('buildMdmDynamicColumns', () => {
   it('keeps every model field available in column settings', () => {

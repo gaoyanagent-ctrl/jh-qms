@@ -4,6 +4,8 @@ export interface MdmField { id:number; code:string; name:string; dataType:MdmDat
 export interface MdmModel { id:number; domainCode:string; code:string; name:string; recordType:string; versionEnabled:boolean; effectiveDateEnabled:boolean; organizationScopeEnabled:boolean; approvalRequired:boolean; status:string; currentModelVersion:number; uiSchema:Record<string,unknown>; fields:MdmField[] }
 export interface MdmRecord { id:string; modelId:number; businessCode:string; name:string; lifecycleStatus:string; currentVersionNo:number; modelVersionNo:number; scopeType:string; scopeIds:number[]; effectiveFrom:string|null; effectiveTo:string|null; attributes:Record<string,unknown>; version:number; createdAt:string; updatedAt:string }
 export interface MdmRecordVersion { id:number; recordId:string; versionNo:number; snapshot:Record<string,unknown>; changeType:string; changeReason:string|null; effectiveFrom:string|null; effectiveTo:string|null; createdBy:number; createdByName:string; createdAt:string }
+export type MdmRecordActionType = 'SUBMIT'|'APPROVE'|'REJECT'|'DEACTIVATE';
+export interface MdmRecordAction { id:number; recordId:string; action:MdmRecordActionType; fromStatus:string; toStatus:string; comment:string|null; actorId:number; actorName:string; createdAt:string }
 export interface SaveMdmRecord { businessCode:string; name:string; lifecycleStatus:string; scopeType:string; scopeIds:number[]; effectiveFrom?:string|null; effectiveTo?:string|null; attributes:Record<string,unknown>; expectedVersion?:number; changeReason?:string }
 export interface MdmBatchRowValidation { rowNo:number; businessCode:string; valid:boolean; errors:string[] }
 export interface MdmBatchValidation { valid:boolean; total:number; rows:MdmBatchRowValidation[] }

@@ -38,4 +38,5 @@ public final class MdmDtos {
                                       @NotNull Map<String, Object> assertion, boolean enabled, int sortNo) {}
     public record SaveValidationRulesRequest(@NotNull List<@Valid ValidationRuleDraft> rules) {}
     public record ReferenceCondition(String targetField, Object value) {}
+    public record RecordActionRequest(String comment) {}
 }

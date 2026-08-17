@@ -42,4 +42,7 @@ public final class MdmModels {
                                  String ruleType, String fieldCode, String severity, String message,
                                  Map<String, Object> condition, Map<String, Object> assertion,
                                  boolean enabled, int sortNo) {}
+
+    public record RecordAction(long id, UUID recordId, String action, String fromStatus, String toStatus,
+                               String comment, long actorId, String actorName, OffsetDateTime createdAt) {}
 }

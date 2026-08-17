@@ -81,7 +81,7 @@ public class MdmApplicationService {
     public MdmModels.Record create(long tenantId, long actorId, String code, MdmDtos.SaveRecordRequest request) {
         MdmModels.Model model = requireModel(tenantId, code); validate(tenantId, model, request);
         if (repository.businessCodeExists(tenantId, model.id(), request.businessCode().trim(), null)) throw new BusinessException(MdmErrorCode.BUSINESS_CODE_EXISTS);
-        MdmModels.Record saved = repository.insertRecord(tenantId, actorId, model, request.businessCode().trim(), request.name().trim(), status(request), scope(request), request.scopeIds(), request.effectiveFrom(), request.effectiveTo(), request.attributes());
+        MdmModels.Record saved = repository.insertRecord(tenantId, actorId, model, request.businessCode().trim(), request.name().trim(), "DRAFT", scope(request), request.scopeIds(), request.effectiveFrom(), request.effectiveTo(), request.attributes());
         repository.insertVersion(tenantId, actorId, saved, "CREATE", request.changeReason()); return saved;
     }
     @RequiresPermission("mdm:record:create") @Transactional(readOnly = true)
@@ -114,13 +114,25 @@ public class MdmApplicationService {
         if (request.expectedVersion() == null) throw new BusinessException(MdmErrorCode.VALIDATION_FAILED, "expectedVersion is required");
         if (repository.businessCodeExists(tenantId, model.id(), request.businessCode().trim(), id)) throw new BusinessException(MdmErrorCode.BUSINESS_CODE_EXISTS);
         MdmModels.Record current = repository.findRecord(tenantId, model.id(), id).orElseThrow(() -> new BusinessException(MdmErrorCode.RECORD_NOT_FOUND));
-        MdmModels.Record changed = new MdmModels.Record(id, model.id(), model.code(), request.businessCode().trim(), request.name().trim(), status(request), current.currentVersionNo()+1, model.currentModelVersion(), scope(request), request.scopeIds(), request.effectiveFrom(), request.effectiveTo(), request.attributes(), current.version()+1, current.createdAt(), current.updatedAt());
+        if(!List.of("DRAFT","REJECTED").contains(current.lifecycleStatus()))throw new BusinessException(MdmErrorCode.RECORD_STATE_CONFLICT);
+        MdmModels.Record changed = new MdmModels.Record(id, model.id(), model.code(), request.businessCode().trim(), request.name().trim(), current.lifecycleStatus(), current.currentVersionNo()+1, model.currentModelVersion(), scope(request), request.scopeIds(), request.effectiveFrom(), request.effectiveTo(), request.attributes(), current.version()+1, current.createdAt(), current.updatedAt());
         if (!repository.updateRecord(tenantId, actorId, changed, request.expectedVersion())) throw new BusinessException(MdmErrorCode.OPTIMISTIC_LOCK_CONFLICT);
         MdmModels.Record saved = repository.findRecord(tenantId, model.id(), id).orElseThrow(); repository.insertVersion(tenantId, actorId, saved, "UPDATE", request.changeReason()); return saved;
     }
+    @RequiresPermission("mdm:record:view") @Transactional(readOnly=true)
+    public List<MdmModels.RecordAction> recordActions(long tenantId,String code,UUID id){var model=requireModel(tenantId,code);requireRecord(tenantId,model,id);return repository.findRecordActions(tenantId,model.id(),id);}
+    @RequiresPermission("mdm:record:submit") @Transactional
+    public MdmModels.Record submit(long tenantId,long actorId,String code,UUID id,String comment){var model=requireModel(tenantId,code);var current=requireRecord(tenantId,model,id);String target=model.approvalRequired()?"PENDING_APPROVAL":"ACTIVE";return transition(tenantId,actorId,model,current,List.of("DRAFT","REJECTED"),target,"SUBMIT",comment);}
+    @RequiresPermission("mdm:record:approve") @Transactional
+    public MdmModels.Record approve(long tenantId,long actorId,String code,UUID id,String comment){var model=requireModel(tenantId,code);var current=requireRecord(tenantId,model,id);return transition(tenantId,actorId,model,current,List.of("PENDING_APPROVAL"),"ACTIVE","APPROVE",comment);}
+    @RequiresPermission("mdm:record:approve") @Transactional
+    public MdmModels.Record reject(long tenantId,long actorId,String code,UUID id,String comment){var model=requireModel(tenantId,code);var current=requireRecord(tenantId,model,id);return transition(tenantId,actorId,model,current,List.of("PENDING_APPROVAL"),"REJECTED","REJECT",comment);}
+    @RequiresPermission("mdm:record:disable") @Transactional
+    public MdmModels.Record deactivate(long tenantId,long actorId,String code,UUID id,String comment){var model=requireModel(tenantId,code);var current=requireRecord(tenantId,model,id);return transition(tenantId,actorId,model,current,List.of("ACTIVE"),"INACTIVE","DEACTIVATE",comment);}
     private void validate(long tenantId,MdmModels.Model model,MdmDtos.SaveRecordRequest request){var errors=new ArrayList<>(validator.validate(model,request.attributes()));errors.addAll(configuredRuleValidator.validate(tenantId,model,request));if(!errors.isEmpty())throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,String.join("; ",errors));}
     private MdmModels.Model requireModel(long tenantId, String code) { return repository.findModel(tenantId, code).orElseThrow(() -> new BusinessException(MdmErrorCode.MODEL_NOT_FOUND)); }
-    private String status(MdmDtos.SaveRecordRequest r) { return r.lifecycleStatus() == null ? "DRAFT" : r.lifecycleStatus(); }
     private String scope(MdmDtos.SaveRecordRequest r) { return r.scopeType() == null ? "GROUP" : r.scopeType(); }
+    private MdmModels.Record requireRecord(long tenantId,MdmModels.Model model,UUID id){return repository.findRecord(tenantId,model.id(),id).orElseThrow(()->new BusinessException(MdmErrorCode.RECORD_NOT_FOUND));}
+    private MdmModels.Record transition(long tenantId,long actorId,MdmModels.Model model,MdmModels.Record current,List<String> from,String target,String action,String comment){if(!repository.transitionRecord(tenantId,model.id(),current.id(),from,target,actorId))throw new BusinessException(MdmErrorCode.RECORD_STATE_CONFLICT);repository.insertRecordAction(tenantId,actorId,current.id(),action,current.lifecycleStatus(),target,comment);var saved=requireRecord(tenantId,model,current.id());repository.insertVersion(tenantId,actorId,saved,action,comment);return saved;}
     private List<String> validateReferenceTargets(long tenantId,List<MdmDtos.FieldDraft> fields){var errors=new ArrayList<String>();var common=java.util.Set.of("businessCode","name","lifecycleStatus");for(var field:fields){if(!"REFERENCE".equals(field.dataType())||field.referenceConfig()==null)continue;var config=field.referenceConfig();var target=repository.findModel(tenantId,config.targetModelCode());if(target.isEmpty()){errors.add(field.code()+": reference target model does not exist");continue;}var codes=new HashSet<>(common);target.get().fields().forEach(item->codes.add(item.code()));if(!codes.contains(config.valueFieldCode()))errors.add(field.code()+": reference value field does not exist");if(!codes.contains(config.displayFieldCode()))errors.add(field.code()+": reference display field does not exist");if(config.statusFieldCode()!=null&&!config.statusFieldCode().isBlank()&&!codes.contains(config.statusFieldCode()))errors.add(field.code()+": reference status field does not exist");}return errors;}
 }
