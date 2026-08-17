@@ -1,5 +1,5 @@
 import { logout, useAuthStore } from '@iaf/auth';
-import { PLATFORM_PERMISSIONS, QMS_PERMISSIONS, hasAnyPermission } from '@iaf/permissions';
+import { MDM_PERMISSIONS, PLATFORM_PERMISSIONS, QMS_PERMISSIONS, hasAnyPermission } from '@iaf/permissions';
 import type { PlatformMenu } from '@iaf/domain-types';
 import {
   iafDefaultExperienceSettings,
@@ -63,6 +63,8 @@ const fallbackMenus: PlatformMenu[] = [
   { id: 8, tenantId: 1, parentId: null, menuCode: 'platform.kanban', menuType: 'MENU', titleKey: 'menu.kanban', routePath: '/platform/kanban', componentKey: 'platform/kanban/PlatformKanbanPage', icon: 'DashboardOutlined', sortNo: 180, visible: true, enabled: true, version: 0, permissionCodes: [], children: [] },
   { id: 9, tenantId: 1, parentId: null, menuCode: 'qms.engineering.parts', menuType: 'MENU', titleKey: 'menu.qmsParts', routePath: '/qms/engineering/parts', componentKey: 'qms/engineering/QmsPartListPage', icon: 'FileSearchOutlined', sortNo: 410, visible: true, enabled: true, version: 0, permissionCodes: [QMS_PERMISSIONS.partView], children: [] },
   { id: 10, tenantId: 1, parentId: null, menuCode: 'qms.engineering.legend', menuType: 'MENU', titleKey: 'menu.qmsDrawingLegend', routePath: '/qms/engineering/drawing-legend', componentKey: 'qms/engineering/QmsDrawingLegendConfigPage', icon: 'SettingOutlined', sortNo: 420, visible: true, enabled: true, version: 0, permissionCodes: [QMS_PERMISSIONS.drawingLegendManage], children: [] }
+  ,{ id: 11, tenantId: 1, parentId: null, menuCode: 'mdm.models', menuType: 'MENU', titleKey: 'menu.mdmModels', routePath: '/mdm/models', componentKey: 'mdm/MdmModelCenterPage', icon: 'DatabaseOutlined', sortNo: 310, visible: true, enabled: true, version: 0, permissionCodes: [MDM_PERMISSIONS.modelView], children: [] }
+  ,{ id: 12, tenantId: 1, parentId: null, menuCode: 'mdm.material', menuType: 'MENU', titleKey: 'menu.mdmMaterial', routePath: '/mdm/models/material/records', componentKey: 'mdm/MdmRecordWorkspacePage', icon: 'DatabaseOutlined', sortNo: 320, visible: true, enabled: true, version: 0, permissionCodes: [MDM_PERMISSIONS.recordView], children: [] }
 ];
 
 const clampSidebarWidth = (width: number) => Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, width));

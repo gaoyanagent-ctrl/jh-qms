@@ -200,6 +200,9 @@ export const resources = {
         }
       },
       menu: {
+        mdm: '主数据管理',
+        mdmModels: '模型中心',
+        mdmMaterial: '物料主数据',
         qmsDrawingReview: '图纸评审',
         qmsInspectionStandard: '检验标准',
         workbench: '工作台',
@@ -217,6 +220,18 @@ export const resources = {
         qmsDrawingLegend: '图纸图例配置',
         qmsPartDetail: '零件详情',
         qmsValidationPlan: '试验验证计划'
+      },
+      mdm: {
+        models: { title: '主数据模型中心' },
+        records: { title: '主数据工作台', description: '表格和表单共用模型定义、校验与版本保存管道。' },
+        sections: { basic: '基本信息' },
+        actions: { openWorkspace: '打开数据工作台', createModel: '新建模型', designModel: '模型设计' },
+        search: { keyword: '关键词', placeholder: '搜索业务编码或名称' },
+        feedback: { loadFailed: '主数据加载失败，请重试。', loadSchemaFailed: '模型定义加载失败。' },
+        fields: { modelCode: '模型编码', domain: '数据域', modelVersion: '模型版本', fieldCount: '字段数', businessCode: '业务编码', name: '名称', dataVersion: '数据版本', effectiveFrom: '生效日期', effectiveTo: '失效日期' },
+        dynamic: { specification: '规格型号', materialType: '物料类型', category: '物料分类', baseUnit: '基本计量单位', manufacturer: '制造商', manufacturerPartNo: '制造商料号', safetyPart: '是否安全件', remark: '备注' },
+        status: { PUBLISHED: '已发布', DRAFT: '草稿', ACTIVE: '生效', INACTIVE: '停用' },
+        changeReason: { create: '创建主数据', edit: '编辑主数据' }
       },
       qms: {
         inspectionStandard: {
@@ -884,6 +899,9 @@ export const resources = {
         }
       },
       menu: {
+        mdm: 'Master Data Management',
+        mdmModels: 'Model Center',
+        mdmMaterial: 'Material Master',
         qmsDrawingReview: 'Drawing Review',
         qmsInspectionStandard: 'Inspection Standard',
         workbench: 'Workbench',
@@ -901,6 +919,16 @@ export const resources = {
         qmsDrawingLegend: 'Drawing Legend',
         qmsPartDetail: 'Part Detail',
         qmsValidationPlan: 'Validation Plan'
+      },
+      mdm: {
+        models: { title: 'Master Data Model Center' },
+        records: { title: 'Master Data Workspace', description: 'Grid and form share one model, validation, and version pipeline.' },
+        sections: { basic: 'Basic Information' }, actions: { openWorkspace: 'Open Data Workspace', createModel: 'Create Model', designModel: 'Model Designer' },
+        search: { keyword: 'Keyword', placeholder: 'Search business code or name' },
+        feedback: { loadFailed: 'Failed to load master data.', loadSchemaFailed: 'Failed to load model schema.' },
+        fields: { modelCode: 'Model code', domain: 'Data domain', modelVersion: 'Model version', fieldCount: 'Fields', businessCode: 'Business code', name: 'Name', dataVersion: 'Data version', effectiveFrom: 'Effective from', effectiveTo: 'Effective to' },
+        dynamic: { specification: 'Specification', materialType: 'Material type', category: 'Category', baseUnit: 'Base unit', manufacturer: 'Manufacturer', manufacturerPartNo: 'Manufacturer part no.', safetyPart: 'Safety part', remark: 'Remark' },
+        status: { PUBLISHED: 'Published', DRAFT: 'Draft', ACTIVE: 'Active', INACTIVE: 'Inactive' }, changeReason: { create: 'Create master data', edit: 'Edit master data' }
       },
       qms: {
         inspectionStandard: {

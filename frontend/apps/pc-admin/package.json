@@ -15,15 +15,15 @@
     "@iaf/api-client": "workspace:*",
     "@iaf/auth": "workspace:*",
     "@iaf/domain-types": "workspace:*",
-    "@iaf/mock-data": "workspace:*",
     "@iaf/form-engine": "workspace:*",
     "@iaf/i18n": "workspace:*",
+    "@iaf/mock-data": "workspace:*",
     "@iaf/permissions": "workspace:*",
     "@iaf/table-engine": "workspace:*",
     "@iaf/theme": "workspace:*",
     "@iaf/ui-business": "workspace:*",
     "@iaf/ui-core": "workspace:*",
+    "dayjs": "^1.11.22",
     "pdfjs-dist": "^5.4.149"
-  },
-  "devDependencies": {}
+  }
 }

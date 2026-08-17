@@ -1,0 +1,9 @@
+import { useMutation,useQuery,useQueryClient } from '@tanstack/react-query'; import { mdmApi } from './api'; import type { CreateMdmModel, SaveMdmModelDraft, SaveMdmRecord } from './types';
+const keys={models:['mdm-models'] as const,schema:(c:string)=>['mdm-schema',c] as const,records:(c:string)=>['mdm-records',c] as const};
+export const useMdmModels=()=>useQuery({queryKey:keys.models,queryFn:mdmApi.models});
+export const useMdmSchema=(code:string)=>useQuery({queryKey:keys.schema(code),queryFn:()=>mdmApi.schema(code)});
+export const useMdmRecords=(code:string,p:{keyword?:string;pageNo:number;pageSize:number})=>useQuery({queryKey:[...keys.records(code),p.keyword??'',p.pageNo,p.pageSize],queryFn:()=>mdmApi.records(code,p)});
+export const useSaveMdmRecord=(code:string,onSuccess:()=>void)=>{const qc=useQueryClient();return useMutation({mutationFn:(v:{id?:string;request:SaveMdmRecord})=>v.id?mdmApi.update(code,v.id,v.request):mdmApi.create(code,v.request),onSuccess:async()=>{await qc.invalidateQueries({queryKey:keys.records(code)});onSuccess();}})};
+export const useCreateMdmModel=(onSuccess:(code:string)=>void)=>{const qc=useQueryClient();return useMutation({mutationFn:(v:CreateMdmModel)=>mdmApi.createModel(v),onSuccess:async model=>{await qc.invalidateQueries({queryKey:keys.models});onSuccess(model.code);}})};
+export const useSaveMdmModelDraft=(code:string,onSuccess:()=>void)=>{const qc=useQueryClient();return useMutation({mutationFn:(v:SaveMdmModelDraft)=>mdmApi.saveDraft(code,v),onSuccess:async()=>{await Promise.all([qc.invalidateQueries({queryKey:keys.models}),qc.invalidateQueries({queryKey:keys.schema(code)})]);onSuccess();}})};
+export const usePublishMdmModel=(code:string,onSuccess:()=>void)=>{const qc=useQueryClient();return useMutation({mutationFn:()=>mdmApi.publishModel(code),onSuccess:async()=>{await Promise.all([qc.invalidateQueries({queryKey:keys.models}),qc.invalidateQueries({queryKey:keys.schema(code)})]);onSuccess();}})};

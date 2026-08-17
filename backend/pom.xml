@@ -25,6 +25,7 @@
         <module>iaf-platform-integration</module>
         <module>iaf-manufacturing-core</module>
         <module>iaf-manufacturing-master</module>
+        <module>iaf-mdm</module>
         <module>iaf-qms-engineering</module>
         <module>iaf-wms-core</module>
         <module>iaf-wms-master</module>

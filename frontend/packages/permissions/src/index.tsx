@@ -64,6 +64,12 @@ export const QMS_PERMISSIONS = {
   validationPlanRelease: 'qms:validation-plan:release'
 } as const;
 
+export const MDM_PERMISSIONS = {
+  modelView: 'mdm:model:view', recordView: 'mdm:record:view',
+  modelCreate: 'mdm:model:create', modelUpdate: 'mdm:model:update', modelPublish: 'mdm:model:publish',
+  recordCreate: 'mdm:record:create', recordUpdate: 'mdm:record:update'
+} as const;
+
 export type QmsPermissionCode = (typeof QMS_PERMISSIONS)[keyof typeof QMS_PERMISSIONS];
 
 export type PlatformPermissionCode = (typeof PLATFORM_PERMISSIONS)[keyof typeof PLATFORM_PERMISSIONS];
