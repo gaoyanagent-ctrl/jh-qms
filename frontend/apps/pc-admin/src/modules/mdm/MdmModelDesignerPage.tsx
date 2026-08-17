@@ -9,7 +9,7 @@ import { useMdmModels, useMdmSchema, usePublishMdmModel, useSaveMdmModelDraft } 
 import type { MdmDataType, MdmReferenceConfig, SaveMdmModelDraft } from './types';
 
 const TYPES:MdmDataType[]=['STRING','TEXT','INTEGER','DECIMAL','BOOLEAN','DATE','DATETIME','ENUM','REFERENCE'];
-type DesignerValues={fields:SaveMdmModelDraft['fields'];uiSchemaText:string};
+type DesignerValues={approvalRequired:boolean;fields:SaveMdmModelDraft['fields'];uiSchemaText:string};
 
 export const MdmModelDesignerPage=()=>{
   const {t}=useTranslation();
@@ -20,8 +20,8 @@ export const MdmModelDesignerPage=()=>{
   const [editingPublished,setEditingPublished]=useState(false);
   const save=useSaveMdmModelDraft(modelCode,()=>message.success('模型草稿已保存'));
   const publish=usePublishMdmModel(modelCode,()=>{message.success('模型已发布');navigate('/mdm/models');});
-  useEffect(()=>{if(query.data)form.setFieldsValue({fields:query.data.fields.map(({id:_,length,...field})=>({...field,maxLength:length})),uiSchemaText:JSON.stringify(query.data.uiSchema,null,2)});},[query.data,form]);
-  const submit=(values:DesignerValues)=>{let uiSchema:Record<string,unknown>;try{uiSchema=JSON.parse(values.uiSchemaText||'{}') as Record<string,unknown>;}catch{message.error('UI Schema 必须是有效 JSON');return;}save.mutate({fields:values.fields.map((field,index)=>({...field,sortNo:(index+1)*10,enumOptions:Array.isArray(field.enumOptions)?field.enumOptions:[]})),uiSchema});};
+  useEffect(()=>{if(query.data)form.setFieldsValue({approvalRequired:query.data.approvalRequired,fields:query.data.fields.map(({id:_,length,...field})=>({...field,maxLength:length})),uiSchemaText:JSON.stringify(query.data.uiSchema,null,2)});},[query.data,form]);
+  const submit=(values:DesignerValues)=>{let uiSchema:Record<string,unknown>;try{uiSchema=JSON.parse(values.uiSchemaText||'{}') as Record<string,unknown>;}catch{message.error('UI Schema 必须是有效 JSON');return;}save.mutate({approvalRequired:values.approvalRequired,fields:values.fields.map((field,index)=>({...field,sortNo:(index+1)*10,enumOptions:Array.isArray(field.enumOptions)?field.enumOptions:[]})),uiSchema});};
   if(query.isError)return <Alert type="error" showIcon message="模型定义加载失败"/>;
   const editable=query.data?.status==='DRAFT'||editingPublished;
   const modelOptions=(models.data??[]).map(model=>({value:model.code,label:`${model.name} (${model.code})`}));
@@ -33,7 +33,11 @@ export const MdmModelDesignerPage=()=>{
     {query.data?.status==='PUBLISHED'&&editingPublished&&<Alert type="warning" showIcon message={`正在基于 v${query.data.currentModelVersion} 修改。请先保存草稿，再校验并发布新版本。`} style={{marginBottom:16}}/>}
     {query.data?.status==='DRAFT'&&query.data.currentModelVersion>0&&<Alert type="warning" showIcon message={`v${query.data.currentModelVersion+1} 草稿待发布；当前已发布版本为 v${query.data.currentModelVersion}。`} style={{marginBottom:16}}/>}
     <Form form={form} layout="vertical" onFinish={submit} disabled={!editable}>
-      <Card title="字段定义" extra={editable&&<Form.List name="fields">{(_,operations)=><Button onClick={()=>operations.add({code:'',name:'',dataType:'STRING',required:false,unique:false,readonly:false,searchable:true,sortable:false,listVisible:true,maxLength:null,enumOptions:[],helpText:'',sortNo:0})}>新增字段</Button>}</Form.List>}>
+      <Card title={t('mdm.approval.settingsTitle')}>
+        <Form.Item name="approvalRequired" valuePropName="checked" style={{marginBottom:8}}><Checkbox>{t('mdm.approval.requiredLabel')}</Checkbox></Form.Item>
+        <Typography.Paragraph type="secondary" style={{marginBottom:0}}>{t('mdm.approval.requiredHelp')}</Typography.Paragraph>
+      </Card>
+      <Card title="字段定义" style={{marginTop:16}} extra={editable&&<Form.List name="fields">{(_,operations)=><Button onClick={()=>operations.add({code:'',name:'',dataType:'STRING',required:false,unique:false,readonly:false,searchable:true,sortable:false,listVisible:true,maxLength:null,enumOptions:[],helpText:'',sortNo:0})}>新增字段</Button>}</Form.List>}>
         <Form.List name="fields">{(fields,{remove})=><Table pagination={false} rowKey="key" dataSource={fields} columns={[
           {title:'字段编码',render:(_,field)=><Form.Item name={[field.name,'code']} rules={[{required:true},{pattern:/^[a-z][A-Za-z0-9_]{1,63}$/}]} noStyle><Input aria-label="字段编码"/></Form.Item>},
           {title:'名称',render:(_,field)=><Form.Item name={[field.name,'name']} rules={[{required:true}]} noStyle><Input aria-label="字段名称"/></Form.Item>},

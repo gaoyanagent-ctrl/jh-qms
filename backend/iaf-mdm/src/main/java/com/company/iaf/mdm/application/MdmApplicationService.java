@@ -41,7 +41,7 @@ public class MdmApplicationService {
         var result = modelValidator.validate(request.fields());
         var referenceErrors=validateReferenceTargets(tenantId,request.fields());
         if (!result.valid()||!referenceErrors.isEmpty()) {var errors=new ArrayList<>(result.errors());errors.addAll(referenceErrors);throw new BusinessException(MdmErrorCode.VALIDATION_FAILED,String.join("; ",errors));}
-        repository.replaceDraft(tenantId, actorId, model.id(), request.fields(), request.uiSchema());
+        repository.replaceDraft(tenantId, actorId, model.id(), request.approvalRequired(), request.fields(), request.uiSchema());
         return requireModel(tenantId, code);
     }
     @RequiresPermission("mdm:model:update") @Transactional(readOnly = true)

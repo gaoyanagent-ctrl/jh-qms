@@ -19,4 +19,10 @@ describe('MdmModelDesignerPage reference configuration',()=>{
     expect(screen.getByLabelText('状态字段')).toBeInTheDocument();
     expect(screen.getByLabelText('允许的状态')).toBeInTheDocument();
   });
+  it('shows the model-level approval setting with an explanation',async()=>{
+    render(<MemoryRouter initialEntries={['/mdm/models/bomItem/design']}><Routes><Route path="/mdm/models/:modelCode/design" element={<MdmModelDesignerPage/>}/></Routes></MemoryRouter>);
+    expect(await screen.findByText('审批设置')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox',{name:'记录生效需要审批'})).toBeInTheDocument();
+    expect(screen.getByText(/关闭后提交即直接生效/)).toBeInTheDocument();
+  });
 });

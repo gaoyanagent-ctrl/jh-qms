@@ -33,11 +33,11 @@ class MdmApplicationServiceTest {
         var draft=new MdmModels.Model(7,"manufacturing","material","物料","MASTER",true,true,true,false,"DRAFT",1,Map.of(),List.of());
         when(repository.findModel(1,"material")).thenReturn(Optional.of(published),Optional.of(draft));
         var field=new MdmDtos.FieldDraft("materialType","物料类型","ENUM",true,false,false,true,true,true,32,List.of("RAW","FINISHED"),null,10,null);
-        var request=new MdmDtos.SaveModelDraftRequest(List.of(field),Map.of());
+        var request=new MdmDtos.SaveModelDraftRequest(true,List.of(field),Map.of());
 
         new MdmApplicationService(repository, rules(repository)).saveDraft(1,9,"material",request);
 
-        verify(repository).replaceDraft(1,9,7,List.of(field),Map.of());
+        verify(repository).replaceDraft(1,9,7,true,List.of(field),Map.of());
     }
 
     @Test void returnsImmutableHistoryForRecordInRequestedModel() {

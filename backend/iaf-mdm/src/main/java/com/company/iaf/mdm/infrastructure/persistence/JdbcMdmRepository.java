@@ -33,14 +33,14 @@ public class JdbcMdmRepository implements MdmRepository {
         jdbc.update("insert into mdm_model(tenant_id,domain_id,code,name,record_type,version_enabled,effective_date_enabled,organization_scope_enabled,approval_required,status,current_model_version,ui_schema,created_by,updated_by) values (?,?,?,?,?,?,?,?,?,'DRAFT',0,'{}'::jsonb,?,?)",tenantId,domains.get(0),r.code().trim(),r.name().trim(),r.recordType()==null?"MASTER":r.recordType(),r.versionEnabled(),r.effectiveDateEnabled(),r.organizationScopeEnabled(),r.approvalRequired(),actorId,actorId);
         return findModel(tenantId,r.code().trim()).orElseThrow();
     }
-    public void replaceDraft(long tenantId,long actorId,long modelId,List<MdmDtos.FieldDraft> fields,Map<String,Object> uiSchema) {
+    public void replaceDraft(long tenantId,long actorId,long modelId,boolean approvalRequired,List<MdmDtos.FieldDraft> fields,Map<String,Object> uiSchema) {
         jdbc.update("delete from mdm_model_field where tenant_id=? and model_id=?",tenantId,modelId);
         for(var f:fields) jdbc.update("insert into mdm_model_field(tenant_id,model_id,code,name,data_type,required,unique_value,readonly,searchable,sortable,list_visible,max_length,enum_options,help_text,sort_no,reference_config,created_by,updated_by) values (?,?,?,?,?,?,?,?,?,?,?,?,?::jsonb,?,?,?::jsonb,?,?)",tenantId,modelId,f.code(),f.name(),f.dataType(),f.required(),f.unique(),f.readonly(),f.searchable(),f.sortable(),f.listVisible(),f.maxLength(),write(f.enumOptions()==null?List.of():f.enumOptions()),f.helpText(),f.sortNo(),write(f.referenceConfig()),actorId,actorId);
-        jdbc.update("update mdm_model set ui_schema=?::jsonb,status='DRAFT',updated_by=?,updated_at=now(),version=version+1 where tenant_id=? and id=? and status in ('DRAFT','PUBLISHED')",write(uiSchema),actorId,tenantId,modelId);
+        jdbc.update("update mdm_model set approval_required=?,ui_schema=?::jsonb,status='DRAFT',updated_by=?,updated_at=now(),version=version+1 where tenant_id=? and id=? and status in ('DRAFT','PUBLISHED')",approvalRequired,write(uiSchema),actorId,tenantId,modelId);
     }
     public void publishModel(long tenantId,long actorId,MdmModels.Model model) {
         int next=model.currentModelVersion()+1;
-        jdbc.update("insert into mdm_model_version(tenant_id,model_id,version_no,status,schema_snapshot,ui_schema_snapshot,published_by,created_by,updated_by) values (?,?,?,'PUBLISHED',?::jsonb,?::jsonb,?,?,?)",tenantId,model.id(),next,write(model.fields()),write(model.uiSchema()),actorId,actorId,actorId);
+        jdbc.update("insert into mdm_model_version(tenant_id,model_id,version_no,status,schema_snapshot,ui_schema_snapshot,approval_required,published_by,created_by,updated_by) values (?,?,?,'PUBLISHED',?::jsonb,?::jsonb,?,?,?,?)",tenantId,model.id(),next,write(model.fields()),write(model.uiSchema()),model.approvalRequired(),actorId,actorId,actorId);
         jdbc.update("update mdm_model set status='PUBLISHED',current_model_version=?,updated_by=?,updated_at=now(),version=version+1 where tenant_id=? and id=?",next,actorId,tenantId,model.id());
     }
     private List<MdmModels.Field> fields(long tenantId,long modelId) { return jdbc.query("select * from mdm_model_field where tenant_id=? and model_id=? and deleted=false and deprecated=false order by sort_no,id", this::mapField, tenantId,modelId); }
