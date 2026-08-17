@@ -11,8 +11,10 @@ public interface MdmRepository {
     List<MdmModels.Model> findModels(long tenantId);
     Optional<MdmModels.Model> findModel(long tenantId, String modelCode);
     MdmModels.Model insertModel(long tenantId, long actorId, MdmDtos.CreateModelRequest request);
-    void replaceDraft(long tenantId, long actorId, long modelId, boolean approvalRequired, List<MdmDtos.FieldDraft> fields, Map<String,Object> uiSchema);
+    void replaceDraft(long tenantId, long actorId, long modelId, boolean approvalRequired, long modelApprovalRoleId, List<MdmDtos.FieldDraft> fields, Map<String,Object> uiSchema);
     void publishModel(long tenantId, long actorId, MdmModels.Model model);
+    boolean submitModelApproval(long tenantId,long actorId,long modelId,long orgId);
+    boolean rejectModelApproval(long tenantId,long actorId,long modelId);
     List<MdmModels.Record> findRecords(long tenantId, long modelId, String keyword, long offset, int size);
     long countRecords(long tenantId, long modelId, String keyword);
     boolean businessCodeExists(long tenantId, long modelId, String businessCode, UUID excludingId);
@@ -52,5 +54,6 @@ public interface MdmRepository {
     List<MdmModels.RecordAction> findRecordActions(long tenantId,long modelId,UUID recordId);
     boolean roleExists(long tenantId,long roleId);
     boolean userHasRole(long tenantId,long userId,long roleId);
+    String userDisplayName(long tenantId,long userId);
     List<MdmModels.ApprovalTask> findApprovalTasks(long tenantId,long actorId,String scope);
 }

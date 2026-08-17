@@ -1,13 +1,15 @@
 import { apiClient } from '../../api/client';
-import type { CreateMdmModel, MdmApprovalTask, MdmApprovalTaskScope, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
+import type { CreateMdmModel, MdmApprovalTask, MdmApprovalTaskScope, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelApprovalTask, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
 export const mdmApi = {
   models: () => apiClient.get<MdmModel[]>('/api/mdm/models'),
   approvalTasks: (scope:MdmApprovalTaskScope) => apiClient.get<MdmApprovalTask[]>('/api/mdm/models/approval-tasks',{query:{scope}}),
+  modelApprovalTasks: (scope:MdmApprovalTaskScope) => apiClient.get<MdmModelApprovalTask[]>('/api/mdm/models/model-approval-tasks',{query:{scope}}),
   schema: (code:string) => apiClient.get<MdmModel>(`/api/mdm/models/${code}/schema`),
   createModel: (request:CreateMdmModel) => apiClient.post<MdmModel>('/api/mdm/models',request),
   saveDraft: (code:string,request:SaveMdmModelDraft) => apiClient.put<MdmModel>(`/api/mdm/models/${code}/draft`,request),
   validateModel: (code:string) => apiClient.post<MdmModelValidation>(`/api/mdm/models/${code}/validate`,{}),
   publishModel: (code:string) => apiClient.post<MdmModel>(`/api/mdm/models/${code}/publish`,{}),
+  modelPublishAction: (code:string,action:'APPROVE'|'REJECT',comment:string) => apiClient.post<MdmModel>(`/api/mdm/models/${code}/publish/${action.toLowerCase()}`,{comment}),
   records: (code:string, params:{keyword?:string;pageNo:number;pageSize:number}) => apiClient.get<MdmPage<MdmRecord>>(`/api/mdm/models/${code}/records`,{query:params}),
   recordVersions: (code:string,id:string) => apiClient.get<MdmRecordVersion[]>(`/api/mdm/models/${code}/records/${id}/versions`),
   recordActions: (code:string,id:string) => apiClient.get<MdmRecordAction[]>(`/api/mdm/models/${code}/records/${id}/actions`),
