@@ -204,6 +204,13 @@ export interface LoginRequest {
   password: string;
 }
 
+export type LoginCredentials = Pick<LoginRequest, 'username' | 'password'>;
+
+export interface LoginTenantOption {
+  tenantCode: string;
+  tenantName: string;
+}
+
 export interface AuthPrincipal {
   tenantId: number;
   userId: number;

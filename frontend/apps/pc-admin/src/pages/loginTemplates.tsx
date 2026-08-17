@@ -1,4 +1,4 @@
-import type { LoginRequest } from '@iaf/domain-types';
+import type { LoginCredentials } from '@iaf/domain-types';
 import type { IafBrandConfig, IafDesignTokens, IafLoginTemplateName } from '@iaf/theme';
 import {
   ApartmentOutlined,
@@ -14,7 +14,6 @@ import {
   MessageOutlined,
   SafetyCertificateOutlined,
   ThunderboltOutlined,
-  BankOutlined,
   UserOutlined
 } from '@ant-design/icons';
 import { Button, Checkbox, Form, Input, Space, Typography, theme } from 'antd';
@@ -27,7 +26,7 @@ export interface LoginTemplateProps {
   brandConfig: IafBrandConfig;
   designTokens: IafDesignTokens;
   loading: boolean;
-  onSubmit: (values: LoginRequest) => void;
+  onSubmit: (values: LoginCredentials) => void;
   t: TFunction;
 }
 
@@ -95,10 +94,7 @@ const LoginForm = ({
   };
 
   return (
-    <Form<LoginRequest> layout="vertical" onFinish={onSubmit} requiredMark={false}>
-      <Form.Item name="tenantCode" label={t('auth.tenantCode')} rules={[{ required: true, message: t('auth.required') }]}>
-        <Input prefix={variant === 'light' ? <BankOutlined /> : undefined} autoComplete="organization" placeholder={t('auth.tenantCodePlaceholder')} style={inputStyle} />
-      </Form.Item>
+    <Form<LoginCredentials> layout="vertical" onFinish={onSubmit} requiredMark={false}>
       <Form.Item name="username" label={t(variant === 'terminal' ? 'auth.loginTemplates.cyberAi.username' : variant === 'glass' ? 'auth.loginTemplates.immersiveGlass.username' : variant === 'brutalist' ? 'auth.loginTemplates.minimalTechnical.username' : variant === 'bento' ? 'auth.loginTemplates.bento.username' : 'auth.username')} rules={[{ required: true, message: t('auth.required') }]}>
         <Input prefix={variant === 'light' ? <UserOutlined /> : undefined} autoComplete="username" placeholder={t(variant === 'terminal' ? 'auth.loginTemplates.cyberAi.usernamePlaceholder' : variant === 'glass' ? 'auth.loginTemplates.immersiveGlass.usernamePlaceholder' : variant === 'brutalist' ? 'auth.loginTemplates.minimalTechnical.usernamePlaceholder' : variant === 'bento' ? 'auth.loginTemplates.bento.usernamePlaceholder' : 'auth.loginTemplates.standardIndustrial.usernamePlaceholder')} style={inputStyle} />
       </Form.Item>

@@ -81,6 +81,11 @@ export const resources = {
         submit: '登录',
         required: '请输入必填项',
         failed: '登录失败',
+        tenantSelection: {
+          title: '选择登录租户',
+          description: '该账号可访问多个租户，请选择本次要进入的租户。',
+          continue: '进入系统'
+        },
         sso: {
           dingtalk: '钉钉',
           wecom: '企业微信',
@@ -786,6 +791,11 @@ export const resources = {
         submit: 'Login',
         required: 'This field is required',
         failed: 'Login failed',
+        tenantSelection: {
+          title: 'Select a tenant',
+          description: 'This account can access multiple tenants. Choose where you want to sign in.',
+          continue: 'Continue'
+        },
         sso: {
           dingtalk: 'DingTalk',
           wecom: 'WeCom',

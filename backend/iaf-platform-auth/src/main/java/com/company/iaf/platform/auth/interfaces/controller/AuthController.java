@@ -6,6 +6,8 @@ import com.company.iaf.platform.auth.domain.model.AuthenticatedUser;
 import com.company.iaf.platform.auth.interfaces.dto.CurrentUserResponse;
 import com.company.iaf.platform.auth.interfaces.dto.LoginRequest;
 import com.company.iaf.platform.auth.interfaces.dto.LoginResponse;
+import com.company.iaf.platform.auth.interfaces.dto.LoginTenantDiscoveryRequest;
+import com.company.iaf.platform.auth.interfaces.dto.LoginTenantOptionResponse;
 import com.company.iaf.shared.result.Result;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/platform/auth")
@@ -43,6 +47,15 @@ public class AuthController {
                 user.organizations().stream().map(com.company.iaf.platform.auth.interfaces.dto.UserOrgItemResponse::from).toList(),
                 user.permissions()
         ));
+    }
+
+    @PostMapping("/login/tenants")
+    public Result<List<LoginTenantOptionResponse>> discoverTenants(
+            @Valid @RequestBody LoginTenantDiscoveryRequest request
+    ) {
+        return Result.ok(authApplicationService.discoverTenants(request.username(), request.password()).stream()
+                .map(LoginTenantOptionResponse::from)
+                .toList());
     }
 
     @GetMapping("/me")

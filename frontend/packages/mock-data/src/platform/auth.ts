@@ -1,5 +1,5 @@
 import { mockError, mockSuccess, MockApiAdapter, MockRequest } from '@iaf/api-client';
-import type { AuthPrincipal, LoginResponse } from '@iaf/domain-types';
+import type { AuthPrincipal, LoginResponse, LoginTenantOption } from '@iaf/domain-types';
 
 const adminPrincipal: AuthPrincipal = {
   tenantId: 1,
@@ -77,6 +77,16 @@ const tokens = new Map<string, AuthPrincipal>();
 const mockTenantCode = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.VITE_IAF_MOCK_TENANT_CODE;
 
 export const registerAuthMocks = (adapter: MockApiAdapter) => {
+  adapter.register('POST', '/api/platform/auth/login/tenants', (req: MockRequest) => {
+    const username = String(req.body?.username ?? '');
+    const password = String(req.body?.password ?? '');
+    if (!principals[username] || password.length === 0) {
+      return mockError('Login failed', 'COMMON_UNAUTHORIZED', 401);
+    }
+    const tenantCode = mockTenantCode || 'default';
+    return mockSuccess<LoginTenantOption[]>([{ tenantCode, tenantName: 'Default Tenant' }]);
+  });
+
   adapter.register('POST', '/api/platform/auth/login', (req: MockRequest) => {
     const tenantCode = String(req.body?.tenantCode ?? '');
     const username = String(req.body?.username ?? '');

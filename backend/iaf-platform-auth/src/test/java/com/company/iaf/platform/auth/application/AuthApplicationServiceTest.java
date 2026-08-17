@@ -2,6 +2,7 @@ package com.company.iaf.platform.auth.application;
 
 import com.company.iaf.platform.auth.domain.model.AuthToken;
 import com.company.iaf.platform.auth.domain.model.LoginUser;
+import com.company.iaf.platform.auth.domain.model.LoginTenantCandidate;
 import com.company.iaf.platform.auth.domain.model.Tenant;
 import com.company.iaf.platform.auth.domain.model.TenantInfo;
 import com.company.iaf.platform.auth.domain.model.TenantQuota;
@@ -140,6 +141,45 @@ class AuthApplicationServiceTest {
     }
 
     @Test
+    void discoverTenantsReturnsOnlyEnabledTenantsWithMatchingCredentials() {
+        AuthApplicationService service = new AuthApplicationService(
+                tenantRepository,
+                repositoryWithCandidates(
+                        new LoginTenantCandidate(1L, "default", "Default Tenant", "{noop}admin123", "ENABLED", "ENABLED"),
+                        new LoginTenantCandidate(2L, "acme", "Acme Manufacturing", "{noop}admin123", "ENABLED", "ENABLED"),
+                        new LoginTenantCandidate(3L, "disabled-user", "Disabled User Tenant", "{noop}admin123", "DISABLED", "ENABLED"),
+                        new LoginTenantCandidate(4L, "disabled-tenant", "Disabled Tenant", "{noop}admin123", "ENABLED", "DISABLED"),
+                        new LoginTenantCandidate(5L, "different-password", "Other Tenant", "{noop}other", "ENABLED", "ENABLED")
+                ),
+                userOrgRepository,
+                passwordEncoder,
+                tokenStore
+        );
+
+        assertThat(service.discoverTenants("admin", "admin123"))
+                .extracting(LoginTenantCandidate::tenantCode)
+                .containsExactly("default", "acme");
+    }
+
+    @Test
+    void discoverTenantsRejectsInvalidCredentialsWithoutExposingTenantMembership() {
+        AuthApplicationService service = new AuthApplicationService(
+                tenantRepository,
+                repositoryWithCandidates(
+                        new LoginTenantCandidate(1L, "default", "Default Tenant", "{noop}admin123", "ENABLED", "ENABLED")
+                ),
+                userOrgRepository,
+                passwordEncoder,
+                tokenStore
+        );
+
+        assertThatThrownBy(() -> service.discoverTenants("admin", "wrong"))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(CommonErrorCode.UNAUTHORIZED);
+    }
+
+    @Test
     void authenticateRefreshesCurrentOrgFromPrimaryAssignment() {
         MutableUserOrgRepository mutableUserOrgRepository = new MutableUserOrgRepository(List.of(
                 new UserOrgAssignment(1L, true, 100, null, null),
@@ -174,6 +214,20 @@ class AuthApplicationServiceTest {
         return (tenantId, username) -> List.of(users).stream()
                 .filter(user -> user.tenantId() == tenantId && user.username().equals(username))
                 .findFirst();
+    }
+
+    private static AuthUserRepository repositoryWithCandidates(LoginTenantCandidate... candidates) {
+        return new AuthUserRepository() {
+            @Override
+            public Optional<LoginUser> findByTenantIdAndUsername(long tenantId, String username) {
+                return Optional.empty();
+            }
+
+            @Override
+            public List<LoginTenantCandidate> findTenantCandidatesByUsername(String username) {
+                return List.of(candidates);
+            }
+        };
     }
 
     private static TenantRepository tenantRepository(TenantInfo... tenants) {
