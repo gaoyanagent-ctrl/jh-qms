@@ -9,14 +9,13 @@ import com.company.iaf.platform.core.security.RequiresPermission;
 import com.company.iaf.shared.exception.BusinessException;
 import com.company.iaf.shared.result.PageResult;
 import org.springframework.stereotype.Service;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
-import javax.sql.DataSource;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
 @Service
-@ConditionalOnSingleCandidate(DataSource.class)
+@ConditionalOnProperty(name = "iaf.mdm.enabled", havingValue = "true", matchIfMissing = true)
 public class MdmApplicationService {
     private final MdmRepository repository;
     private final DynamicRecordValidator validator = new DynamicRecordValidator();
