@@ -29,6 +29,7 @@ Cross-module calls must not reach into another module's `infrastructure`, entity
 ### `iaf-mdm`
 
 - `ModelDefinitionValidator` checks field codes, duplicates, data types, enum options and design warnings before publish.
+- `MdmExcelImportService` generates model-version-aware Excel templates and parses uploaded workbooks into the unified batch validation/write contract (synchronous limit: 1,000 rows).
 
 - Owner module: cross-application master data authority.
 - Layers: `interfaces`, `application`, `domain`, `infrastructure`.

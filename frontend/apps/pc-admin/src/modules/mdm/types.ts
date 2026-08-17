@@ -6,6 +6,7 @@ export interface MdmRecordVersion { id:number; recordId:string; versionNo:number
 export interface SaveMdmRecord { businessCode:string; name:string; lifecycleStatus:string; scopeType:string; scopeIds:number[]; effectiveFrom?:string|null; effectiveTo?:string|null; attributes:Record<string,unknown>; expectedVersion?:number; changeReason?:string }
 export interface MdmBatchRowValidation { rowNo:number; businessCode:string; valid:boolean; errors:string[] }
 export interface MdmBatchValidation { valid:boolean; total:number; rows:MdmBatchRowValidation[] }
+export interface MdmImportPreview { fileName:string; records:SaveMdmRecord[]; validation:MdmBatchValidation }
 export interface MdmPage<T> { records:T[]; total:number; pageNo:number; pageSize:number }
 export interface CreateMdmModel { domainCode:string; code:string; name:string; recordType:string; versionEnabled:boolean; effectiveDateEnabled:boolean; organizationScopeEnabled:boolean; approvalRequired:boolean }
 export interface SaveMdmModelDraft { fields:Array<Omit<MdmField,'id'|'length'>&{maxLength:number|null}>; uiSchema:Record<string,unknown> }

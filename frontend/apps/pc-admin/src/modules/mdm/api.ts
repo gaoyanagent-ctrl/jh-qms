@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client';
-import type { CreateMdmModel, MdmBatchValidation, MdmModel, MdmModelValidation, MdmPage, MdmRecord, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
+import type { CreateMdmModel, MdmBatchValidation, MdmImportPreview, MdmModel, MdmModelValidation, MdmPage, MdmRecord, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
 export const mdmApi = {
   models: () => apiClient.get<MdmModel[]>('/api/mdm/models'),
   schema: (code:string) => apiClient.get<MdmModel>(`/api/mdm/models/${code}/schema`),
@@ -12,5 +12,7 @@ export const mdmApi = {
   create: (code:string, request:SaveMdmRecord) => apiClient.post<MdmRecord>(`/api/mdm/models/${code}/records`,request),
   validateBatch: (code:string,records:SaveMdmRecord[]) => apiClient.post<MdmBatchValidation>(`/api/mdm/models/${code}/records/batch-validate`,{records}),
   createBatch: (code:string,records:SaveMdmRecord[]) => apiClient.post<MdmRecord[]>(`/api/mdm/models/${code}/records/batch`,{records}),
+  importTemplate: (code:string) => apiClient.getBlob(`/api/mdm/models/${code}/import-template`),
+  previewImport: (code:string,file:File) => { const body=new FormData(); body.append('file',file); return apiClient.post<MdmImportPreview>(`/api/mdm/models/${code}/imports`,body); },
   update: (code:string,id:string,request:SaveMdmRecord) => apiClient.put<MdmRecord>(`/api/mdm/models/${code}/records/${id}`,request)
 };

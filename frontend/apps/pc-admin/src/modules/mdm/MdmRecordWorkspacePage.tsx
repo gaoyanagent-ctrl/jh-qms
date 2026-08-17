@@ -11,6 +11,7 @@ import { useRegisterDirty } from '../../workspace/DirtyStateRegistry';
 import { useMdmRecords, useMdmRecordVersions, useMdmSchema, useSaveMdmRecord } from './hooks';
 import { MdmPageContextProvider } from './pageContext';
 import { MdmExcelPasteModal } from './MdmExcelPasteModal';
+import { MdmExcelFileImportModal } from './MdmExcelFileImportModal';
 import type { MdmField, MdmRecord, MdmRecordVersion, SaveMdmRecord } from './types';
 
 type AttributeValue = string | number | boolean | null | undefined;
@@ -50,6 +51,7 @@ export const MdmRecordWorkspacePage = () => {
   const [open, setOpen] = useState(false); const [editing, setEditing] = useState<MdmRecord>(); const [dirty, setDirty] = useState(false);
   const [historyRecord,setHistoryRecord]=useState<MdmRecord>(); const versions=useMdmRecordVersions(code,historyRecord?.id);
   const [pasteOpen,setPasteOpen]=useState(false);
+  const [fileImportOpen,setFileImportOpen]=useState(false);
   useRegisterDirty(open && dirty); const schema = useMdmSchema(code); const records = useMdmRecords(code, params);
   const close = () => { setOpen(false); setEditing(undefined); setDirty(false); form.resetFields(); };
   const save = useSaveMdmRecord(code, () => { message.success(t('common.feedback.operationSucceeded')); close(); });
@@ -68,7 +70,7 @@ export const MdmRecordWorkspacePage = () => {
       { key:'lifecycleStatus', dataIndex:'lifecycleStatus', titleKey:'common.fields.status', width:110, render:(status) => <StatusTag status={String(status)} label={t(`mdm.status.${String(status)}`)} /> },
       { key:'currentVersionNo', dataIndex:'currentVersionNo', titleKey:'mdm.fields.dataVersion', width:100 }
     ], searchFields:[{ key:'keyword', labelKey:'mdm.search.keyword', type:'text', placeholderKey:'mdm.search.placeholder' }],
-    toolbarActions:[{ key:'create', labelKey:'common.actions.create', type:'primary', requirePermission:MDM_PERMISSIONS.recordCreate, onClick:() => setOpen(true) },{key:'excelPaste',labelKey:'mdm.actions.excelPaste',type:'default',requirePermission:MDM_PERMISSIONS.recordCreate,onClick:()=>setPasteOpen(true)}],
+    toolbarActions:[{ key:'create', labelKey:'common.actions.create', type:'primary', requirePermission:MDM_PERMISSIONS.recordCreate, onClick:() => setOpen(true) },{key:'excelFileImport',labelKey:'mdm.actions.excelFileImport',type:'default',requirePermission:MDM_PERMISSIONS.recordCreate,onClick:()=>setFileImportOpen(true)},{key:'excelPaste',labelKey:'mdm.actions.excelPaste',type:'default',requirePermission:MDM_PERMISSIONS.recordCreate,onClick:()=>setPasteOpen(true)}],
     rowActions:[{ key:'edit', labelKey:'common.actions.edit', requirePermission:MDM_PERMISSIONS.recordUpdate, onClick:edit },{key:'history',labelKey:'mdm.actions.versionHistory',requirePermission:MDM_PERMISSIONS.recordView,onClick:setHistoryRecord}] };
   }, [code, schema.data?.fields, t]);
   const submit = (values:FormValues) => {
@@ -96,6 +98,7 @@ export const MdmRecordWorkspacePage = () => {
       </Form>
     </FormInteractionSurface>
     {schema.data&&<MdmExcelPasteModal open={pasteOpen} onClose={()=>setPasteOpen(false)} model={schema.data}/>}
+    {schema.data&&<MdmExcelFileImportModal open={fileImportOpen} onClose={()=>setFileImportOpen(false)} model={schema.data}/>}
     <Drawer open={Boolean(historyRecord)} onClose={()=>setHistoryRecord(undefined)} title={`${historyRecord?.businessCode??''} · ${t('mdm.actions.versionHistory')}`} width={760} destroyOnHidden>
       {versions.isError?<Alert type="error" showIcon message={t('mdm.feedback.loadFailed')}/>:versions.isLoading?<Typography.Text type="secondary">{t('common.feedback.loading')}</Typography.Text>:versions.data?.length?<Timeline items={versions.data.map((version,index)=>{const changes=buildMdmVersionDiff(version,versions.data?.[index+1]);return {children:<Space direction="vertical" size={8} style={{width:'100%'}}><Space wrap><Typography.Text strong>v{version.versionNo}</Typography.Text><Tag color={version.changeType==='CREATE'?'green':'blue'}>{version.changeType}</Tag><Typography.Text>{version.createdByName}</Typography.Text><Typography.Text type="secondary">{dayjs(version.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Typography.Text></Space>{version.changeReason&&<Typography.Text type="secondary">变更原因：{version.changeReason}</Typography.Text>}<Table size="small" pagination={false} rowKey="key" dataSource={changes} columns={[{title:'变更字段',dataIndex:'key',width:180,render:(key:string)=>schema.data?.fields.find(field=>field.code===key)?.name??t(`mdm.fields.${key}`,{defaultValue:key})},{title:'变更前',dataIndex:'before',render:displayValue},{title:'变更后',dataIndex:'after',render:displayValue}]}/></Space>};})}/>:<Empty description="暂无版本历史"/>}
     </Drawer>
