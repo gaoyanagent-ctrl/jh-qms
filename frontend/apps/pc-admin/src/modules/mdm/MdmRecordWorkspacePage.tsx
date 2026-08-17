@@ -15,6 +15,11 @@ import type { MdmField, MdmRecord, SaveMdmRecord } from './types';
 type AttributeValue = string | number | boolean | null | undefined;
 type FormValues = { businessCode:string; name:string; lifecycleStatus:string; effectiveFrom?:Dayjs; effectiveTo?:Dayjs; attributes:Record<string,AttributeValue> };
 
+export const buildMdmDynamicColumns = (fields: MdmField[]): ColumnDefinition<MdmRecord>[] => fields.map((field) => ({
+  key:field.code, titleKey:field.name, width:150, defaultVisible:field.listVisible,
+  render:(_value, record) => String(record.attributes[field.code] ?? '')
+}));
+
 const fieldControl = (field: MdmField) => {
   if (field.dataType === 'BOOLEAN') return <Switch />;
   if (field.dataType === 'ENUM') return <Select options={field.enumOptions.map((value) => ({ value, label: value }))} />;
@@ -39,10 +44,7 @@ export const MdmRecordWorkspacePage = () => {
     setOpen(true);
   };
   const definition = useMemo<ListViewDefinition<MdmRecord>>(() => {
-    const dynamicColumns: ColumnDefinition<MdmRecord>[] = schema.data?.fields.filter((field) => field.listVisible).map((field) => ({
-      key:field.code, titleKey:`mdm.dynamic.${field.code}`, width:150,
-      render:(_value, record) => String(record.attributes[field.code] ?? '')
-    })) ?? [];
+    const dynamicColumns = buildMdmDynamicColumns(schema.data?.fields ?? []);
     return { id:`mdm-${code}`, descriptionKey:'mdm.records.description', columns:[
       { key:'businessCode', dataIndex:'businessCode', titleKey:'mdm.fields.businessCode', fixed:'left', width:160 },
       { key:'name', dataIndex:'name', titleKey:'mdm.fields.name', fixed:'left', width:200 }, ...dynamicColumns,
