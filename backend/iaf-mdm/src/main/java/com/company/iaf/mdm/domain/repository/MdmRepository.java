@@ -23,4 +23,5 @@ public interface MdmRepository {
     Optional<MdmModels.Record> findRecord(long tenantId, long modelId, UUID id);
     boolean updateRecord(long tenantId, long actorId, MdmModels.Record record, int expectedVersion);
     void insertVersion(long tenantId, long actorId, MdmModels.Record record, String changeType, String reason);
+    List<MdmModels.RecordVersion> findRecordVersions(long tenantId, long modelId, UUID recordId);
 }
