@@ -3,6 +3,7 @@ package com.company.iaf.platform.auth.application;
 import com.company.iaf.platform.auth.domain.model.AuthToken;
 import com.company.iaf.platform.auth.domain.model.AuthenticatedUser;
 import com.company.iaf.platform.auth.domain.model.LoginUser;
+import com.company.iaf.platform.auth.domain.model.LoginTenantCandidate;
 import com.company.iaf.platform.auth.domain.model.TenantInfo;
 import com.company.iaf.platform.auth.domain.model.TenantStatus;
 import com.company.iaf.platform.auth.domain.model.UserOrg;
@@ -62,6 +63,17 @@ public class AuthApplicationService {
                 user.toAuthenticatedUser(userOrgRepository.findByUserId(user.tenantId(), user.userId())),
                 TOKEN_TTL
         );
+    }
+
+    public List<LoginTenantCandidate> discoverTenants(String username, String password) {
+        List<LoginTenantCandidate> tenants = authUserRepository.findTenantCandidatesByUsername(username).stream()
+                .filter(LoginTenantCandidate::enabled)
+                .filter(candidate -> passwordEncoder.matches(password, candidate.passwordHash()))
+                .toList();
+        if (tenants.isEmpty()) {
+            throw invalidCredentials();
+        }
+        return tenants;
     }
 
     private static BusinessException invalidCredentials() {

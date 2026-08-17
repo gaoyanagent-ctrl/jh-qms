@@ -1,5 +1,5 @@
 import type { ApiClient } from '@iaf/api-client';
-import type { AuthPrincipal, LoginRequest, LoginResponse } from '@iaf/domain-types';
+import type { AuthPrincipal, LoginCredentials, LoginRequest, LoginResponse, LoginTenantOption } from '@iaf/domain-types';
 import { create } from 'zustand';
 
 const TOKEN_KEY = 'iaf.pcAdmin.accessToken';
@@ -48,6 +48,11 @@ export const login = async (apiClient: ApiClient, request: LoginRequest): Promis
   useAuthStore.getState().setPrincipal(toPrincipal(response));
   return response;
 };
+
+export const discoverLoginTenants = async (
+  apiClient: ApiClient,
+  credentials: LoginCredentials
+): Promise<LoginTenantOption[]> => apiClient.post<LoginTenantOption[]>('/api/platform/auth/login/tenants', credentials);
 
 export const loadCurrentUser = async (apiClient: ApiClient): Promise<AuthPrincipal> => {
   const principal = await apiClient.get<AuthPrincipal>('/api/platform/auth/me');
