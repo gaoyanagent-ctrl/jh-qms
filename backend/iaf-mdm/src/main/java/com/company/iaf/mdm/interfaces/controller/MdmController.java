@@ -12,12 +12,11 @@ import com.company.iaf.shared.tenant.TenantContext;
 import io.swagger.v3.oas.annotations.Operation; import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid; import jakarta.validation.constraints.Max; import jakarta.validation.constraints.Min;
 import org.springframework.validation.annotation.Validated; import org.springframework.web.bind.annotation.*;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
-import javax.sql.DataSource;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import java.util.List; import java.util.UUID;
 
 @Tag(name="MDM",description="Metadata-driven master data") @Validated @RestController @RequestMapping("/api/mdm/models")
-@ConditionalOnSingleCandidate(DataSource.class)
+@ConditionalOnProperty(name = "iaf.mdm.enabled", havingValue = "true", matchIfMissing = true)
 public class MdmController {
  private final MdmApplicationService service; public MdmController(MdmApplicationService service){this.service=service;}
  @Operation(summary="List published master data models") @GetMapping public Result<List<MdmModels.Model>> models(){return Result.ok(service.listModels(tenant()));}

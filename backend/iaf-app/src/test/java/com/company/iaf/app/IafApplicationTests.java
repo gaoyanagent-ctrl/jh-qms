@@ -30,6 +30,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest(properties = {
         "spring.flyway.enabled=false",
+        "iaf.mdm.enabled=false",
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
                 + "com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration"
 })
