@@ -15,6 +15,7 @@
 - `V0806__mdm_validation_rules_and_bom.sql` adds `mdm_validation_rule`, its execution index, and a seeded `bomItem` model with configurable active-material reference and positive-quantity rules.
 - `V0807__mdm_reference_field_config.sql` adds JSONB `mdm_model_field.reference_config`, backfills BOM material references and hands their existence/status checks to field metadata.
 - `V0811__mdm_model_publish_approval.sql` adds the model publication approver role, publication approval status/org context, lookup index, and `mdm:model:approve` permission.
+- `V0812__mdm_record_batch_delete_permission.sql` adds `mdm:record:delete` and assigns it to tenant platform administrators; record deletion remains a logical update of `mdm_master_record.deleted`.
 
 ## Local Database Stack (ADR-0002)
 

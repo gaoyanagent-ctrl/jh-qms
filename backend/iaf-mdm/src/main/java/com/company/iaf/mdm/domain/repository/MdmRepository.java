@@ -24,6 +24,7 @@ public interface MdmRepository {
                                   Map<String, Object> attributes);
     Optional<MdmModels.Record> findRecord(long tenantId, long modelId, UUID id);
     boolean updateRecord(long tenantId, long actorId, MdmModels.Record record, int expectedVersion);
+    boolean deleteRecord(long tenantId, long actorId, long modelId, UUID id, int expectedVersion);
     void insertVersion(long tenantId, long actorId, MdmModels.Record record, String changeType, String reason);
     List<MdmModels.RecordVersion> findRecordVersions(long tenantId, long modelId, UUID recordId);
     MdmModels.ImportTask insertImportTask(long tenantId, long actorId, long modelId, String modelCode,

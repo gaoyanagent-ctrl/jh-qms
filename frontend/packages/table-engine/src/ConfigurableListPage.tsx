@@ -22,6 +22,9 @@ interface ConfigurableListPageProps<T> {
   onSearch: (query: Record<string, any>) => void;
   onReset: () => void;
   onRefresh?: () => void;
+  selectedRowKeys?: React.Key[];
+  onSelectedRowKeysChange?: (keys: React.Key[]) => void;
+  notice?: React.ReactNode;
 }
 
 export function ConfigurableListPage<T extends { id: string | number }>({
@@ -34,13 +37,18 @@ export function ConfigurableListPage<T extends { id: string | number }>({
   onPageChange,
   onSearch,
   onReset,
-  onRefresh
+  onRefresh,
+  selectedRowKeys: controlledSelectedRowKeys,
+  onSelectedRowKeysChange,
+  notice
 }: ConfigurableListPageProps<T>) {
   const { t } = useTranslation();
   const { token } = theme.useToken();
   const { message } = App.useApp();
   const { density } = useIafTheme();
-  const [selectedRowKeys, setSelectedRowKeys] = React.useState<React.Key[]>([]);
+  const [internalSelectedRowKeys, setInternalSelectedRowKeys] = React.useState<React.Key[]>([]);
+  const selectedRowKeys = controlledSelectedRowKeys ?? internalSelectedRowKeys;
+  const setSelectedRowKeys = onSelectedRowKeysChange ?? setInternalSelectedRowKeys;
   const [activeQuery, setActiveQuery] = React.useState<Record<string, any>>({});
   const tableSize = density === 'comfortable' ? 'middle' : 'small';
 
@@ -145,7 +153,7 @@ export function ConfigurableListPage<T extends { id: string | number }>({
     <Space wrap>
       {definition.toolbarActions?.map((action) => {
         const btn = (
-          <Button key={action.key} type={action.type} onClick={action.onClick}>
+          <Button key={action.key} type={action.type} danger={action.danger} disabled={action.disabled} loading={action.loading} onClick={action.onClick}>
             {t(action.labelKey)}
           </Button>
         );
@@ -155,6 +163,9 @@ export function ConfigurableListPage<T extends { id: string | number }>({
             <PermissionButton
               key={action.key}
               type={action.type}
+              danger={action.danger}
+              disabled={action.disabled}
+              loading={action.loading}
               require={action.requirePermission}
               onClick={action.onClick}
             >
@@ -215,6 +226,7 @@ export function ConfigurableListPage<T extends { id: string | number }>({
           </Space>
           <Typography.Text type="secondary">{definition.descriptionKey ? t(definition.descriptionKey) : t('workspace.standardListView')}</Typography.Text>
         </Space>
+        {notice}
         {definition.searchFields && definition.searchFields.length > 0 && (
           <SearchPanelRenderer
             fields={definition.searchFields}

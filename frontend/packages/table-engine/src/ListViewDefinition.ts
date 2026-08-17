@@ -34,6 +34,9 @@ export interface ToolbarActionDefinition {
   labelKey: string;
   type: 'primary' | 'default';
   requirePermission?: string;
+  disabled?: boolean;
+  loading?: boolean;
+  danger?: boolean;
   onClick: () => void;
 }
 

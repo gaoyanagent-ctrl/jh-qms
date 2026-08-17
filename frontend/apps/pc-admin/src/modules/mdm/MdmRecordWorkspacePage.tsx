@@ -4,12 +4,12 @@ import { AppPageContainer, FormInteractionSurface, StatusTag } from '@iaf/ui-cor
 import { useIafTheme, iafSurfaceWidths } from '@iaf/theme';
 import { Alert, App, Button, DatePicker, Divider, Drawer, Empty, Form, Input, InputNumber, Modal, Select, Space, Switch, Table, Tag, Timeline, Typography } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type Key } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useRegisterDirty } from '../../workspace/DirtyStateRegistry';
-import { useMdmRecordAction, useMdmRecordActions, useMdmRecords, useMdmRecordVersions, useMdmSchema, useSaveMdmRecord } from './hooks';
+import { useDeleteMdmRecordBatch, useMdmRecordAction, useMdmRecordActions, useMdmRecords, useMdmRecordVersions, useMdmSchema, useSaveMdmRecord, useUpdateMdmRecordBatch } from './hooks';
 import { MdmPageContextProvider } from './pageContext';
 import { MdmExcelPasteModal } from './MdmExcelPasteModal';
 import { MdmExcelFileImportModal } from './MdmExcelFileImportModal';
@@ -40,14 +40,17 @@ export const buildMdmDynamicColumns = (fields: MdmField[]): ColumnDefinition<Mdm
 
 export const allowedMdmRecordActions=(status:string):MdmRecordActionType[]=>status==='DRAFT'||status==='REJECTED'?['SUBMIT']:status==='PENDING_APPROVAL'?['APPROVE','REJECT']:status==='ACTIVE'?['DEACTIVATE']:[];
 
+export const buildMdmGridDraft=(record:MdmRecord,changeReason:string):SaveMdmRecord=>({businessCode:record.businessCode,name:record.name,lifecycleStatus:record.lifecycleStatus,scopeType:record.scopeType,scopeIds:record.scopeIds,effectiveFrom:record.effectiveFrom,effectiveTo:record.effectiveTo,attributes:{...record.attributes},expectedVersion:record.version,changeReason});
+export const updateMdmGridAttribute=(draft:SaveMdmRecord,fieldCode:string,value:unknown):SaveMdmRecord=>({...draft,attributes:{...draft.attributes,[fieldCode]:value}});
+
 const recordFieldValue=(record:MdmRecord,fieldCode:string):unknown=>fieldCode==='businessCode'?record.businessCode:fieldCode==='name'?record.name:fieldCode==='lifecycleStatus'?record.lifecycleStatus:record.attributes[fieldCode];
 
-const ReferenceSelect=({field}:{field:MdmField})=>{
+const ReferenceSelect=({field,value,onChange}:{field:MdmField;value?:unknown;onChange?:(value:unknown)=>void})=>{
   const {t}=useTranslation();
   const config=field.referenceConfig;const [keyword,setKeyword]=useState('');
   const query=useQuery({queryKey:['mdm-reference-options',config?.targetModelCode,keyword],queryFn:()=>mdmApi.records(config!.targetModelCode,{keyword,pageNo:1,pageSize:100}),enabled:Boolean(config?.targetModelCode)});
   const options=(query.data?.records??[]).filter(record=>!config?.statusFieldCode||!config.allowedStatuses?.length||config.allowedStatuses.includes(String(recordFieldValue(record,config.statusFieldCode)))).map(record=>{const value=recordFieldValue(record,config?.valueFieldCode??'businessCode');const display=recordFieldValue(record,config?.displayFieldCode??'name');return {value:String(value??''),label:`${String(display??value??'')} (${String(value??'')})`};});
-  return <Select showSearch allowClear filterOption={false} onSearch={setKeyword} loading={query.isFetching} options={options} placeholder={config?.targetModelCode?t('mdm.reference.search',{model:config.targetModelCode}):t('mdm.reference.incomplete')} disabled={!config?.targetModelCode} notFoundContent={query.isFetching?t('common.feedback.loading'):t('mdm.reference.empty')} />;
+  return <Select showSearch allowClear value={value as string|undefined} onChange={onChange} filterOption={false} onSearch={setKeyword} loading={query.isFetching} options={options} placeholder={config?.targetModelCode?t('mdm.reference.search',{model:config.targetModelCode}):t('mdm.reference.incomplete')} disabled={!config?.targetModelCode} notFoundContent={query.isFetching?t('common.feedback.loading'):t('mdm.reference.empty')} />;
 };
 
 const fieldControl = (field: MdmField) => {
@@ -68,25 +71,47 @@ export const MdmRecordWorkspacePage = () => {
   const [pendingAction,setPendingAction]=useState<{record:MdmRecord;action:MdmRecordActionType}>(); const [actionForm]=Form.useForm<{comment:string}>();
   const [pasteOpen,setPasteOpen]=useState(false);
   const [fileImportOpen,setFileImportOpen]=useState(false);
-  useRegisterDirty(open && dirty); const schema = useMdmSchema(code); const records = useMdmRecords(code, params);
+  const [drafts,setDrafts]=useState<Record<string,SaveMdmRecord>>({});
+  const [selectedRowKeys,setSelectedRowKeys]=useState<Key[]>([]);
+  useRegisterDirty((open && dirty)||Object.keys(drafts).length>0); const schema = useMdmSchema(code); const records = useMdmRecords(code, params);
   const close = () => { setOpen(false); setEditing(undefined); setDirty(false); form.resetFields(); };
   const save = useSaveMdmRecord(code, () => { message.success(t('common.feedback.operationSucceeded')); close(); });
+  const recordRequest=(record:MdmRecord):SaveMdmRecord=>buildMdmGridDraft(record,t('mdm.changeReason.gridEdit'));
+  const effectiveRequest=(record:MdmRecord)=>drafts[record.id]??recordRequest(record);
+  const stage=(record:MdmRecord,change:Partial<SaveMdmRecord>)=>setDrafts(current=>({...current,[record.id]:{...(current[record.id]??recordRequest(record)),...change}}));
+  const stageAttribute=(record:MdmRecord,field:MdmField,value:unknown)=>setDrafts(current=>{const draft=current[record.id]??recordRequest(record);return {...current,[record.id]:updateMdmGridAttribute(draft,field.code,value)};});
+  const gridControl=(record:MdmRecord,field:MdmField)=>{
+    const value=effectiveRequest(record).attributes[field.code];const editable=['DRAFT','REJECTED'].includes(record.lifecycleStatus)&&!field.readonly;
+    if(!editable)return displayValue(value);
+    if(field.dataType==='BOOLEAN')return <Switch size="small" checked={Boolean(value)} onChange={next=>stageAttribute(record,field,next)}/>;
+    if(field.dataType==='ENUM')return <Select aria-label={field.name} value={value as string|undefined} options={field.enumOptions.map(option=>({value:option,label:option}))} onChange={next=>stageAttribute(record,field,next)} style={{width:'100%'}}/>;
+    if(field.dataType==='INTEGER'||field.dataType==='DECIMAL')return <InputNumber aria-label={field.name} value={value as number|undefined} onChange={next=>stageAttribute(record,field,next)} style={{width:'100%'}}/>;
+    if(field.dataType==='DATE')return <DatePicker aria-label={field.name} value={value?dayjs(String(value)):null} onChange={next=>stageAttribute(record,field,next?.format('YYYY-MM-DD')??null)} style={{width:'100%'}}/>;
+    if(field.dataType==='REFERENCE')return <ReferenceSelect field={field} value={value} onChange={next=>stageAttribute(record,field,next)}/>;
+    return <Input aria-label={field.name} value={String(value??'')} onChange={event=>stageAttribute(record,field,event.target.value)} />;
+  };
   const edit = (record:MdmRecord) => {
     setEditing(record);
-    form.setFieldsValue({ businessCode:record.businessCode, name:record.name,
-      effectiveFrom:record.effectiveFrom ? dayjs(record.effectiveFrom) : undefined, effectiveTo:record.effectiveTo ? dayjs(record.effectiveTo) : undefined,
-      attributes: record.attributes as Record<string, AttributeValue> });
+    const current=effectiveRequest(record);
+    form.setFieldsValue({ businessCode:current.businessCode, name:current.name,
+      effectiveFrom:current.effectiveFrom ? dayjs(current.effectiveFrom) : undefined, effectiveTo:current.effectiveTo ? dayjs(current.effectiveTo) : undefined,
+      attributes: current.attributes as Record<string, AttributeValue> });
     setOpen(true);
   };
+  const batchSave=useUpdateMdmRecordBatch(code,()=>{message.success(t('mdm.grid.saved',{count:Object.keys(drafts).length}));setDrafts({});setSelectedRowKeys([]);});
+  const batchDelete=useDeleteMdmRecordBatch(code,()=>{message.success(t('mdm.grid.deleted'));setDrafts(current=>Object.fromEntries(Object.entries(current).filter(([id])=>!selectedRowKeys.includes(id))));setSelectedRowKeys([]);});
+  const saveDrafts=()=>{const items=Object.entries(drafts).map(([id,record])=>({id,record}));if(!items.length){message.info(t('mdm.grid.noChanges'));return;}batchSave.mutate(items);};
+  const deleteSelected=()=>{const selected=(records.data?.records??[]).filter(record=>selectedRowKeys.includes(record.id));if(!selected.length){message.info(t('mdm.grid.noSelection'));return;}if(selected.some(record=>!['DRAFT','REJECTED'].includes(record.lifecycleStatus))){message.error(t('mdm.grid.deleteStateError'));return;}Modal.confirm({title:t('mdm.grid.deleteConfirm',{count:selected.length}),okText:t('common.actions.confirm'),cancelText:t('common.actions.cancel'),okButtonProps:{danger:true},onOk:()=>batchDelete.mutate(selected.map(record=>({id:record.id,expectedVersion:record.version})))});};
+  const discardDrafts=()=>{if(!Object.keys(drafts).length){message.info(t('mdm.grid.noChanges'));return;}Modal.confirm({title:t('mdm.grid.discardConfirm',{count:Object.keys(drafts).length}),okText:t('mdm.grid.discard'),cancelText:t('common.actions.cancel'),onOk:()=>setDrafts({})});};
   const definition = useMemo<ListViewDefinition<MdmRecord>>(() => {
-    const dynamicColumns = buildMdmDynamicColumns(schema.data?.fields ?? []);
+    const dynamicColumns:ColumnDefinition<MdmRecord>[]=(schema.data?.fields??[]).map(field=>({key:field.code,titleKey:field.name,width:180,defaultVisible:field.listVisible,render:(_value,record)=>gridControl(record,field)}));
     return { id:`mdm-${code}`, descriptionKey:'mdm.records.description', columns:[
-      { key:'businessCode', dataIndex:'businessCode', titleKey:'mdm.fields.businessCode', fixed:'left', width:160 },
-      { key:'name', dataIndex:'name', titleKey:'mdm.fields.name', fixed:'left', width:200 }, ...dynamicColumns,
+      { key:'businessCode', dataIndex:'businessCode', titleKey:'mdm.fields.businessCode', fixed:'left', width:180,render:(_value,record)=>['DRAFT','REJECTED'].includes(record.lifecycleStatus)?<Input aria-label={t('mdm.fields.businessCode')} status={drafts[record.id]?'warning':undefined} value={effectiveRequest(record).businessCode} onChange={event=>stage(record,{businessCode:event.target.value})}/>:record.businessCode },
+      { key:'name', dataIndex:'name', titleKey:'mdm.fields.name', fixed:'left', width:220,render:(_value,record)=>['DRAFT','REJECTED'].includes(record.lifecycleStatus)?<Input aria-label={t('mdm.fields.name')} value={effectiveRequest(record).name} onChange={event=>stage(record,{name:event.target.value})}/>:record.name }, ...dynamicColumns,
       { key:'lifecycleStatus', dataIndex:'lifecycleStatus', titleKey:'common.fields.status', width:110, render:(status) => <StatusTag status={String(status)} label={t(`mdm.status.${String(status)}`)} /> },
       { key:'currentVersionNo', dataIndex:'currentVersionNo', titleKey:'mdm.fields.dataVersion', width:100 }
     ], searchFields:[{ key:'keyword', labelKey:'mdm.search.keyword', type:'text', placeholderKey:'mdm.search.placeholder' }],
-    toolbarActions:[{ key:'create', labelKey:'common.actions.create', type:'primary', requirePermission:MDM_PERMISSIONS.recordCreate, onClick:() => setOpen(true) },{key:'excelFileImport',labelKey:'mdm.actions.excelFileImport',type:'default',requirePermission:MDM_PERMISSIONS.recordCreate,onClick:()=>setFileImportOpen(true)},{key:'excelPaste',labelKey:'mdm.actions.excelPaste',type:'default',requirePermission:MDM_PERMISSIONS.recordCreate,onClick:()=>setPasteOpen(true)}],
+    toolbarActions:[{key:'saveGrid',labelKey:'mdm.grid.saveAll',type:'primary',requirePermission:MDM_PERMISSIONS.recordUpdate,disabled:!Object.keys(drafts).length,loading:batchSave.isPending,onClick:saveDrafts},{key:'deleteGrid',labelKey:'mdm.grid.deleteSelected',type:'default',danger:true,requirePermission:MDM_PERMISSIONS.recordDelete,disabled:!selectedRowKeys.length,loading:batchDelete.isPending,onClick:deleteSelected},{key:'discardGrid',labelKey:'mdm.grid.discard',type:'default',requirePermission:MDM_PERMISSIONS.recordUpdate,disabled:!Object.keys(drafts).length,onClick:discardDrafts},{ key:'create', labelKey:'common.actions.create', type:'default', requirePermission:MDM_PERMISSIONS.recordCreate, onClick:() => setOpen(true) },{key:'excelFileImport',labelKey:'mdm.actions.excelFileImport',type:'default',requirePermission:MDM_PERMISSIONS.recordCreate,onClick:()=>setFileImportOpen(true)},{key:'excelPaste',labelKey:'mdm.actions.excelPaste',type:'default',requirePermission:MDM_PERMISSIONS.recordCreate,onClick:()=>setPasteOpen(true)}],
     rowActions:[
       { key:'edit', labelKey:'common.actions.edit', requirePermission:MDM_PERMISSIONS.recordUpdate, hidden:record=>!['DRAFT','REJECTED'].includes(record.lifecycleStatus), onClick:edit },
       { key:'submit', labelKey:'mdm.actions.submitRecord', requirePermission:MDM_PERMISSIONS.recordSubmit, hidden:record=>!allowedMdmRecordActions(record.lifecycleStatus).includes('SUBMIT'), onClick:record=>setPendingAction({record,action:'SUBMIT'}) },
@@ -95,12 +120,13 @@ export const MdmRecordWorkspacePage = () => {
       { key:'deactivate', labelKey:'mdm.actions.deactivateRecord', requirePermission:MDM_PERMISSIONS.recordDisable, hidden:record=>!allowedMdmRecordActions(record.lifecycleStatus).includes('DEACTIVATE'), onClick:record=>setPendingAction({record,action:'DEACTIVATE'}) },
       {key:'history',labelKey:'mdm.actions.versionHistory',requirePermission:MDM_PERMISSIONS.recordView,onClick:setHistoryRecord}
     ] };
-  }, [code, schema.data?.fields, t]);
+  }, [code,schema.data?.fields,t,drafts,selectedRowKeys,records.data?.records]);
   const submit = (values:FormValues) => {
     const request:SaveMdmRecord = { businessCode:values.businessCode, name:values.name, lifecycleStatus:editing?.lifecycleStatus ?? 'DRAFT',
       scopeType:'GROUP', scopeIds:[], effectiveFrom:values.effectiveFrom?.format('YYYY-MM-DD'), effectiveTo:values.effectiveTo?.format('YYYY-MM-DD'),
       attributes:values.attributes ?? {}, expectedVersion:editing?.version, changeReason:editing ? t('mdm.changeReason.edit') : t('mdm.changeReason.create') };
-    save.mutate({ id:editing?.id, request });
+    if(editing){setDrafts(current=>({...current,[editing.id]:request}));message.success(t('mdm.grid.staged'));close();return;}
+    save.mutate({ request });
   };
   const actionMutation=useMdmRecordAction(code,()=>{message.success(t('common.feedback.operationSucceeded'));setPendingAction(undefined);actionForm.resetFields();});
   const context = { module:'mdm' as const, pageType:'workspace' as const, objectType:code, routePath:`/mdm/models/${code}/records`,
@@ -108,8 +134,10 @@ export const MdmRecordWorkspacePage = () => {
   if (schema.isError) return <AppPageContainer title={t('mdm.records.title')}><Alert type="error" showIcon message={t('mdm.feedback.loadSchemaFailed')} /></AppPageContainer>;
   return <MdmPageContextProvider value={context}>
     {records.isError ? <AppPageContainer title={t('mdm.records.title')}><Alert type="error" showIcon message={t('mdm.feedback.loadFailed')} action={<Button onClick={() => records.refetch()}>{t('common.actions.retry')}</Button>} /></AppPageContainer>
-      : <ConfigurableListPage definition={definition} loading={records.isLoading || schema.isLoading} dataSource={records.data?.records ?? []} total={records.data?.total ?? 0} pageNo={params.pageNo} pageSize={params.pageSize}
-        onPageChange={(pageNo,pageSize) => setParams((current) => ({...current,pageNo,pageSize}))} onSearch={(query) => setParams((current) => ({...current,keyword:String(query.keyword ?? ''),pageNo:1}))}
+      : <ConfigurableListPage definition={definition} loading={records.isLoading || schema.isLoading || batchSave.isPending || batchDelete.isPending} dataSource={records.data?.records ?? []} total={records.data?.total ?? 0} pageNo={params.pageNo} pageSize={params.pageSize}
+        selectedRowKeys={selectedRowKeys} onSelectedRowKeysChange={setSelectedRowKeys}
+        notice={batchSave.isError||batchDelete.isError?<Alert type="error" showIcon message={(batchSave.error??batchDelete.error)?.message} style={{marginBottom:16}}/>:Object.keys(drafts).length?<Alert type="warning" showIcon message={t('mdm.grid.pending',{count:Object.keys(drafts).length})} style={{marginBottom:16}}/>:undefined}
+        onPageChange={(pageNo,pageSize) => {setSelectedRowKeys([]);setParams((current) => ({...current,pageNo,pageSize}));}} onSearch={(query) => {setSelectedRowKeys([]);setParams((current) => ({...current,keyword:String(query.keyword ?? ''),pageNo:1}));}}
         onReset={() => setParams((current) => ({...current,keyword:'',pageNo:1}))} onRefresh={() => records.refetch()} />}
     <FormInteractionSurface mode={formInteractionMode} open={open} title={`${editing ? t('common.actions.edit') : t('common.actions.create')} · ${schema.data?.name ?? ''}`} onCancel={close} onSubmit={() => form.submit()} confirmLoading={save.isPending} submitLabel={t('common.actions.save')} cancelLabel={t('common.actions.cancel')} width={iafSurfaceWidths[surfaceWidth]}>
       <Form form={form} layout="vertical" onFinish={submit} onFieldsChange={() => setDirty(true)} initialValues={{ attributes:{} }}>

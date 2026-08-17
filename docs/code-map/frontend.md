@@ -6,7 +6,8 @@
 - `/mdm/models/:modelCode/design` → `MdmModelDesignerPage`: draft field/UI Schema editor, independent model/data approver-role settings, and publication-approval submission.
 - `/platform/approval/tasks` → `ApprovalTaskCenterPage`: unified MDM model-publication and master-data record tasks with explicit task-type presentation and role/permission-aware decisions.
 - Reference fields show a compact model/value/display summary in the field table and open a labeled, searchable configuration dialog for target model, stored value, display label and optional status filters; stable model/field codes are persisted instead of environment-specific row IDs.
-- `/mdm/models/:modelCode/records` → `MdmRecordWorkspacePage`: metadata-driven configurable list and dynamic create/edit form, Excel paste, dynamic template download and Excel file precheck/import; permissions `mdm:record:view/create/update`.
+- `/mdm/models/:modelCode/records` → `MdmRecordWorkspacePage`: editable metadata-driven Grid, controlled row selection, shared Grid/form pending-change set, atomic batch save/delete, dynamic form, Excel paste and file precheck/import; permissions `mdm:record:view/create/update/delete`.
+- `packages/table-engine/ConfigurableListPage`: supports optional controlled row selection so domain workspaces can implement explicit batch actions while retaining column preferences and standard search/pagination.
 - Dynamic record forms render Reference fields as searchable master-data selectors and store the configured value-field value while presenting the display-field label.
 - `modules/mdm/MdmExcelFileImportModal.tsx`: authenticated template download, drag/drop upload, row-level precheck results, guarded task commit, recent task history, original-file download and validation-report download.
 - `modules/mdm/api.ts` and `hooks.ts`: API-client-only HTTP boundary and TanStack Query state.

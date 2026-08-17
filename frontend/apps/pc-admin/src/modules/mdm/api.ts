@@ -1,5 +1,5 @@
 import { apiClient } from '../../api/client';
-import type { CreateMdmModel, MdmApprovalTask, MdmApprovalTaskScope, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelApprovalTask, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
+import type { CreateMdmModel, MdmApprovalTask, MdmApprovalTaskScope, MdmBatchDeleteItem, MdmBatchUpdateItem, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelApprovalTask, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, SaveMdmModelDraft, SaveMdmRecord } from './types';
 export const mdmApi = {
   models: () => apiClient.get<MdmModel[]>('/api/mdm/models'),
   approvalTasks: (scope:MdmApprovalTaskScope) => apiClient.get<MdmApprovalTask[]>('/api/mdm/models/approval-tasks',{query:{scope}}),
@@ -25,5 +25,7 @@ export const mdmApi = {
   commitImport: (code:string,taskId:string) => apiClient.post<MdmImportTask>(`/api/mdm/models/${code}/imports/${taskId}/commit`,{}),
   importSource: (code:string,taskId:string) => apiClient.getBlob(`/api/mdm/models/${code}/imports/${taskId}/source`),
   importResult: (code:string,taskId:string) => apiClient.getBlob(`/api/mdm/models/${code}/imports/${taskId}/result`),
-  update: (code:string,id:string,request:SaveMdmRecord) => apiClient.put<MdmRecord>(`/api/mdm/models/${code}/records/${id}`,request)
+  update: (code:string,id:string,request:SaveMdmRecord) => apiClient.put<MdmRecord>(`/api/mdm/models/${code}/records/${id}`,request),
+  updateBatch: (code:string,items:MdmBatchUpdateItem[]) => apiClient.put<MdmRecord[]>(`/api/mdm/models/${code}/records/batch`,{items}),
+  deleteBatch: (code:string,items:MdmBatchDeleteItem[]) => apiClient.request<void>(`/api/mdm/models/${code}/records/batch`,{method:'DELETE',body:{items}})
 };
