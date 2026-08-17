@@ -2,6 +2,7 @@ package com.company.iaf.mdm;
 
 import com.company.iaf.mdm.application.MdmApplicationService;
 import com.company.iaf.mdm.application.MdmExcelImportService;
+import com.company.iaf.mdm.application.ConfiguredRuleValidator;
 import com.company.iaf.mdm.infrastructure.persistence.JdbcMdmRepository;
 import com.company.iaf.mdm.interfaces.controller.MdmController;
 import com.company.iaf.mdm.domain.repository.MdmImportObjectStorage;
@@ -19,7 +20,7 @@ class MdmModuleRegistrationTest {
             .withBean(JdbcTemplate.class, () -> mock(JdbcTemplate.class))
             .withBean(ObjectMapper.class, ObjectMapper::new)
             .withBean(MdmImportObjectStorage.class, () -> mock(MdmImportObjectStorage.class))
-            .withUserConfiguration(JdbcMdmRepository.class, MdmApplicationService.class, MdmExcelImportService.class, MdmController.class);
+            .withUserConfiguration(JdbcMdmRepository.class, ConfiguredRuleValidator.class, MdmApplicationService.class, MdmExcelImportService.class, MdmController.class);
 
     @Test void registersMdmHttpChainByDefault() {
         runner.run(context -> assertThat(context).hasSingleBean(MdmController.class));

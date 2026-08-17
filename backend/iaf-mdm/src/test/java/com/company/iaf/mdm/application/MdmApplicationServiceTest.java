@@ -21,7 +21,7 @@ class MdmApplicationServiceTest {
         var field=new MdmDtos.FieldDraft("materialType","物料类型","ENUM",true,false,false,true,true,true,32,List.of("RAW","FINISHED"),null,10);
         var request=new MdmDtos.SaveModelDraftRequest(List.of(field),Map.of());
 
-        new MdmApplicationService(repository).saveDraft(1,9,"material",request);
+        new MdmApplicationService(repository, rules(repository)).saveDraft(1,9,"material",request);
 
         verify(repository).replaceDraft(1,9,7,List.of(field),Map.of());
     }
@@ -34,7 +34,7 @@ class MdmApplicationServiceTest {
         when(repository.findRecord(1,7,recordId)).thenReturn(Optional.of(record));
         when(repository.findRecordVersions(1,7,recordId)).thenReturn(List.of());
 
-        new MdmApplicationService(repository).recordVersions(1,"material",recordId);
+        new MdmApplicationService(repository, rules(repository)).recordVersions(1,"material",recordId);
 
         verify(repository).findRecordVersions(1,7,recordId);
     }
@@ -47,10 +47,11 @@ class MdmApplicationServiceTest {
         var first=new MdmDtos.SaveRecordRequest("M-1","物料1","DRAFT","GROUP",List.of(),null,null,Map.of("materialType","BAD"),null,"导入");
         var second=new MdmDtos.SaveRecordRequest("M-1","物料2","DRAFT","GROUP",List.of(),null,null,Map.of("materialType","RAW"),null,"导入");
 
-        var result=new MdmApplicationService(repository).validateBatch(1,"material",new MdmDtos.BatchRecordRequest(List.of(first,second)));
+        var result=new MdmApplicationService(repository, rules(repository)).validateBatch(1,"material",new MdmDtos.BatchRecordRequest(List.of(first,second)));
 
         org.assertj.core.api.Assertions.assertThat(result.valid()).isFalse();
         org.assertj.core.api.Assertions.assertThat(result.rows().get(0).errors()).contains("materialType: invalid option");
         org.assertj.core.api.Assertions.assertThat(result.rows().get(1).errors()).contains("businessCode: duplicated in batch");
     }
+    private ConfiguredRuleValidator rules(MdmRepository repository){return new ConfiguredRuleValidator(repository);}
 }
