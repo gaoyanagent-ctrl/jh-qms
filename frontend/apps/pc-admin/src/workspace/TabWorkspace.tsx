@@ -5,7 +5,7 @@ import { Tabs, Dropdown, Modal, theme } from 'antd';
 import { useRouteTabStore, RouteTab } from './RouteTabStore';
 import { useDirtyStateStore } from './DirtyStateRegistry';
 
-const getTabLabelKey = (pathname: string): string => {
+export const getTabLabelKey = (pathname: string): string => {
   if (pathname === '/') return 'menu.workbench';
   if (pathname === '/platform/users') return 'menu.users';
   if (pathname === '/platform/orgs') return 'menu.orgs';
@@ -15,6 +15,9 @@ const getTabLabelKey = (pathname: string): string => {
   if (pathname === '/platform/audit-logs') return 'menu.auditLogs';
   if (pathname === '/platform/approval/tasks') return 'menu.approvalTasks';
   if (pathname === '/platform/kanban') return 'menu.kanban';
+  if (pathname === '/mdm/models') return 'menu.mdmModels';
+  if (/^\/mdm\/models\/[^/]+\/design$/.test(pathname)) return 'menu.mdmModelDesigner';
+  if (/^\/mdm\/models\/[^/]+\/records$/.test(pathname)) return 'menu.mdmRecords';
   if (pathname === '/qms/engineering/parts') return 'menu.qmsParts';
   if (pathname === '/qms/engineering/drawing-legend') return 'menu.qmsDrawingLegend';
   if (/^\/qms\/engineering\/parts\/\d+$/.test(pathname)) return 'menu.qmsPartDetail';
