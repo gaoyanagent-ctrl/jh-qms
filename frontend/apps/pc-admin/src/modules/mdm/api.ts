@@ -1,11 +1,13 @@
 import { apiClient } from '../../api/client';
-import type { CreateMdmModel, MdmApprovalTask, MdmApprovalTaskScope, MdmBatchDeleteItem, MdmBatchUpdateItem, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelApprovalTask, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, MdmValidationOutcome, MdmValidationRule, SaveMdmModelDraft, SaveMdmRecord } from './types';
+import type { CreateMdmModel, MdmApprovalTask, MdmApprovalTaskScope, MdmBatchDeleteItem, MdmBatchUpdateItem, MdmBatchValidation, MdmImportPreview, MdmImportTask, MdmModel, MdmModelApprovalTask, MdmModelDictionaryPreview, MdmModelValidation, MdmPage, MdmRecord, MdmRecordAction, MdmRecordActionType, MdmRecordVersion, MdmValidationOutcome, MdmValidationRule, SaveMdmModelDraft, SaveMdmRecord } from './types';
 export const mdmApi = {
   models: () => apiClient.get<MdmModel[]>('/api/mdm/models'),
   approvalTasks: (scope:MdmApprovalTaskScope) => apiClient.get<MdmApprovalTask[]>('/api/mdm/models/approval-tasks',{query:{scope}}),
   modelApprovalTasks: (scope:MdmApprovalTaskScope) => apiClient.get<MdmModelApprovalTask[]>('/api/mdm/models/model-approval-tasks',{query:{scope}}),
   schema: (code:string) => apiClient.get<MdmModel>(`/api/mdm/models/${code}/schema`),
   createModel: (request:CreateMdmModel) => apiClient.post<MdmModel>('/api/mdm/models',request),
+  modelDictionaryTemplate: () => apiClient.getBlob('/api/mdm/models/dictionary-import-template'),
+  previewModelDictionary: (file:File) => { const body=new FormData(); body.append('file',file); return apiClient.post<MdmModelDictionaryPreview>('/api/mdm/models/dictionary-imports/preview',body); },
   saveDraft: (code:string,request:SaveMdmModelDraft) => apiClient.put<MdmModel>(`/api/mdm/models/${code}/draft`,request),
   validateModel: (code:string) => apiClient.post<MdmModelValidation>(`/api/mdm/models/${code}/validate`,{}),
   publishModel: (code:string) => apiClient.post<MdmModel>(`/api/mdm/models/${code}/publish`,{}),

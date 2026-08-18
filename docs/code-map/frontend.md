@@ -1,5 +1,11 @@
 # Frontend Code Map
 
+## MDM model dictionary import
+
+- `MdmModelCenterPage` exposes the model dictionary import entry.
+- `MdmModelDictionaryImportModal` handles template download, local workbook selection, loading/error feedback, difference summary and Sheet/row issue table.
+- MDM `api.ts` and `hooks.ts` own template/precheck transport and mutation state.
+
 ## MDM PC Admin
 
 - `/mdm/models` → `MdmModelCenterPage`: model cards, status, schema summary and workspace navigation; permission `mdm:model:view`.

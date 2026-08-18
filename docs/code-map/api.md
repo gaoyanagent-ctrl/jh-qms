@@ -1,5 +1,10 @@
 # API Code Map
 
+## MDM model dictionary import
+
+- `GET /api/mdm/models/dictionary-import-template` downloads the multi-Sheet model dictionary template; permission `mdm:model:view`.
+- `POST /api/mdm/models/dictionary-imports/preview` parses a workbook and returns model/field differences and row-addressable issues without persistence; permission `mdm:model:view`.
+
 ## MDM
 
 - `GET /api/mdm/models` (`mdm:model:view`): list models with field/UI schema.

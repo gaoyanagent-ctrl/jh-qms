@@ -2,6 +2,7 @@ package com.company.iaf.mdm.interfaces.controller;
 
 import com.company.iaf.mdm.application.MdmApplicationService;
 import com.company.iaf.mdm.application.MdmExcelImportService;
+import com.company.iaf.mdm.application.MdmModelDictionaryExcelService;
 import com.company.iaf.mdm.domain.model.MdmModels;
 import com.company.iaf.mdm.interfaces.dto.MdmDtos;
 import com.company.iaf.shared.exception.BusinessException;
@@ -21,11 +22,13 @@ import java.util.List; import java.util.UUID;
 @Tag(name="MDM",description="Metadata-driven master data") @Validated @RestController @RequestMapping("/api/mdm/models")
 @ConditionalOnProperty(name = "iaf.mdm.enabled", havingValue = "true", matchIfMissing = true)
 public class MdmController {
- private final MdmApplicationService service; private final MdmExcelImportService excel;
- public MdmController(MdmApplicationService service,MdmExcelImportService excel){this.service=service;this.excel=excel;}
+ private final MdmApplicationService service; private final MdmExcelImportService excel; private final MdmModelDictionaryExcelService modelDictionary;
+ public MdmController(MdmApplicationService service,MdmExcelImportService excel,MdmModelDictionaryExcelService modelDictionary){this.service=service;this.excel=excel;this.modelDictionary=modelDictionary;}
  @Operation(summary="List published master data models") @GetMapping public Result<List<MdmModels.Model>> models(){return Result.ok(service.listModels(tenant()));}
  @Operation(summary="Get model schema and UI schema") @GetMapping("/{code}/schema") public Result<MdmModels.Model> schema(@PathVariable("code") String code){return Result.ok(service.schema(tenant(),code));}
  @Operation(summary="Create a draft master data model") @PostMapping public Result<MdmModels.Model> createModel(@Valid @RequestBody MdmDtos.CreateModelRequest request){return Result.ok(service.createModel(tenant(),actor(),request));}
+ @Operation(summary="Download the multi-model dictionary workbook template") @GetMapping("/dictionary-import-template") public ResponseEntity<byte[]> modelDictionaryTemplate(){return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=mdm-model-dictionary-template.xlsx").contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).body(modelDictionary.template());}
+ @Operation(summary="Precheck a multi-model dictionary workbook without writing drafts") @PostMapping(value="/dictionary-imports/preview",consumes=MediaType.MULTIPART_FORM_DATA_VALUE) public Result<MdmDtos.ModelDictionaryPreview> previewModelDictionary(@RequestPart("file")MultipartFile file){return Result.ok(modelDictionary.preview(tenant(),file));}
  @Operation(summary="Save draft fields and UI schema") @PutMapping("/{code}/draft") public Result<MdmModels.Model> saveDraft(@PathVariable("code") String code,@Valid @RequestBody MdmDtos.SaveModelDraftRequest request){return Result.ok(service.saveDraft(tenant(),actor(),code,request));}
  @Operation(summary="Validate a model definition") @PostMapping("/{code}/validate") public Result<MdmDtos.ModelValidationResult> validateModel(@PathVariable("code") String code){return Result.ok(service.validateModel(tenant(),code));}
  @Operation(summary="Submit an immutable model version for publication approval") @PostMapping("/{code}/publish") public Result<MdmModels.Model> publish(@PathVariable("code") String code,@RequestBody(required=false) MdmDtos.RecordActionRequest request){return Result.ok(service.submitModelPublication(tenant(),org(),actor(),code,request==null?null:request.comment()));}
