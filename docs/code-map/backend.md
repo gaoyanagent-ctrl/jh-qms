@@ -33,6 +33,7 @@ Cross-module calls must not reach into another module's `infrastructure`, entity
 - `MdmImportObjectStorage` is the MDM-owned object-storage port; `MinioMdmImportObjectStorage` archives source workbooks under tenant-isolated keys without depending on QMS infrastructure.
 - `MdmImportTaskDispatcher` claims queued tasks on a scheduled worker, parses archived workbooks and persists validation results for up to 10,000 rows.
 - `ConfiguredRuleValidator` executes tenant/model-scoped save rules through an allow-listed JSON Logic subset and generic cross-model reference lookups.
+- `ConfiguredRuleValidator.validateDetailed` separates blocking errors from warnings, evaluates SAVE and BLUR rules on final save, and scopes interactive validation to one BLUR field.
 - Reference fields carry stable target model/value/display/status field codes; draft save and publish reject missing targets, while record validation enforces existence and allowed status without business-specific Java logic.
 - `JsonLogicEvaluator` supports safe variable lookup, boolean, comparison and membership operators without script execution.
 

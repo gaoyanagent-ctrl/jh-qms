@@ -10,6 +10,8 @@
 - `packages/table-engine/ConfigurableListPage`: supports optional controlled row selection so domain workspaces can implement explicit batch actions while retaining column preferences and standard search/pagination.
 - Dynamic record forms render Reference fields as searchable master-data selectors and store the configured value-field value while presenting the display-field label.
 - `modules/mdm/MdmExcelFileImportModal.tsx`: authenticated template download, drag/drop upload, row-level precheck results, guarded task commit, recent task history, original-file download and validation-report download.
+- `modules/mdm/MdmValidationRuleEditor.tsx`: labeled visual editor for current field, target model, AND match conditions, save/blur timing, block/warn strategy, message and enablement; business users do not edit rule JSON.
+- Dynamic forms call the field-validation endpoint on blur for configured fields, render blocking errors next to the field and announce non-blocking warnings.
 - `modules/mdm/api.ts` and `hooks.ts`: API-client-only HTTP boundary and TanStack Query state.
 - `modules/mdm/pageContext.tsx`: explicit page/AI-safe visible field and action context.
 

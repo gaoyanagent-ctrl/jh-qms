@@ -8,6 +8,7 @@ import { mdmApi } from './api';
 import { useMdmModels, useMdmSchema, usePublishMdmModel, useSaveMdmModelDraft } from './hooks';
 import { useRolesQuery } from '../platform/roles/hooks';
 import type { MdmDataType, MdmReferenceConfig, SaveMdmModelDraft } from './types';
+import { MdmValidationRuleEditor } from './MdmValidationRuleEditor';
 
 const TYPES:MdmDataType[]=['STRING','TEXT','INTEGER','DECIMAL','BOOLEAN','DATE','DATETIME','ENUM','REFERENCE'];
 type DesignerValues={approvalRequired:boolean;approvalRoleId?:number;modelApprovalRoleId:number;fields:SaveMdmModelDraft['fields'];uiSchemaText:string};
@@ -56,6 +57,7 @@ export const MdmModelDesignerPage=()=>{
           {title:'操作',width:70,render:(_,field)=><Button danger type="link" onClick={()=>remove(field.name)}>删除</Button>}
         ]}/>}</Form.List>
       </Card>
+      {query.data&&<MdmValidationRuleEditor model={query.data} models={models.data??[]} editable={query.data.status==='DRAFT'}/>}
       <Card title="UI Schema" style={{marginTop:16}}><Typography.Paragraph type="secondary">表单分区与列表列定义，使用 JSON 保存并随模型版本固化。</Typography.Paragraph><Form.Item name="uiSchemaText" rules={[{required:true}]}><Input.TextArea aria-label="UI Schema" autoSize={{minRows:8,maxRows:18}} style={{fontFamily:'monospace'}}/></Form.Item></Card>
     </Form>
     <Modal title={t('mdm.reference.dialogTitle')} open={referenceFieldIndex!==undefined} onCancel={()=>setReferenceFieldIndex(undefined)} onOk={saveReference} okText={t('common.actions.confirm')} cancelText={t('common.actions.cancel')} width={640} destroyOnHidden>

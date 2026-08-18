@@ -20,3 +20,6 @@ export interface MdmPage<T> { records:T[]; total:number; pageNo:number; pageSize
 export interface CreateMdmModel { domainCode:string; code:string; name:string; recordType:string; versionEnabled:boolean; effectiveDateEnabled:boolean; organizationScopeEnabled:boolean; approvalRequired:boolean }
 export interface SaveMdmModelDraft { approvalRequired:boolean; modelApprovalRoleId:number; fields:Array<Omit<MdmField,'id'|'length'>&{maxLength:number|null}>; uiSchema:Record<string,unknown> }
 export interface MdmModelValidation { valid:boolean; errors:string[]; warnings:string[] }
+export interface MdmValidationRule { id?:number; code:string; name:string; triggerPoint:'SAVE'|'BLUR'; ruleType:'REFERENCE_EXISTS'; fieldCode:string; severity:'BLOCK'|'WARNING'; message:string; condition:Record<string,unknown>; assertion:{targetModel:string;conditions:Array<{targetField:string;sourceField?:string;value?:unknown}>}; enabled:boolean; sortNo:number }
+export interface MdmValidationIssue { fieldCode:string|null; severity:string; message:string }
+export interface MdmValidationOutcome { valid:boolean; errors:MdmValidationIssue[]; warnings:MdmValidationIssue[] }

@@ -4,6 +4,8 @@ export const useMdmModels=()=>useQuery({queryKey:keys.models,queryFn:mdmApi.mode
 export const useMdmApprovalTasks=(scope:MdmApprovalTaskScope)=>useQuery({queryKey:['mdm-approval-tasks',scope],queryFn:()=>mdmApi.approvalTasks(scope)});
 export const useMdmModelApprovalTasks=(scope:MdmApprovalTaskScope)=>useQuery({queryKey:['mdm-model-approval-tasks',scope],queryFn:()=>mdmApi.modelApprovalTasks(scope)});
 export const useMdmSchema=(code:string)=>useQuery({queryKey:keys.schema(code),queryFn:()=>mdmApi.schema(code)});
+export const useMdmValidationRules=(code:string)=>useQuery({queryKey:['mdm-validation-rules',code],queryFn:()=>mdmApi.validationRules(code),enabled:Boolean(code)});
+export const useSaveMdmValidationRules=(code:string,onSuccess:()=>void)=>{const qc=useQueryClient();return useMutation({mutationFn:(rules:import('./types').MdmValidationRule[])=>mdmApi.saveValidationRules(code,rules),onSuccess:async()=>{await qc.invalidateQueries({queryKey:['mdm-validation-rules',code]});onSuccess();}})};
 export const useMdmRecords=(code:string,p:{keyword?:string;pageNo:number;pageSize:number})=>useQuery({queryKey:[...keys.records(code),p.keyword??'',p.pageNo,p.pageSize],queryFn:()=>mdmApi.records(code,p)});
 export const useMdmRecordVersions=(code:string,id?:string)=>useQuery({queryKey:[...keys.records(code),id,'versions'],queryFn:()=>mdmApi.recordVersions(code,id!),enabled:Boolean(id)});
 export const useMdmRecordActions=(code:string,id?:string)=>useQuery({queryKey:[...keys.records(code),id,'actions'],queryFn:()=>mdmApi.recordActions(code,id!),enabled:Boolean(id)});

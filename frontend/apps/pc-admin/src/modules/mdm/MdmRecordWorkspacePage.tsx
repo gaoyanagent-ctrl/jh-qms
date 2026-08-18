@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useRegisterDirty } from '../../workspace/DirtyStateRegistry';
-import { useDeleteMdmRecordBatch, useMdmRecordAction, useMdmRecordActions, useMdmRecords, useMdmRecordVersions, useMdmSchema, useSaveMdmRecord, useUpdateMdmRecordBatch } from './hooks';
+import { useDeleteMdmRecordBatch, useMdmRecordAction, useMdmRecordActions, useMdmRecords, useMdmRecordVersions, useMdmSchema, useMdmValidationRules, useSaveMdmRecord, useUpdateMdmRecordBatch } from './hooks';
 import { MdmPageContextProvider } from './pageContext';
 import { MdmExcelPasteModal } from './MdmExcelPasteModal';
 import { MdmExcelFileImportModal } from './MdmExcelFileImportModal';
@@ -74,6 +74,7 @@ export const MdmRecordWorkspacePage = () => {
   const [drafts,setDrafts]=useState<Record<string,SaveMdmRecord>>({});
   const [selectedRowKeys,setSelectedRowKeys]=useState<Key[]>([]);
   useRegisterDirty((open && dirty)||Object.keys(drafts).length>0); const schema = useMdmSchema(code); const records = useMdmRecords(code, params);
+  const validationRules=useMdmValidationRules(code);
   const close = () => { setOpen(false); setEditing(undefined); setDirty(false); form.resetFields(); };
   const save = useSaveMdmRecord(code, () => { message.success(t('common.feedback.operationSucceeded')); close(); });
   const recordRequest=(record:MdmRecord):SaveMdmRecord=>buildMdmGridDraft(record,t('mdm.changeReason.gridEdit'));
@@ -128,6 +129,7 @@ export const MdmRecordWorkspacePage = () => {
     if(editing){setDrafts(current=>({...current,[editing.id]:request}));message.success(t('mdm.grid.staged'));close();return;}
     save.mutate({ request });
   };
+  const validateOnBlur=async(field:MdmField)=>{if(!validationRules.data?.some(rule=>rule.enabled&&rule.triggerPoint==='BLUR'&&rule.fieldCode===field.code))return;const values=form.getFieldsValue();if(!values.businessCode||!values.name)return;const request:SaveMdmRecord={businessCode:values.businessCode,name:values.name,lifecycleStatus:editing?.lifecycleStatus??'DRAFT',scopeType:editing?.scopeType??'GROUP',scopeIds:editing?.scopeIds??[],effectiveFrom:values.effectiveFrom?.format('YYYY-MM-DD'),effectiveTo:values.effectiveTo?.format('YYYY-MM-DD'),attributes:values.attributes??{},expectedVersion:editing?.version};const outcome=await mdmApi.validateField(code,field.code,request);outcome.warnings.forEach(issue=>message.warning(issue.message));if(outcome.errors.length)throw new Error(outcome.errors.map(issue=>issue.message).join('；'));};
   const actionMutation=useMdmRecordAction(code,()=>{message.success(t('common.feedback.operationSucceeded'));setPendingAction(undefined);actionForm.resetFields();});
   const context = { module:'mdm' as const, pageType:'workspace' as const, objectType:code, routePath:`/mdm/models/${code}/records`,
     visibleFields:['businessCode','name',...(schema.data?.fields.map((field) => field.code) ?? [])], availableActions:['search','create','edit'] };
@@ -146,7 +148,7 @@ export const MdmRecordWorkspacePage = () => {
         <Form.Item name="businessCode" label={t('mdm.fields.businessCode')} rules={[{required:true,message:t('common.validation.required')}]}><Input autoFocus /></Form.Item>
         <Form.Item name="name" label={t('mdm.fields.name')} rules={[{required:true,message:t('common.validation.required')}]}><Input /></Form.Item>
         {schema.data?.effectiveDateEnabled && <><Form.Item name="effectiveFrom" label={t('mdm.fields.effectiveFrom')}><DatePicker style={{width:'100%'}} /></Form.Item><Form.Item name="effectiveTo" label={t('mdm.fields.effectiveTo')}><DatePicker style={{width:'100%'}} /></Form.Item></>}
-        {schema.data?.fields.map((field) => <Form.Item key={field.code} name={['attributes',field.code]} label={field.name} extra={field.helpText} valuePropName={field.dataType === 'BOOLEAN' ? 'checked' : 'value'} rules={[{required:field.required,message:t('common.validation.required')}]}>{fieldControl(field)}</Form.Item>)}
+        {schema.data?.fields.map((field) => <Form.Item key={field.code} name={['attributes',field.code]} label={field.name} extra={field.helpText} valuePropName={field.dataType === 'BOOLEAN' ? 'checked' : 'value'} validateTrigger="onBlur" rules={[{required:field.required,message:t('common.validation.required')},{validator:()=>validateOnBlur(field)}]}>{fieldControl(field)}</Form.Item>)}
       </Form>
     </FormInteractionSurface>
     {schema.data&&<MdmExcelPasteModal open={pasteOpen} onClose={()=>setPasteOpen(false)} model={schema.data}/>}

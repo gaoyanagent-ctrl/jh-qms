@@ -42,6 +42,9 @@ public final class MdmDtos {
                                       @NotBlank String message, @NotNull Map<String, Object> condition,
                                       @NotNull Map<String, Object> assertion, boolean enabled, int sortNo) {}
     public record SaveValidationRulesRequest(@NotNull List<@Valid ValidationRuleDraft> rules) {}
+    public record FieldValidationRequest(@NotBlank String fieldCode, @NotNull @Valid SaveRecordRequest record) {}
+    public record ValidationIssue(String fieldCode, String severity, String message) {}
+    public record ValidationOutcome(boolean valid, List<ValidationIssue> errors, List<ValidationIssue> warnings) {}
     public record ReferenceCondition(String targetField, Object value) {}
     public record RecordActionRequest(String comment) {}
 }
