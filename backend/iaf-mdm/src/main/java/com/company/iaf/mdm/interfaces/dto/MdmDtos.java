@@ -45,6 +45,13 @@ public final class MdmDtos {
     public record FieldValidationRequest(@NotBlank String fieldCode, @NotNull @Valid SaveRecordRequest record) {}
     public record ValidationIssue(String fieldCode, String severity, String message) {}
     public record ValidationOutcome(boolean valid, List<ValidationIssue> errors, List<ValidationIssue> warnings) {}
+    public record ModelDictionaryIssue(String sheet, int rowNo, String field, String severity, String message) {}
+    public record ModelDictionaryChange(String modelCode, String modelName, String changeType, String currentStatus,
+                                        int fieldAdds, int fieldUpdates, int fieldUnchanged,
+                                        List<ModelDictionaryIssue> issues) {}
+    public record ModelDictionaryPreview(boolean valid, int totalModels, int totalFields, int modelCreates,
+                                         int modelUpdates, List<ModelDictionaryChange> changes,
+                                         List<ModelDictionaryIssue> issues) {}
     public record ReferenceCondition(String targetField, Object value) {}
     public record RecordActionRequest(String comment) {}
 }

@@ -23,3 +23,6 @@ export interface MdmModelValidation { valid:boolean; errors:string[]; warnings:s
 export interface MdmValidationRule { id?:number; code:string; name:string; triggerPoint:'SAVE'|'BLUR'; ruleType:'REFERENCE_EXISTS'; fieldCode:string; severity:'BLOCK'|'WARNING'; message:string; condition:Record<string,unknown>; assertion:{targetModel:string;conditions:Array<{targetField:string;sourceField?:string;value?:unknown}>}; enabled:boolean; sortNo:number }
 export interface MdmValidationIssue { fieldCode:string|null; severity:string; message:string }
 export interface MdmValidationOutcome { valid:boolean; errors:MdmValidationIssue[]; warnings:MdmValidationIssue[] }
+export interface MdmModelDictionaryIssue { sheet:string; rowNo:number; field:string; severity:'ERROR'|'WARNING'; message:string }
+export interface MdmModelDictionaryChange { modelCode:string; modelName:string; changeType:'CREATE'|'UPDATE'; currentStatus:string|null; fieldAdds:number; fieldUpdates:number; fieldUnchanged:number; issues:MdmModelDictionaryIssue[] }
+export interface MdmModelDictionaryPreview { valid:boolean; totalModels:number; totalFields:number; modelCreates:number; modelUpdates:number; changes:MdmModelDictionaryChange[]; issues:MdmModelDictionaryIssue[] }
